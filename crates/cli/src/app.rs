@@ -1,11 +1,7 @@
+use crate::worker::{Boot, Cmd, Evt, Worker};
 use anyhow::Result;
+use chrono::{DateTime, Utc};
 use ghwork_core::{Filter, Item, SyncStats};
-use std::sync::mpsc::{self, Receiver, Sender};
-
-pub enum Msg {
-    Done(SyncStats),
-    Failed(String),
-}
 
 pub struct App {
     pub items: Vec<Item>,
@@ -16,39 +12,45 @@ pub struct App {
     pub search: String,
     pub searching: bool,
     pub help: bool,
-    pub busy: bool,
     pub status: String,
     pub stats: Option<SyncStats>,
+    pub last_sync: Option<DateTime<Utc>>,
+    pub last_check: Option<DateTime<Utc>>,
+    pub interval: u64,
     pub quit: bool,
-    tx: Sender<Msg>,
-    rx: Receiver<Msg>,
+    worker: Worker,
 }
 
 impl App {
-    pub fn new(items: Vec<Item>, me: String) -> Self {
-        let (tx, rx) = mpsc::channel();
+    pub fn new(boot: Boot) -> Self {
         let mut app = Self {
-            items,
+            items: boot.items,
             view: Vec::new(),
             filter: Filter::Attention,
             cursor: 0,
-            me,
+            me: boot.login,
             search: String::new(),
             searching: false,
             help: false,
-            busy: false,
             status: String::new(),
             stats: None,
+            last_sync: boot.last_sync,
+            last_check: boot.last_sync,
+            interval: boot.interval,
             quit: false,
-            tx,
-            rx,
+            worker: boot.worker,
         };
         app.reindex();
         app
     }
 
+    pub fn busy(&self) -> bool {
+        self.worker.is_busy()
+    }
+
     pub fn reindex(&mut self) {
         let q = self.search.to_lowercase();
+        let keep = self.selected().map(|it| it.url.clone());
         self.view = self
             .items
             .iter()
@@ -62,7 +64,10 @@ impl App {
             })
             .map(|(i, _)| i)
             .collect();
-        self.cursor = self.cursor.min(self.view.len().saturating_sub(1));
+        self.cursor = keep
+            .and_then(|url| self.view.iter().position(|&i| self.items[i].url == url))
+            .unwrap_or(self.cursor)
+            .min(self.view.len().saturating_sub(1));
     }
 
     pub fn selected(&self) -> Option<&Item> {
@@ -73,8 +78,12 @@ impl App {
         if self.view.is_empty() {
             return;
         }
-        let last = self.view.len() - 1;
-        self.cursor = (self.cursor as isize + delta).clamp(0, last as isize) as usize;
+        let last = (self.view.len() - 1) as isize;
+        self.cursor = (self.cursor as isize).saturating_add(delta).clamp(0, last) as usize;
+    }
+
+    pub fn jump_to_end(&mut self) {
+        self.cursor = self.view.len().saturating_sub(1);
     }
 
     pub fn set_filter(&mut self, f: Filter) {
@@ -95,32 +104,23 @@ impl App {
     }
 
     pub fn refresh(&mut self, pages: usize) {
-        if self.busy {
-            return;
-        }
-        self.busy = true;
         self.status = "syncing".into();
-        let tx = self.tx.clone();
-        std::thread::spawn(move || {
-            let msg = match ghwork_core::open().and_then(|mut s| s.refresh(pages)) {
-                Ok(st) => Msg::Done(st),
-                Err(e) => Msg::Failed(e.to_string()),
-            };
-            let _ = tx.send(msg);
-        });
+        self.worker.send(Cmd::Refresh(pages));
     }
 
     pub fn drain(&mut self) -> Result<()> {
-        while let Ok(msg) = self.rx.try_recv() {
-            self.busy = false;
-            match msg {
-                Msg::Done(st) => {
-                    self.items = ghwork_core::open()?.items()?;
-                    self.stats = Some(st);
-                    self.status = format!("{} items, {} api pts", st.fetched, st.cost);
+        while let Ok(evt) = self.worker.evt.try_recv() {
+            self.last_check = Some(Utc::now());
+            match evt {
+                Evt::Synced { stats, items } => {
+                    self.items = items;
+                    self.stats = Some(stats);
+                    self.last_sync = Some(Utc::now());
+                    self.status = format!("{} items, {} api pts", stats.fetched, stats.cost);
                     self.reindex();
                 }
-                Msg::Failed(e) => self.status = format!("sync failed: {e}"),
+                Evt::Quiet => self.status.clear(),
+                Evt::Failed(e) => self.status = format!("sync failed: {e}"),
             }
         }
         Ok(())

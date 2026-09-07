@@ -45,7 +45,7 @@ fn header(f: &mut Frame, area: Rect, app: &App) {
         };
         spans.push(Span::styled(format!(" {}:{} {} ", i + 1, filt.label(), n), style));
     }
-    if app.busy {
+    if app.busy() {
         spans.push(Span::styled("  syncing", Style::default().fg(Color::Yellow)));
     }
     f.render_widget(Line::from(spans), area);
@@ -154,6 +154,17 @@ fn footer(f: &mut Frame, area: Rect, app: &App) {
         "j k move · tab filter · o open · r sync · / search · ? help · q quit".into()
     };
     let mut bar = vec![Span::styled(hint, Style::default().fg(Color::DarkGray))];
+    bar.push(Span::styled(
+        match app.last_sync {
+            Some(t) => format!("   synced {} ago", ago(t)),
+            None => "   never synced".into(),
+        },
+        Style::default().fg(Color::DarkGray),
+    ));
+    bar.push(Span::styled(
+        format!(", watching every {}s", app.interval),
+        Style::default().fg(Color::DarkGray),
+    ));
     if !app.search.is_empty() && !app.searching {
         bar.push(Span::styled(
             format!("   filtering on \"{}\"", app.search),

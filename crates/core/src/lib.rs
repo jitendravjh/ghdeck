@@ -48,10 +48,3 @@ pub fn open() -> Result<Sync> {
     let cache = cache::Cache::open(&cache::default_path()?)?;
     Ok(Sync::new(client, cache))
 }
-
-pub fn viewer() -> Result<String> {
-    let out = std::process::Command::new("gh")
-        .args(["api", "user", "-q", ".login"])
-        .output()?;
-    Ok(String::from_utf8(out.stdout)?.trim().to_string())
-}

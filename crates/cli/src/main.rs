@@ -1,10 +1,12 @@
 mod app;
 mod ui;
+mod worker;
 
 use anyhow::Result;
 use app::App;
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyModifiers};
 use ghwork_core::{ago, plural, Filter, Kind};
+use worker::Worker;
 use std::time::Duration;
 
 const HELP: &str = "\
@@ -86,7 +88,7 @@ fn list(what: Option<&str>) -> Result<()> {
     let filter = parse_filter(what);
     let mut sync = ghwork_core::open()?;
     let items = ensure_synced(&mut sync)?;
-    let me = ghwork_core::viewer()?;
+    let me = sync.login()?;
     let rows: Vec<_> = items.iter().filter(|it| filter.keeps(it, &me)).collect();
     println!("{}, {}\n", plural(rows.len() as u64, "item"), filter.label());
     for it in rows {
@@ -100,12 +102,10 @@ fn list(what: Option<&str>) -> Result<()> {
 }
 
 fn dashboard() -> Result<()> {
-    let sync = ghwork_core::open()?;
-    let items = sync.items()?;
-    let me = ghwork_core::viewer()?;
-    let stale = items.is_empty();
-    let mut app = App::new(items, me);
-    if stale {
+    let boot = Worker::boot()?;
+    let cold = boot.items.is_empty();
+    let mut app = App::new(boot);
+    if cold {
         app.refresh(5);
     }
 
@@ -125,11 +125,9 @@ fn loop_events(
         if !event::poll(Duration::from_millis(200))? {
             continue;
         }
-        if let Event::Key(key) = event::read()? {
-            if key.kind == event::KeyEventKind::Release {
-                continue;
-            }
-            handle(app, key);
+        match event::read()? {
+            Event::Key(key) if key.kind != event::KeyEventKind::Release => handle(app, key),
+            _ => {}
         }
     }
     Ok(())
@@ -172,7 +170,7 @@ fn handle(app: &mut App, key: KeyEvent) {
         KeyCode::PageDown => app.move_by(10),
         KeyCode::PageUp => app.move_by(-10),
         KeyCode::Char('g') | KeyCode::Home => app.cursor = 0,
-        KeyCode::Char('G') | KeyCode::End => app.move_by(isize::MAX / 2),
+        KeyCode::Char('G') | KeyCode::End => app.jump_to_end(),
         KeyCode::Tab => app.cycle_filter(true),
         KeyCode::BackTab => app.cycle_filter(false),
         KeyCode::Char(c @ '1'..='5') => {

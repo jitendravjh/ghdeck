@@ -59,7 +59,9 @@ One GraphQL query gets both PRs and issues interleaved and already sorted, using
 
 Change detection is free. `GET /notifications` with `If-Modified-Since` returns 304 when nothing has moved, and GitHub does not count 304s against the rate limit. So `ghwork poll` costs nothing on a quiet repo and only spends points when there is actually something new.
 
-Everything is cached in SQLite, so the dashboard opens on cached data straight away and syncs in the background.
+The dashboard watches for changes on its own using that poll, on whatever interval GitHub asks for in `X-Poll-Interval`, usually 60 seconds. Four auto-polls over 40 seconds measured zero points spent on either the GraphQL or the REST bucket. Set `GHWORK_POLL_SECS` to override the interval.
+
+Everything is cached in SQLite, so the dashboard opens on cached data straight away and syncs in the background. One worker thread owns the connection and the token, so nothing re-authenticates per refresh.
 
 ## Layout
 
@@ -75,6 +77,7 @@ The core has no UI dependency, so a GUI can sit on the same data later.
 - GitHub search caps at 1000 results, so very old history is not reachable
 - `mergeable` comes back unknown while GitHub computes it, those rows need a re-sync to settle
 - No write actions yet, it is read only
+- The list shows who acted last but not what they said, comment bodies are not fetched
 
 ## Licence
 

@@ -1,9 +1,13 @@
 use crate::{cache::Cache, github::Client, model::Item};
 use anyhow::Result;
-use chrono::Utc;
+use chrono::{DateTime, Utc};
 
 const NOTIF_LM: &str = "notifications_last_modified";
 const LAST_SYNC: &str = "last_sync";
+const LOGIN: &str = "login";
+const POLL_INTERVAL: &str = "poll_interval";
+
+pub const DEFAULT_POLL_SECS: u64 = 60;
 
 pub struct Sync {
     pub client: Client,
@@ -29,39 +33,75 @@ impl Sync {
         self.cache.all()
     }
 
-    pub fn last_sync(&self) -> Option<String> {
-        self.cache.get_meta(LAST_SYNC).ok().flatten()
+    pub fn last_sync(&self) -> Option<DateTime<Utc>> {
+        self.cache
+            .get_meta(LAST_SYNC)
+            .ok()
+            .flatten()
+            .and_then(|s| DateTime::parse_from_rfc3339(&s).ok())
+            .map(|d| d.with_timezone(&Utc))
+    }
+
+    pub fn poll_interval(&self) -> u64 {
+        if let Some(secs) = std::env::var("GHWORK_POLL_SECS").ok().and_then(|v| v.parse::<u64>().ok()) {
+            return secs.max(10);
+        }
+        self.cache
+            .get_meta(POLL_INTERVAL)
+            .ok()
+            .flatten()
+            .and_then(|s| s.parse().ok())
+            .unwrap_or(DEFAULT_POLL_SECS)
+            .max(30)
+    }
+
+    pub fn login(&self) -> Result<String> {
+        if let Some(login) = self.cache.get_meta(LOGIN)? {
+            if !login.is_empty() {
+                return Ok(login);
+            }
+        }
+        let out = std::process::Command::new("gh")
+            .args(["api", "user", "-q", ".login"])
+            .output()?;
+        let login = String::from_utf8(out.stdout)?.trim().to_string();
+        if !login.is_empty() {
+            self.cache.set_meta(LOGIN, &login)?;
+        }
+        Ok(login)
     }
 
     pub fn refresh(&mut self, pages: usize) -> Result<SyncStats> {
         let got = self.client.fetch(pages, 50)?;
         self.cache.put(&got.items)?;
         self.cache.set_meta(LAST_SYNC, &Utc::now().to_rfc3339())?;
+        if !got.login.is_empty() {
+            self.cache.set_meta(LOGIN, &got.login)?;
+        }
         Ok(SyncStats {
             fetched: got.items.len(),
             involved_total: got.involved_total,
             cost: got.cost,
             remaining: got.remaining,
             skipped: false,
-            notif_ok: self.prime_notifications().is_ok(),
+            notif_ok: self.watermark(None).is_ok(),
         })
     }
 
-    fn prime_notifications(&self) -> Result<()> {
-        let (_, lm) = self.client.notifications_changed(None)?;
-        if let Some(lm) = lm {
+    fn watermark(&self, last_modified: Option<&str>) -> Result<bool> {
+        let poll = self.client.notifications_changed(last_modified)?;
+        if let Some(lm) = poll.last_modified {
             self.cache.set_meta(NOTIF_LM, &lm)?;
         }
-        Ok(())
+        if let Some(secs) = poll.interval {
+            self.cache.set_meta(POLL_INTERVAL, &secs.to_string())?;
+        }
+        Ok(poll.changed)
     }
 
     pub fn poll(&mut self, pages: usize) -> Result<SyncStats> {
         let lm = self.cache.get_meta(NOTIF_LM)?;
-        let (changed, next) = self.client.notifications_changed(lm.as_deref())?;
-        if let Some(next) = next {
-            self.cache.set_meta(NOTIF_LM, &next)?;
-        }
-        if !changed {
+        if !self.watermark(lm.as_deref())? {
             return Ok(SyncStats { skipped: true, notif_ok: true, ..Default::default() });
         }
         self.refresh(pages)
