@@ -240,9 +240,9 @@ fn footer(f: &mut Frame, area: Rect, app: &App) {
     } else if !app.status.is_empty() {
         app.status.clone()
     } else if app.detail {
-        "j k scroll · b bots · r reload · o open · esc back".into()
+        "↑↓ scroll · b bots · r reload · o open · ← back".into()
     } else {
-        "j k move · enter read · tab filter · o open · r sync · / search · ? help · q quit".into()
+        "↑↓ move · ←→ filter · enter read · o open · r sync · / search · ? help · q quit".into()
     };
     let mut bar = vec![Span::styled(hint, Style::default().fg(Color::DarkGray))];
     bar.push(Span::styled(
@@ -275,12 +275,11 @@ fn footer(f: &mut Frame, area: Rect, app: &App) {
 
 fn help(f: &mut Frame, area: Rect) {
     let keys = [
-        ("j / k, arrows", "move"),
+        ("up / down", "move"),
+        ("left / right", "change filter"),
+        ("1 to 5", "jump to a filter"),
+        ("enter", "read the conversation"),
         ("g / G", "top / bottom"),
-        ("tab, shift-tab", "cycle filter"),
-        ("1 to 5", "jump to filter"),
-        ("enter, l", "read the conversation"),
-        ("b", "expand bot messages in a conversation"),
         ("o", "open in browser"),
         ("y", "copy url"),
         ("r", "sync now"),
@@ -289,6 +288,12 @@ fn help(f: &mut Frame, area: Rect) {
         ("esc", "clear search"),
         ("?", "close help"),
         ("q", "quit"),
+        ("", ""),
+        ("in a conversation", ""),
+        ("up / down", "scroll"),
+        ("b", "expand bot messages"),
+        ("r", "reload it"),
+        ("left, esc", "back to the list"),
     ];
     let lines: Vec<Line> = keys
         .iter()

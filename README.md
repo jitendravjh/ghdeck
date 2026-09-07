@@ -52,18 +52,19 @@ Filters are `needs-you`, `open`, `mine`, `to-review` and `all`.
 ## Keys
 
 ```
-j k         move
-enter       read the conversation
-tab, 1 to 5 switch filter
-o           open in browser
-y           copy url
-r           sync
-/           search
-?           help
-q           quit
+up down       move
+left right    switch filter
+1 to 5        jump straight to a filter
+enter         read the conversation
+o             open in browser
+y             copy url
+r             sync
+/             search
+?             help
+q             quit
 ```
 
-Inside a conversation `j k` scrolls, `b` expands bot messages and `esc` takes you back.
+Inside a conversation, up and down scroll, `b` expands bot messages, and left or esc takes you back.
 
 ## How it stays cheap
 

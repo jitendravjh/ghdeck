@@ -187,11 +187,9 @@ fn handle(app: &mut App, key: KeyEvent) {
     if app.detail {
         match key.code {
             KeyCode::Char('c') if ctrl => app.quit = true,
-            KeyCode::Esc | KeyCode::Char('q') | KeyCode::Char('h') | KeyCode::Left => {
-                app.close_detail()
-            }
-            KeyCode::Char('j') | KeyCode::Down => app.scroll_by(1),
-            KeyCode::Char('k') | KeyCode::Up => app.scroll_by(-1),
+            KeyCode::Esc | KeyCode::Char('q') | KeyCode::Left => app.close_detail(),
+            KeyCode::Down => app.scroll_by(1),
+            KeyCode::Up => app.scroll_by(-1),
             KeyCode::PageDown | KeyCode::Char(' ') => app.scroll_by(15),
             KeyCode::PageUp => app.scroll_by(-15),
             KeyCode::Char('g') | KeyCode::Home => app.scroll = 0,
@@ -212,19 +210,19 @@ fn handle(app: &mut App, key: KeyEvent) {
         }
         KeyCode::Esc if app.help => app.help = false,
         KeyCode::Char('?') => app.help = !app.help,
-        KeyCode::Char('j') | KeyCode::Down => app.move_by(1),
-        KeyCode::Char('k') | KeyCode::Up => app.move_by(-1),
+        KeyCode::Down => app.move_by(1),
+        KeyCode::Up => app.move_by(-1),
         KeyCode::PageDown => app.move_by(10),
         KeyCode::PageUp => app.move_by(-10),
         KeyCode::Char('g') | KeyCode::Home => app.cursor = 0,
         KeyCode::Char('G') | KeyCode::End => app.jump_to_end(),
-        KeyCode::Tab => app.cycle_filter(true),
-        KeyCode::BackTab => app.cycle_filter(false),
+        KeyCode::Right | KeyCode::Tab => app.cycle_filter(true),
+        KeyCode::Left | KeyCode::BackTab => app.cycle_filter(false),
         KeyCode::Char(c @ '1'..='5') => {
             let i = c as usize - '1' as usize;
             app.set_filter(Filter::ORDER[i]);
         }
-        KeyCode::Enter | KeyCode::Char('l') | KeyCode::Right => app.open_detail(),
+        KeyCode::Enter => app.open_detail(),
         KeyCode::Char('o') => app.open_in_browser(),
         KeyCode::Char('y') => copy_url(app),
         KeyCode::Char('r') => app.refresh(5),
