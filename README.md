@@ -19,15 +19,21 @@ An issue closing and the PR that closed it, next to each other. Conflicts, faili
 
 ## Install
 
-`cargo` is Rust's build tool. `brew install rust` if you do not have it.
+What you need first:
+
+- **Rust 1.88 or newer** for `cargo`, its build tool. `brew install rust`, or [rustup](https://rustup.rs).
+- **A C compiler**, since SQLite is compiled from source. `xcode-select --install` on macOS, `gcc` or `clang` on Linux.
+- **[gh](https://cli.github.com) logged in**, or a `GITHUB_TOKEN` in the environment with the `repo` scope.
+
+Then:
 
 ```sh
 cargo install --git https://github.com/jitendravjh/ghwork ghwork
 ```
 
-That drops the binary in `~/.cargo/bin`, so put it on your PATH.
+The binary lands in `~/.cargo/bin`, so keep that on your PATH.
 
-You also need `gh` logged in, or a `GITHUB_TOKEN` in the environment.
+Built and used on macOS. Linux should be fine. Windows is untested, and the clipboard key will not work there.
 
 ## Use
 

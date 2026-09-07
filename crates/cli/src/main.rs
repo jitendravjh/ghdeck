@@ -239,14 +239,30 @@ fn handle(app: &mut App, key: KeyEvent) {
 
 fn copy_url(app: &mut App) {
     let Some(url) = app.selected().map(|it| it.url.clone()) else { return };
-    let ok = std::process::Command::new("pbcopy")
+    let candidates: &[(&str, &[&str])] = if cfg!(target_os = "macos") {
+        &[("pbcopy", &[])]
+    } else {
+        &[("wl-copy", &[]), ("xclip", &["-selection", "clipboard"]), ("xsel", &["--clipboard", "--input"])]
+    };
+    let copied = candidates.iter().any(|(bin, args)| pipe_to(bin, args, &url));
+    app.status = if copied { "url copied".into() } else { "no clipboard tool found".into() };
+}
+
+fn pipe_to(bin: &str, args: &[&str], text: &str) -> bool {
+    use std::io::Write;
+    let Ok(mut child) = std::process::Command::new(bin)
+        .args(args)
         .stdin(std::process::Stdio::piped())
+        .stdout(std::process::Stdio::null())
+        .stderr(std::process::Stdio::null())
         .spawn()
-        .and_then(|mut c| {
-            use std::io::Write;
-            c.stdin.as_mut().unwrap().write_all(url.as_bytes())?;
-            c.wait()
-        })
-        .is_ok();
-    app.status = if ok { "url copied".into() } else { "copy failed".into() };
+    else {
+        return false;
+    };
+    let wrote = child
+        .stdin
+        .take()
+        .map(|mut pipe| pipe.write_all(text.as_bytes()).is_ok())
+        .unwrap_or(false);
+    matches!(child.wait(), Ok(st) if st.success()) && wrote
 }
