@@ -99,6 +99,10 @@ impl Sync {
         Ok(poll.changed)
     }
 
+    pub fn thread(&self, repo: &str, number: u64) -> Result<Vec<crate::thread::Event>> {
+        self.client.thread(repo, number)
+    }
+
     pub fn poll(&mut self, pages: usize) -> Result<SyncStats> {
         let lm = self.cache.get_meta(NOTIF_LM)?;
         if !self.watermark(lm.as_deref())? {

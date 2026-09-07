@@ -60,8 +60,8 @@ impl Client {
         Self { token, agent: ureq::Agent::new_with_defaults() }
     }
 
-    fn graphql(&self, vars: Value) -> Result<Value> {
-        let body = json!({ "query": QUERY, "variables": vars });
+    fn graphql(&self, query: &str, vars: Value) -> Result<Value> {
+        let body = json!({ "query": query, "variables": vars });
         let mut last: Option<anyhow::Error> = None;
 
         for attempt in 0..RETRIES {
@@ -101,7 +101,7 @@ impl Client {
         let mut login = String::new();
 
         for _ in 0..pages {
-            let data = self.graphql(json!({
+            let data = self.graphql(QUERY, json!({
                 "involves": "involves:@me sort:updated-desc",
                 "reviews": "is:pr review-requested:@me sort:updated-desc",
                 "n": per_page,
@@ -146,6 +146,15 @@ impl Client {
 
         items.sort_by_key(|i| std::cmp::Reverse(i.updated_at));
         Ok(Fetched { items, login, involved_total: total, cost, remaining })
+    }
+
+    pub fn thread(&self, repo: &str, number: u64) -> Result<Vec<crate::thread::Event>> {
+        let (owner, name) = repo.split_once('/').context("repo was not owner/name")?;
+        let data = self.graphql(
+            crate::thread::QUERY,
+            json!({ "owner": owner, "name": name, "number": number }),
+        )?;
+        Ok(crate::thread::parse(&data))
     }
 
     pub fn notifications_changed(&self, last_modified: Option<&str>) -> Result<Poll> {

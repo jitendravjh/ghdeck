@@ -2,7 +2,7 @@ mod app;
 mod ui;
 mod worker;
 
-use anyhow::Result;
+use anyhow::{Context, Result};
 use app::App;
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyModifiers};
 use ghwork_core::{ago, plural, Filter, Kind};
@@ -17,6 +17,7 @@ usage:
   ghwork list [what]  print to stdout, what is one of needs-you, open, mine, to-review, all
   ghwork sync         refresh the cache now
   ghwork poll         refresh only if github notifications changed, costs nothing otherwise
+  ghwork show <ref>   print the conversation, ref is owner/repo#123
   ghwork where        print the cache path
 ";
 
@@ -49,6 +50,7 @@ fn run() -> Result<()> {
             }
             Ok(())
         }
+        Some("show") => show(args.get(1).map(String::as_str)),
         Some("where") => {
             println!("{}", ghwork_core::cache::default_path()?.display());
             Ok(())
@@ -97,6 +99,32 @@ fn list(what: Option<&str>) -> Result<()> {
         let chips: Vec<String> = it.chips().into_iter().map(|(t, _)| t).collect();
         let activity = it.activity().unwrap_or_default();
         println!("      {}   {}  {}", chips.join(" · "), plural(it.comments, "comment"), activity);
+    }
+    Ok(())
+}
+
+fn show(target: Option<&str>) -> Result<()> {
+    let target = target.context("give a ref like owner/repo#123")?;
+    let (repo, number) = target.rsplit_once('#').context("expected owner/repo#123")?;
+    let number: u64 = number.parse().context("that number did not parse")?;
+    let events = ghwork_core::open()?.thread(repo, number)?;
+    if events.is_empty() {
+        println!("nothing on {repo}#{number}");
+        return Ok(());
+    }
+    for e in events {
+        println!("{} {} {}", e.at.format("%Y-%m-%d %H:%M"), e.who, e.label);
+        if e.bot {
+            let gist = e.gist();
+            if !gist.is_empty() {
+                println!("    {gist}");
+            }
+        } else {
+            for line in e.body.lines() {
+                println!("    {line}");
+            }
+        }
+        println!();
     }
     Ok(())
 }
@@ -156,6 +184,25 @@ fn handle(app: &mut App, key: KeyEvent) {
     }
 
     let ctrl = key.modifiers.contains(KeyModifiers::CONTROL);
+    if app.detail {
+        match key.code {
+            KeyCode::Char('c') if ctrl => app.quit = true,
+            KeyCode::Esc | KeyCode::Char('q') | KeyCode::Char('h') | KeyCode::Left => {
+                app.close_detail()
+            }
+            KeyCode::Char('j') | KeyCode::Down => app.scroll_by(1),
+            KeyCode::Char('k') | KeyCode::Up => app.scroll_by(-1),
+            KeyCode::PageDown | KeyCode::Char(' ') => app.scroll_by(15),
+            KeyCode::PageUp => app.scroll_by(-15),
+            KeyCode::Char('g') | KeyCode::Home => app.scroll = 0,
+            KeyCode::Char('b') => app.show_bots = !app.show_bots,
+            KeyCode::Char('r') => app.reload_thread(),
+            KeyCode::Char('o') => app.open_in_browser(),
+            KeyCode::Char('y') => copy_url(app),
+            _ => {}
+        }
+        return;
+    }
     match key.code {
         KeyCode::Char('c') if ctrl => app.quit = true,
         KeyCode::Char('q') => app.quit = true,
@@ -177,7 +224,8 @@ fn handle(app: &mut App, key: KeyEvent) {
             let i = c as usize - '1' as usize;
             app.set_filter(Filter::ORDER[i]);
         }
-        KeyCode::Char('o') | KeyCode::Enter => app.open_in_browser(),
+        KeyCode::Enter | KeyCode::Char('l') | KeyCode::Right => app.open_detail(),
+        KeyCode::Char('o') => app.open_in_browser(),
         KeyCode::Char('y') => copy_url(app),
         KeyCode::Char('r') => app.refresh(5),
         KeyCode::Char('R') => app.refresh(20),

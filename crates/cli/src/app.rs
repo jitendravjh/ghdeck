@@ -1,7 +1,8 @@
 use crate::worker::{Boot, Cmd, Evt, Worker};
 use anyhow::Result;
 use chrono::{DateTime, Utc};
-use ghwork_core::{Filter, Item, SyncStats};
+use ghwork_core::{Event, Filter, Item, SyncStats};
+use std::collections::HashMap;
 
 pub struct App {
     pub items: Vec<Item>,
@@ -18,6 +19,11 @@ pub struct App {
     pub last_check: Option<DateTime<Utc>>,
     pub interval: u64,
     pub quit: bool,
+    pub detail: bool,
+    pub scroll: u16,
+    pub show_bots: bool,
+    pub threads: HashMap<String, Vec<Event>>,
+    pub loading: Option<String>,
     worker: Worker,
 }
 
@@ -38,6 +44,11 @@ impl App {
             last_check: boot.last_sync,
             interval: boot.interval,
             quit: false,
+            detail: false,
+            scroll: 0,
+            show_bots: false,
+            threads: HashMap::new(),
+            loading: None,
             worker: boot.worker,
         };
         app.reindex();
@@ -103,6 +114,46 @@ impl App {
         self.items.iter().filter(|it| f.keeps(it, &self.me)).count()
     }
 
+    pub fn open_detail(&mut self) {
+        let Some(it) = self.selected() else { return };
+        let (url, repo, number) = (it.url.clone(), it.repo.clone(), it.number);
+        self.detail = true;
+        self.scroll = 0;
+        if !self.threads.contains_key(&url) {
+            self.loading = Some(url.clone());
+            self.worker.send(Cmd::Thread { url, repo, number });
+        }
+    }
+
+    pub fn close_detail(&mut self) {
+        self.detail = false;
+        self.scroll = 0;
+    }
+
+    pub fn reload_thread(&mut self) {
+        if let Some(it) = self.selected() {
+            let (url, repo, number) = (it.url.clone(), it.repo.clone(), it.number);
+            self.threads.remove(&url);
+            self.loading = Some(url.clone());
+            self.worker.send(Cmd::Thread { url, repo, number });
+        }
+    }
+
+    pub fn thread(&self) -> Option<&Vec<Event>> {
+        self.selected().and_then(|it| self.threads.get(&it.url))
+    }
+
+    pub fn thread_loading(&self) -> bool {
+        match (&self.loading, self.selected()) {
+            (Some(url), Some(it)) => *url == it.url,
+            _ => false,
+        }
+    }
+
+    pub fn scroll_by(&mut self, delta: i32) {
+        self.scroll = (self.scroll as i32 + delta).max(0) as u16;
+    }
+
     pub fn refresh(&mut self, pages: usize) {
         self.status = "syncing".into();
         self.worker.send(Cmd::Refresh(pages));
@@ -118,6 +169,12 @@ impl App {
                     self.last_sync = Some(Utc::now());
                     self.status = format!("{} items, {} api pts", stats.fetched, stats.cost);
                     self.reindex();
+                }
+                Evt::Thread { url, events } => {
+                    if self.loading.as_deref() == Some(url.as_str()) {
+                        self.loading = None;
+                    }
+                    self.threads.insert(url, events);
                 }
                 Evt::Quiet => self.status.clear(),
                 Evt::Failed(e) => self.status = format!("sync failed: {e}"),

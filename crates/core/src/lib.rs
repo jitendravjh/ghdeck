@@ -3,11 +3,13 @@ pub mod cache;
 pub mod github;
 pub mod model;
 pub mod sync;
+pub mod thread;
 
 use anyhow::Result;
 
 pub use model::{ago, plural, Ci, Item, Kind, Review, State, Tone};
 pub use sync::{Sync, SyncStats};
+pub use thread::Event;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Filter {

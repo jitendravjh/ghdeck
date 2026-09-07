@@ -27,6 +27,8 @@ pub fn draw(f: &mut Frame, app: &mut App) {
     header(f, head, app);
     if app.help {
         help(f, body);
+    } else if app.detail {
+        detail(f, body, app);
     } else {
         list(f, body, app);
     }
@@ -114,6 +116,88 @@ fn list(f: &mut Frame, area: Rect, app: &mut App) {
     f.render_stateful_widget(widget, area, &mut state);
 }
 
+fn detail(f: &mut Frame, area: Rect, app: &App) {
+    let Some(it) = app.selected() else { return };
+    let mut lines: Vec<Line> = vec![
+        Line::from(vec![
+            Span::styled(it.slug(), Style::default().fg(Color::Cyan).bold()),
+            Span::raw("  "),
+            Span::styled(it.title.clone(), Style::default().bold()),
+        ]),
+        Line::from({
+            let mut chips: Vec<Span> = Vec::new();
+            for (text, t) in it.chips() {
+                chips.push(Span::styled(text, tone(t)));
+                chips.push(Span::styled(" · ", Style::default().fg(Color::DarkGray)));
+            }
+            chips.pop();
+            chips
+        }),
+        Line::raw(""),
+    ];
+
+    if app.thread_loading() {
+        lines.push(Line::from(Span::styled(
+            "loading the conversation",
+            Style::default().fg(Color::DarkGray),
+        )));
+    }
+
+    let events = app.thread();
+    let mut hidden = 0usize;
+    for e in events.into_iter().flatten() {
+        if e.bot && !app.show_bots {
+            hidden += 1;
+            let gist = e.gist();
+            lines.push(Line::from(vec![
+                Span::styled(format!("{:>4} ", ago(e.at)), Style::default().fg(Color::DarkGray)),
+                Span::styled(e.who.clone(), Style::default().fg(Color::DarkGray)),
+                Span::styled(
+                    if gist.is_empty() { String::new() } else { format!("  {gist}") },
+                    Style::default().fg(Color::DarkGray),
+                ),
+            ]));
+            continue;
+        }
+        let accent = match e.label.as_str() {
+            "approved" => Color::Green,
+            "requested changes" => Color::Red,
+            "opened" => Color::Cyan,
+            l if l.starts_with("on ") => Color::Yellow,
+            _ => Color::Blue,
+        };
+        lines.push(Line::from(vec![
+            Span::styled(format!("{:>4} ", ago(e.at)), Style::default().fg(Color::DarkGray)),
+            Span::styled(e.who.clone(), Style::default().fg(accent).bold()),
+            Span::raw(" "),
+            Span::styled(e.label.clone(), Style::default().fg(accent)),
+        ]));
+        for raw in e.body.lines() {
+            lines.push(Line::from(Span::raw(format!("     {raw}"))));
+        }
+        lines.push(Line::raw(""));
+    }
+
+    if events.is_some_and(|e| e.is_empty()) {
+        lines.push(Line::from(Span::styled(
+            "no conversation on this one",
+            Style::default().fg(Color::DarkGray),
+        )));
+    }
+    if hidden > 0 {
+        lines.push(Line::from(Span::styled(
+            format!("{} bot {} collapsed, press b to expand", hidden, if hidden == 1 { "message" } else { "messages" }),
+            Style::default().fg(Color::DarkGray),
+        )));
+    }
+
+    let max = lines.len().saturating_sub(area.height as usize / 2) as u16;
+    f.render_widget(
+        Paragraph::new(lines).wrap(Wrap { trim: false }).scroll((app.scroll.min(max), 0)),
+        area,
+    );
+}
+
 fn footer(f: &mut Frame, area: Rect, app: &App) {
     let block = Block::default().borders(Borders::TOP).border_style(Style::default().fg(Color::DarkGray));
     let inner = block.inner(area);
@@ -126,7 +210,12 @@ fn footer(f: &mut Frame, area: Rect, app: &App) {
         ]));
         let mut meta = vec![format!("by {}", it.author)];
         if it.kind == Kind::Pr {
-            meta.push(format!("+{} -{} in {} files", it.additions, it.deletions, it.changed_files));
+            meta.push(format!(
+                "+{} -{} in {}",
+                it.additions,
+                it.deletions,
+                plural(it.changed_files, "file")
+            ));
         }
         if !it.assignees.is_empty() {
             meta.push(format!("assigned {}", it.assignees.join(", ")));
@@ -150,8 +239,10 @@ fn footer(f: &mut Frame, area: Rect, app: &App) {
         format!("search: {}_", app.search)
     } else if !app.status.is_empty() {
         app.status.clone()
+    } else if app.detail {
+        "j k scroll · b bots · r reload · o open · esc back".into()
     } else {
-        "j k move · tab filter · o open · r sync · / search · ? help · q quit".into()
+        "j k move · enter read · tab filter · o open · r sync · / search · ? help · q quit".into()
     };
     let mut bar = vec![Span::styled(hint, Style::default().fg(Color::DarkGray))];
     bar.push(Span::styled(
@@ -188,7 +279,9 @@ fn help(f: &mut Frame, area: Rect) {
         ("g / G", "top / bottom"),
         ("tab, shift-tab", "cycle filter"),
         ("1 to 5", "jump to filter"),
-        ("o, enter", "open in browser"),
+        ("enter, l", "read the conversation"),
+        ("b", "expand bot messages in a conversation"),
+        ("o", "open in browser"),
         ("y", "copy url"),
         ("r", "sync now"),
         ("R", "deep sync, more pages"),

@@ -1,6 +1,6 @@
 use anyhow::Result;
 use chrono::{DateTime, Utc};
-use ghwork_core::{Item, SyncStats};
+use ghwork_core::{Event, Item, SyncStats};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc::{self, Receiver, Sender};
 use std::sync::Arc;
@@ -9,10 +9,12 @@ use std::time::Duration;
 pub enum Cmd {
     Refresh(usize),
     Poll(usize),
+    Thread { url: String, repo: String, number: u64 },
 }
 
 pub enum Evt {
     Synced { stats: SyncStats, items: Vec<Item> },
+    Thread { url: String, events: Vec<Event> },
     Quiet,
     Failed(String),
 }
@@ -47,9 +49,21 @@ impl Worker {
         std::thread::spawn(move || {
             while let Ok(cmd) = cmd_rx.recv() {
                 flag.store(true, Ordering::Relaxed);
+                if let Cmd::Thread { url, repo, number } = cmd {
+                    let evt = match sync.thread(&repo, number) {
+                        Ok(events) => Evt::Thread { url, events },
+                        Err(e) => Evt::Failed(format!("{e:#}")),
+                    };
+                    flag.store(false, Ordering::Relaxed);
+                    if evt_tx.send(evt).is_err() {
+                        break;
+                    }
+                    continue;
+                }
                 let res = match cmd {
                     Cmd::Refresh(pages) => sync.refresh(pages),
                     Cmd::Poll(pages) => sync.poll(pages),
+                    Cmd::Thread { .. } => unreachable!(),
                 };
                 let evt = match res {
                     Ok(stats) if stats.skipped => Evt::Quiet,

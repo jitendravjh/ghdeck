@@ -33,6 +33,10 @@ ghwork poll         # refresh only if something actually changed
 ghwork where        # path to the cache
 ```
 
+```sh
+ghwork show calcom/cal.diy#29686   # print the conversation
+```
+
 Filters are `needs-you`, `open`, `mine`, `to-review`, `all`.
 
 `needs-you` means open items that are conflicting, have changes requested, have failing CI, or are waiting on your review.
@@ -44,7 +48,8 @@ j k, arrows      move
 g G              top, bottom
 tab, shift-tab   cycle filter
 1 to 5           jump to filter
-o, enter         open in browser
+enter, l         read the conversation
+o                open in browser
 y                copy url
 r                sync
 R                deep sync, more pages
@@ -63,6 +68,12 @@ The dashboard watches for changes on its own using that poll, on whatever interv
 
 Everything is cached in SQLite, so the dashboard opens on cached data straight away and syncs in the background. One worker thread owns the connection and the token, so nothing re-authenticates per refresh.
 
+## Reading a thread
+
+Press enter on a row to read it. The PR body, comments and reviews come in on one query, sorted oldest first, with line comments attached under the review that made them.
+
+Bots are collapsed to a single line each, because codecov and CI bots otherwise bury the actual conversation. Press `b` to expand them. Markdown links are reduced to their text so a collapsed line stays readable.
+
 ## Layout
 
 ```
@@ -77,7 +88,7 @@ The core has no UI dependency, so a GUI can sit on the same data later.
 - GitHub search caps at 1000 results, so very old history is not reachable
 - `mergeable` comes back unknown while GitHub computes it, those rows need a re-sync to settle
 - No write actions yet, it is read only
-- The list shows who acted last but not what they said, comment bodies are not fetched
+- Diffs are not shown, only the conversation
 
 ## Licence
 
