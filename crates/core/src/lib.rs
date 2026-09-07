@@ -26,11 +26,11 @@ impl Filter {
 
     pub fn label(self) -> &'static str {
         match self {
-            Filter::Attention => "needs you",
-            Filter::Open => "open",
-            Filter::Mine => "mine",
-            Filter::Reviews => "to review",
-            Filter::All => "all",
+            Filter::Attention => "ATTENTION NEEDED",
+            Filter::Open => "OPEN",
+            Filter::Mine => "YOURS",
+            Filter::Reviews => "TO REVIEW",
+            Filter::All => "ALL",
         }
     }
 

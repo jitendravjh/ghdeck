@@ -5,13 +5,15 @@ All your GitHub work in one list. PRs and issues together, newest first, with th
 GitHub splits these across two pages and neither one tells you if a PR is conflicting or if CI has gone red. Other terminal dashboards keep PRs and issues in separate tabs. This one does not.
 
 ```
- 23m  IS  SciML/SciMLBenchmarks.jl#126  Fix AdaptiveSDE benchmarks
+ATTENTION NEEDED [7]   OPEN [13]   YOURS [111]   TO REVIEW [0]   ALL [130]
+
+ 54m  [ISSUE] SciML/SciMLBenchmarks.jl#126  Fix AdaptiveSDE benchmarks
       closed   5 comments  jitendravjh commented
- 23m  PR  SciML/SciMLBenchmarks.jl#1605  Fix and update AdaptiveSDE benchmarks (#126)
+ 54m  [PR]    SciML/SciMLBenchmarks.jl#1605  Fix and update AdaptiveSDE benchmarks (#126)
       merged   37 comments  ChrisRackauckas commented
- 38m  PR  JuliaGeometry/Meshes.jl#1429  Add Geodesic primitive
+  1h  [PR]    JuliaGeometry/Meshes.jl#1429  Add Geodesic primitive
       draft · ci fail · reviewed   3 comments  jitendravjh reviewed
-  4h  PR  kubernetes-sigs/headlamp#7128  i18n: Complete Hindi translations for app and glossary
+  5h  [PR]    kubernetes-sigs/headlamp#7128  i18n: Complete Hindi translations for app and glossary
       open · changes requested · ci running · waiting on vyncent-t   4 comments  kubernetes-prow commented
 ```
 
@@ -39,15 +41,15 @@ Built and used on macOS. Linux should be fine. Windows is untested, and the clip
 
 ```sh
 ghwork                             # dashboard
-ghwork list                        # print what needs you
+ghwork list                        # print what needs attention
 ghwork list all                    # print everything
 ghwork show calcom/cal.diy#29686   # print one conversation
 ghwork sync                        # refresh now
 ```
 
-Filters are `needs-you`, `open`, `mine`, `to-review` and `all`.
+Filters are `attention`, `open`, `yours`, `to-review` and `all`.
 
-`needs-you` means open items that are conflicting, have changes requested, have CI failing, or are waiting on your review.
+Attention needed means open items that are conflicting, have changes requested, have CI failing, or are waiting on your review.
 
 ## Keys
 

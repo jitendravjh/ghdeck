@@ -37,7 +37,7 @@ pub fn draw(f: &mut Frame, app: &mut App) {
 
 fn header(f: &mut Frame, area: Rect, app: &App) {
     let mut spans = vec![Span::styled(" ghwork ", Style::default().bold().fg(Color::Cyan))];
-    for (i, filt) in Filter::ORDER.iter().enumerate() {
+    for filt in Filter::ORDER.iter() {
         let n = app.count(*filt);
         let active = *filt == app.filter;
         let style = if active {
@@ -45,7 +45,7 @@ fn header(f: &mut Frame, area: Rect, app: &App) {
         } else {
             Style::default().fg(Color::DarkGray)
         };
-        spans.push(Span::styled(format!(" {}:{} {} ", i + 1, filt.label(), n), style));
+        spans.push(Span::styled(format!(" {} [{}] ", filt.label(), n), style));
     }
     if app.busy() {
         spans.push(Span::styled("  syncing", Style::default().fg(Color::Yellow)));
@@ -54,12 +54,13 @@ fn header(f: &mut Frame, area: Rect, app: &App) {
 }
 
 fn row(it: &Item, width: usize) -> ListItem<'static> {
-    let kind = match it.kind {
-        Kind::Pr => Span::styled("PR", Style::default().fg(Color::Blue).bold()),
-        Kind::Issue => Span::styled("IS", Style::default().fg(Color::Cyan).bold()),
+    let (label, colour) = match it.kind {
+        Kind::Pr => ("[PR]", Color::Blue),
+        Kind::Issue => ("[ISSUE]", Color::Cyan),
     };
+    let kind = Span::styled(format!("{label:<7}"), Style::default().fg(colour).bold());
     let slug = it.slug();
-    let budget = width.saturating_sub(slug.len() + 14).max(20);
+    let budget = width.saturating_sub(slug.len() + 19).max(20);
     let mut title = it.title.clone();
     if title.chars().count() > budget {
         title = title.chars().take(budget.saturating_sub(1)).collect::<String>() + "…";

@@ -14,7 +14,7 @@ ghwork, all your github work in one list
 
 usage:
   ghwork              open the dashboard
-  ghwork list [what]  print to stdout, what is one of needs-you, open, mine, to-review, all
+  ghwork list [what]  print to stdout, what is one of attention, open, yours, to-review, all
   ghwork sync         refresh the cache now
   ghwork poll         refresh only if github notifications changed, costs nothing otherwise
   ghwork show <ref>   print the conversation, ref is owner/repo#123
@@ -70,7 +70,7 @@ fn run() -> Result<()> {
 fn parse_filter(name: Option<&str>) -> Filter {
     match name {
         Some("open") => Filter::Open,
-        Some("mine") => Filter::Mine,
+        Some("yours") | Some("mine") => Filter::Mine,
         Some("to-review") | Some("reviews") => Filter::Reviews,
         Some("all") => Filter::All,
         _ => Filter::Attention,
@@ -92,10 +92,10 @@ fn list(what: Option<&str>) -> Result<()> {
     let items = ensure_synced(&mut sync)?;
     let me = sync.login()?;
     let rows: Vec<_> = items.iter().filter(|it| filter.keeps(it, &me)).collect();
-    println!("{}, {}\n", plural(rows.len() as u64, "item"), filter.label());
+    println!("{}, {}\n", plural(rows.len() as u64, "item"), filter.label().to_lowercase());
     for it in rows {
-        let kind = if it.kind == Kind::Pr { "PR" } else { "IS" };
-        println!("{:>4}  {kind}  {}  {}", ago(it.updated_at), it.slug(), it.title);
+        let kind = if it.kind == Kind::Pr { "[PR]" } else { "[ISSUE]" };
+        println!("{:>4}  {kind:<7} {}  {}", ago(it.updated_at), it.slug(), it.title);
         let chips: Vec<String> = it.chips().into_iter().map(|(t, _)| t).collect();
         let activity = it.activity().unwrap_or_default();
         println!("      {}   {}  {}", chips.join(" · "), plural(it.comments, "comment"), activity);
