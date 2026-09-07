@@ -5,20 +5,29 @@ All your GitHub work in one list. PRs and issues together, newest first, with th
 GitHub splits these across two pages and neither one tells you if a PR is conflicting or if CI has gone red. Other terminal dashboards keep PRs and issues in separate tabs. This one does not.
 
 ```
-  2h  PR  kubernetes-sigs/headlamp#7128  i18n: Complete Hindi translations
+ 23m  IS  SciML/SciMLBenchmarks.jl#126  Fix AdaptiveSDE benchmarks
+      closed   5 comments  jitendravjh commented
+ 23m  PR  SciML/SciMLBenchmarks.jl#1605  Fix and update AdaptiveSDE benchmarks (#126)
+      merged   37 comments  ChrisRackauckas commented
+ 38m  PR  JuliaGeometry/Meshes.jl#1429  Add Geodesic primitive
+      draft · ci fail · reviewed   3 comments  jitendravjh reviewed
+  4h  PR  kubernetes-sigs/headlamp#7128  i18n: Complete Hindi translations for app and glossary
       open · changes requested · ci running · waiting on vyncent-t   4 comments  kubernetes-prow commented
-
- 3mo  PR  SciML/NeuralOperators.jl#134  feat: implement ConvolutionalNeuralOperator
-      open · conflict   2 comments  jitendravjh commented
 ```
+
+An issue closing and the PR that closed it, next to each other. Conflicts, failing CI and who you are waiting on all show up the same way.
 
 ## Install
 
-Needs `gh` logged in, or a `GITHUB_TOKEN` in the environment.
+`cargo` is Rust's build tool. `brew install rust` if you do not have it.
 
 ```sh
-cargo install --path crates/cli
+cargo install --git https://github.com/jitendravjh/ghwork ghwork
 ```
+
+That drops the binary in `~/.cargo/bin`, so put it on your PATH.
+
+You also need `gh` logged in, or a `GITHUB_TOKEN` in the environment.
 
 ## Use
 
