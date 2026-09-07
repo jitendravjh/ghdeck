@@ -61,14 +61,18 @@ impl Sync {
                 return Ok(login);
             }
         }
-        let out = std::process::Command::new("gh")
+        let from_gh = std::process::Command::new("gh")
             .args(["api", "user", "-q", ".login"])
-            .output()?;
-        let login = String::from_utf8(out.stdout)?.trim().to_string();
-        if !login.is_empty() {
-            self.cache.set_meta(LOGIN, &login)?;
+            .output()
+            .ok()
+            .filter(|out| out.status.success())
+            .and_then(|out| String::from_utf8(out.stdout).ok())
+            .map(|s| s.trim().to_string())
+            .unwrap_or_default();
+        if !from_gh.is_empty() {
+            self.cache.set_meta(LOGIN, &from_gh)?;
         }
-        Ok(login)
+        Ok(from_gh)
     }
 
     pub fn refresh(&mut self, pages: usize) -> Result<SyncStats> {

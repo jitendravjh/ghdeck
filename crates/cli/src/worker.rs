@@ -13,7 +13,7 @@ pub enum Cmd {
 }
 
 pub enum Evt {
-    Synced { stats: SyncStats, items: Vec<Item> },
+    Synced { stats: SyncStats, items: Vec<Item>, login: String },
     Thread { url: String, events: Vec<Event> },
     Quiet,
     Failed(String),
@@ -68,7 +68,11 @@ impl Worker {
                 let evt = match res {
                     Ok(stats) if stats.skipped => Evt::Quiet,
                     Ok(stats) => match sync.items() {
-                        Ok(items) => Evt::Synced { stats, items },
+                        Ok(items) => Evt::Synced {
+                            stats,
+                            items,
+                            login: sync.login().unwrap_or_default(),
+                        },
                         Err(e) => Evt::Failed(e.to_string()),
                     },
                     Err(e) => Evt::Failed(format!("{e:#}")),

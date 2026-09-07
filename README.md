@@ -21,11 +21,38 @@ An issue closing and the PR that closed it, next to each other. Conflicts, faili
 
 ## Install
 
-What you need first:
+### Download a binary
 
-- **Rust 1.88 or newer** for `cargo`, its build tool. `brew install rust`, or [rustup](https://rustup.rs).
-- **A C compiler**, since SQLite is compiled from source. `xcode-select --install` on macOS, `gcc` or `clang` on Linux.
-- **[gh](https://cli.github.com) logged in**, or a `GITHUB_TOKEN` in the environment with the `repo` scope.
+No Rust needed. macOS on Apple Silicon:
+
+```sh
+curl -sSfL https://github.com/jitendravjh/ghwork/releases/latest/download/ghwork-aarch64-apple-darwin.tar.gz | tar xz
+sudo mv ghwork /usr/local/bin/
+```
+
+Same thing for the rest, just swap the file name:
+
+| platform | file |
+| --- | --- |
+| macOS, Apple Silicon | `ghwork-aarch64-apple-darwin.tar.gz` |
+| macOS, Intel | `ghwork-x86_64-apple-darwin.tar.gz` |
+| Linux, x86_64 | `ghwork-x86_64-unknown-linux-musl.tar.gz` |
+| Linux, arm64 | `ghwork-aarch64-unknown-linux-musl.tar.gz` |
+
+Linux builds are static, so any distro works. Checksums are in `SHA256SUMS` on the [release](https://github.com/jitendravjh/ghwork/releases/latest).
+
+If you grab it through a browser rather than curl, macOS will quarantine it since the binary is not signed. Clear that with `xattr -d com.apple.quarantine ghwork`.
+
+### Build from source
+
+Needs Rust 1.88 or newer and a C compiler, because SQLite is built from source.
+
+```sh
+# macOS
+brew install rust && xcode-select --install
+# Debian or Ubuntu
+sudo apt install cargo build-essential
+```
 
 Then:
 
@@ -35,7 +62,33 @@ cargo install --git https://github.com/jitendravjh/ghwork ghwork
 
 The binary lands in `~/.cargo/bin`, so keep that on your PATH.
 
-Built and used on macOS. Linux should be fine. Windows is untested, and the clipboard key will not work there.
+## Setup
+
+ghwork needs GitHub credentials. Either of these works.
+
+If you have [gh](https://cli.github.com):
+
+```sh
+gh auth login
+```
+
+Otherwise a token, with the `repo` scope, from [github.com/settings/tokens](https://github.com/settings/tokens):
+
+```sh
+export GITHUB_TOKEN=ghp_your_token_here
+```
+
+Put that in your `.zshrc` or `.bashrc` so it survives a new shell. gh is not required if you go this route.
+
+Then just run it:
+
+```sh
+ghwork
+```
+
+The first run fetches everything and caches it, a few seconds. After that it opens instantly and refreshes in the background.
+
+Windows is untested.
 
 ## Use
 

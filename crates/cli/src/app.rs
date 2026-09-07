@@ -163,7 +163,10 @@ impl App {
         while let Ok(evt) = self.worker.evt.try_recv() {
             self.last_check = Some(Utc::now());
             match evt {
-                Evt::Synced { stats, items } => {
+                Evt::Synced { stats, items, login } => {
+                    if !login.is_empty() {
+                        self.me = login;
+                    }
                     self.items = items;
                     self.stats = Some(stats);
                     self.last_sync = Some(Utc::now());
