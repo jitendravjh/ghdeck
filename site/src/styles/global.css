@@ -323,7 +323,13 @@ table.keys td:last-child { color: var(--muted); }
 }
 .nav-heart:hover { transform: translateY(-1px); }
 .nav-heart svg { color: var(--bad); }
-.icon-link { color: var(--text) !important; }
+.icon-link {
+  display: inline-flex; align-items: center; gap: 6px; flex: none;
+  color: var(--muted); text-decoration: none; font-size: 14.5px;
+  white-space: nowrap;
+}
+.icon-link:hover { color: var(--text); }
+.icon-link svg { width: 15px; height: 15px; flex: none; }
 
 .footer-divider { width: 100%; height: 1px; background: var(--line); margin-bottom: 34px; }
 .footer-inner {
