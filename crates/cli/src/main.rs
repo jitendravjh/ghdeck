@@ -93,12 +93,9 @@ fn list(what: Option<&str>) -> Result<()> {
     let me = sync.login()?;
     let rows: Vec<_> = items.iter().filter(|it| filter.keeps(it, &me)).collect();
     println!("{}, {}\n", plural(rows.len() as u64, "item"), filter.label().to_lowercase());
-    let slugs: Vec<String> = rows.iter().map(|it| it.slug()).collect();
-    let repo_w = ghwork_core::repo_width(slugs.iter().map(String::as_str));
     for it in rows {
         let kind = if it.kind == Kind::Pr { "[PR]" } else { "[ISSUE]" };
-        let slug = ghwork_core::clip(&it.slug(), repo_w);
-        println!("{:>4}  {kind:<7} {slug:<repo_w$}  {}", ago(it.updated_at), it.title);
+        println!("{:>4}  {kind:<7} {}  {}", ago(it.updated_at), it.slug(), it.title);
         let chips: Vec<String> = it.chips().into_iter().map(|(t, _)| t).collect();
         let mut line = format!("{:<14}{}", "", chips.join(" \u{b7} "));
         if it.comments > 0 {
@@ -163,7 +160,13 @@ fn loop_events(
             continue;
         }
         match event::read()? {
-            Event::Key(key) if key.kind != event::KeyEventKind::Release => handle(app, key),
+            Event::Key(key) if key.kind != event::KeyEventKind::Release => {
+                let was_detail = app.detail;
+                handle(app, key);
+                if was_detail || app.detail {
+                    term.clear()?;
+                }
+            }
             _ => {}
         }
     }

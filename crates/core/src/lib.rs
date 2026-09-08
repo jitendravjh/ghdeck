@@ -7,7 +7,7 @@ pub mod thread;
 
 use anyhow::Result;
 
-pub use model::{ago, clip, plural, repo_width, Ci, Item, Kind, Review, State, Tone};
+pub use model::{ago, clip, plural, Ci, Item, Kind, Review, State, Tone};
 pub use sync::{Sync, SyncStats};
 pub use thread::Event;
 

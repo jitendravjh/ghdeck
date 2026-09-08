@@ -151,10 +151,6 @@ pub fn clip(text: &str, max: usize) -> String {
     text.chars().take(max.saturating_sub(1)).collect::<String>() + "\u{2026}"
 }
 
-pub fn repo_width<'a>(slugs: impl Iterator<Item = &'a str>) -> usize {
-    slugs.map(|s| s.chars().count()).max().unwrap_or(24).clamp(20, 34)
-}
-
 pub fn plural(n: u64, word: &str) -> String {
     if n == 1 {
         format!("{n} {word}")

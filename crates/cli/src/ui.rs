@@ -1,5 +1,5 @@
 use crate::app::App;
-use ghwork_core::{ago, clip, plural, repo_width, Filter, Item, Kind, Tone};
+use ghwork_core::{ago, clip, plural, Filter, Item, Kind, Tone};
 use ratatui::{
     layout::{Constraint, Layout, Rect},
     style::{Color, Style},
@@ -54,14 +54,16 @@ fn header(f: &mut Frame, area: Rect, app: &App) {
 }
 
 const GUTTER: usize = 14;
+const ROW_HEIGHT: u16 = 3;
+const RULE: Color = Color::Rgb(52, 56, 64);
 
-fn row(it: &Item, width: usize, repo_w: usize) -> ListItem<'static> {
+fn row(it: &Item, width: usize) -> ListItem<'static> {
     let (label, colour) = match it.kind {
         Kind::Pr => ("[PR]", Color::Blue),
         Kind::Issue => ("[ISSUE]", Color::Cyan),
     };
-    let slug = clip(&it.slug(), repo_w);
-    let budget = width.saturating_sub(GUTTER + repo_w + 2).max(16);
+    let slug = it.slug();
+    let budget = width.saturating_sub(GUTTER + slug.chars().count() + 2).max(16);
 
     let top = Line::from(vec![
         Span::styled(
@@ -70,10 +72,7 @@ fn row(it: &Item, width: usize, repo_w: usize) -> ListItem<'static> {
         ),
         Span::styled(format!("{label:<7}"), Style::default().fg(colour)),
         Span::raw(" "),
-        Span::styled(
-            format!("{slug:<repo_w$}"),
-            Style::default().fg(Color::Gray),
-        ),
+        Span::styled(slug, Style::default().fg(Color::Gray)),
         Span::raw("  "),
         Span::styled(clip(&it.title, budget), Style::default().bold()),
     ]);
@@ -113,18 +112,13 @@ fn list(f: &mut Frame, area: Rect, app: &mut App) {
         return;
     }
     let width = area.width as usize;
-    let slugs: Vec<String> = app.view.iter().map(|&i| app.items[i].slug()).collect();
-    let repo_w = repo_width(slugs.iter().map(String::as_str));
-    let rows: Vec<ListItem> = app
-        .view
-        .iter()
-        .map(|&i| row(&app.items[i], width, repo_w))
-        .collect();
+    let rows: Vec<ListItem> = app.view.iter().map(|&i| row(&app.items[i], width)).collect();
     let mut state = ListState::default().with_selected(Some(app.cursor));
     let widget = List::new(rows)
         .highlight_style(Style::default().bg(Color::Rgb(30, 40, 55)))
         .highlight_symbol("");
     f.render_stateful_widget(widget, area, &mut state);
+    separators(f, area, app.view.len().saturating_sub(state.offset()));
 }
 
 fn detail(f: &mut Frame, area: Rect, app: &App) {
@@ -207,6 +201,23 @@ fn detail(f: &mut Frame, area: Rect, app: &App) {
         Paragraph::new(lines).wrap(Wrap { trim: false }).scroll((app.scroll.min(max), 0)),
         area,
     );
+}
+
+fn separators(f: &mut Frame, area: Rect, visible: usize) {
+    let style = Style::default().fg(RULE).bg(Color::Reset);
+    let buf = f.buffer_mut();
+    for k in 0..visible {
+        let y = area.y + k as u16 * ROW_HEIGHT + ROW_HEIGHT - 1;
+        if y >= area.y + area.height {
+            break;
+        }
+        for x in area.x..area.x + area.width {
+            if let Some(cell) = buf.cell_mut((x, y)) {
+                cell.set_char('\u{254c}');
+                cell.set_style(style);
+            }
+        }
+    }
 }
 
 fn footer(f: &mut Frame, area: Rect, app: &App) {
