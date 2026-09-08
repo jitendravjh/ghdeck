@@ -21,17 +21,31 @@ An issue closing and the PR that closed it, next to each other. Conflicts, faili
 
 ## Install
 
-### Homebrew, macOS and Linux
+Three ways. Pick one, then do [Setup](#setup).
+
+### 1. Homebrew, on macOS or Linux
+
+Easiest. Handles PATH and upgrades for you.
+
+**You need Homebrew.** If `brew --version` gives nothing:
+
+```sh
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+```
+
+Then:
 
 ```sh
 brew install jitendravjh/tap/ghwork
 ```
 
-Later on, `brew upgrade ghwork`. This is the easy one, it sorts out PATH and updates for you.
+Upgrade later with `brew upgrade ghwork`, uninstall with `brew uninstall ghwork`.
 
-### Without Homebrew
+### 2. Download a binary
 
-Copy the block for your machine, there is nothing to fill in. Run `uname -m` if you are unsure: `arm64` means Apple Silicon, `x86_64` means Intel.
+**You need nothing.** No Homebrew, no Rust.
+
+Copy the block for your machine, there is nothing to fill in. Run `uname -m` if you are unsure which Mac you have: `arm64` is Apple Silicon, `x86_64` is Intel.
 
 **macOS, Apple Silicon**
 
@@ -63,44 +77,58 @@ sudo mv ghwork /usr/local/bin/
 
 Linux builds are static, so any distro works. Checksums are in `SHA256SUMS` on the [release](https://github.com/jitendravjh/ghwork/releases/latest).
 
-If you download through a browser instead of curl, macOS quarantines the file because the binary is not signed. Clear it with `xattr -d com.apple.quarantine ghwork`.
+To upgrade, run the same command again. To uninstall, `sudo rm /usr/local/bin/ghwork`.
 
-### From source
+If you download through a browser rather than curl, macOS quarantines the file because the binary is not signed. Clear it with `xattr -d com.apple.quarantine ghwork`.
 
-Needs Rust 1.88 or newer and a C compiler, because SQLite is built from source.
+### 3. From source
+
+**You need Rust 1.88 or newer and a C compiler**, because SQLite is built from source.
 
 ```sh
 # macOS
 brew install rust && xcode-select --install
+
 # Debian or Ubuntu
 sudo apt install cargo build-essential
+
+# Fedora
+sudo dnf install cargo gcc
 ```
+
+Then:
 
 ```sh
 cargo install --git https://github.com/jitendravjh/ghwork ghwork
 ```
 
-The binary lands in `~/.cargo/bin`, so keep that on your PATH.
+The binary lands in `~/.cargo/bin`, so keep that on your PATH. Add this to your `.zshrc` or `.bashrc` if it is not there:
+
+```sh
+export PATH="$HOME/.cargo/bin:$PATH"
+```
 
 ## Setup
 
-ghwork needs GitHub credentials. Either of these works.
+ghwork needs GitHub credentials. Either way works, pick one.
 
-If you have [gh](https://cli.github.com):
+**If you have [gh](https://cli.github.com):**
 
 ```sh
 gh auth login
 ```
 
-Otherwise a token, with the `repo` scope, from [github.com/settings/tokens](https://github.com/settings/tokens):
+Nothing else to do, ghwork borrows its token.
+
+**Otherwise, a token.** Make one at [github.com/settings/tokens](https://github.com/settings/tokens) with the `repo` scope, then:
 
 ```sh
 export GITHUB_TOKEN=ghp_your_token_here
 ```
 
-Put that in your `.zshrc` or `.bashrc` so it survives a new shell. gh is not required if you go this route.
+Put that line in your `.zshrc` or `.bashrc` so it survives a new shell. gh is not needed if you go this route.
 
-Then just run it:
+Then run it:
 
 ```sh
 ghwork
@@ -156,5 +184,22 @@ Bots get collapsed to one line in a conversation, otherwise codecov and CI comme
 - GitHub search caps at 1000 results, so older history is out of reach
 - No diffs
 - Read only, no approve or merge
+
+## Releasing
+
+Pushing to `main` does not reach anyone. A release is what ships.
+
+```sh
+# bump version in Cargo.toml, then
+git tag -a v0.1.1 -m "..." && git push origin v0.1.1
+```
+
+That builds all four binaries and publishes the release. The formula in
+[jitendravjh/homebrew-tap](https://github.com/jitendravjh/homebrew-tap) picks up
+the new tag on its daily run, or immediately with:
+
+```sh
+gh workflow run bump.yml --repo jitendravjh/homebrew-tap
+```
 
 MIT
