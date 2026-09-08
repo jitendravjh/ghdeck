@@ -2,6 +2,7 @@
 import "../styles/global.css";
 import Logo from "../components/Logo.astro";
 import GitHubIcon from "../components/icons/GitHubIcon.astro";
+import HeartIcon from "../components/icons/HeartIcon.astro";
 
 interface Props {
   title?: string;
@@ -16,6 +17,7 @@ const {
 } = Astro.props;
 
 const repo = "https://github.com/jitendravjh/ghdeck";
+const sponsors = "https://github.com/sponsors/jitendravjh";
 const pageTitle = title === "ghdeck" ? "ghdeck" : `${title} | ghdeck`;
 const canonical = new URL(Astro.url.pathname, Astro.site ?? Astro.url).href;
 const jsonLd = [
@@ -69,7 +71,10 @@ const jsonLd = [
       <nav class="top-nav" aria-label="Main">
         <a href="/docs/">Docs</a>
         <a href="/docs/#install">Install</a>
-        <a href={repo} target="_blank" rel="noopener">
+        <a class="nav-heart" href={sponsors} target="_blank" rel="noopener">
+          <HeartIcon />Support
+        </a>
+        <a class="icon-link" href={repo} target="_blank" rel="noopener">
           <GitHubIcon /><span>GitHub</span>
         </a>
       </nav>
@@ -82,45 +87,59 @@ const jsonLd = [
     <main><slot /></main>
 
     <footer class="site-footer">
-      <div class="inner">
-        <span>MIT. Built by <a href="https://jitendravjh.in">Jitendra Verma</a>.</span>
-        <a href={repo}>jitendravjh/ghdeck</a>
+      <div class="footer-divider"></div>
+      <div class="footer-inner">
+        <div class="footer-brand">
+          <Logo class="footer-logo" />
+          <strong>ghdeck</strong>
+          <span>All your GitHub work in one list.</span>
+        </div>
+        <nav class="footer-nav" aria-label="Footer">
+          <a href="/docs/#install">Install</a>
+          <a href="/docs/#setup">Setup</a>
+          <a href="/docs/#use">Use</a>
+          <a href={`${repo}/releases`}>Releases</a>
+        </nav>
+        <div class="footer-actions">
+          <a class="nav-heart" href={sponsors} target="_blank" rel="noopener">
+            <HeartIcon />Support
+          </a>
+          <a class="icon-link" href={repo} target="_blank" rel="noopener">
+            <GitHubIcon />GitHub
+          </a>
+        </div>
+        <p class="footer-meta">
+          &copy; 2026 <a href="https://jitendravjh.in" target="_blank">Jitendra Verma</a>
+          {" ("}<a href={`${repo}/blob/main/LICENSE`} target="_blank">MIT licensed</a>{")"}
+        </p>
       </div>
     </footer>
 
     <script is:inline>
       (() => {
-        for (const pre of document.querySelectorAll("pre.block, .install-strip pre")) {
-          const wrap = document.createElement("div");
-          wrap.className = "code-wrap";
-          pre.parentNode.insertBefore(wrap, pre);
-          wrap.appendChild(pre);
+        for (const pre of document.querySelectorAll("main pre")) {
+          if (pre.closest(".terminal") || pre.parentElement?.classList.contains("code-frame")) continue;
 
-          const btn = document.createElement("button");
-          btn.className = "copy-btn";
-          btn.type = "button";
-          btn.textContent = "copy";
-          btn.setAttribute("aria-label", "Copy to clipboard");
-          btn.addEventListener("click", async () => {
-            const text = pre.innerText.replace(/\ncopy$/, "").trim();
+          const frame = document.createElement("div");
+          frame.className = "code-frame";
+          const button = document.createElement("button");
+          button.className = "copy-code-button";
+          button.type = "button";
+          button.textContent = "Copy";
+          button.setAttribute("aria-label", "Copy code block");
+
+          pre.parentNode?.insertBefore(frame, pre);
+          frame.append(pre, button);
+
+          button.addEventListener("click", async () => {
             try {
-              await navigator.clipboard.writeText(text);
+              await navigator.clipboard.writeText(pre.textContent || "");
+              button.textContent = "Copied";
             } catch {
-              const ta = document.createElement("textarea");
-              ta.value = text;
-              document.body.appendChild(ta);
-              ta.select();
-              document.execCommand("copy");
-              ta.remove();
+              button.textContent = "Failed";
             }
-            btn.textContent = "copied";
-            btn.dataset.done = "";
-            setTimeout(() => {
-              btn.textContent = "copy";
-              delete btn.dataset.done;
-            }, 1400);
+            window.setTimeout(() => { button.textContent = "Copy"; }, 1300);
           });
-          wrap.appendChild(btn);
         }
       })();
     </script>

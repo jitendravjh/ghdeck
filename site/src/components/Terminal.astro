@@ -1,8 +1,8 @@
 ---
-interface Props { title?: string; }
-const { title = "ghdeck" } = Astro.props;
+interface Props { title?: string; html: string; }
+const { title = "ghdeck", html } = Astro.props;
 ---
 <div class="terminal">
   <div class="chrome"><i></i><i></i><i></i><span>{title}</span></div>
-  <pre><code><slot /></code></pre>
+  <pre><code set:html={html} /></pre>
 </div>
