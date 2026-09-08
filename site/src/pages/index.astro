@@ -4,26 +4,28 @@ import Terminal from "../components/Terminal.astro";
 
 const repo = "https://github.com/jitendravjh/ghdeck";
 
+const termHtml = [
+  `<span class="ln"><span class="c"><b class="brand-tab">ghdeck</b></span>  <span class="tabs"><b>ATTENTION NEEDED [4]</b>  OPEN [8]  YOURS [46]  TO REVIEW [0]  ALL [50]</span></span>`,
+  `<span class="ln sel"><span class="d"> 2h</span>  <span class="b">[PR]   </span> <span class="rp">screenpipe/screenpipe#6449</span>  <span class="t">fix(meetings): lock live transcription language</span></span>`,
+  `<span class="ln sel">             <span class="g">● open</span> <span class="d">·</span> <span class="r">✖ ci</span>   <span class="d">6 comments   jitendravjh commented</span></span>`,
+  `<span class="sep"></span>`,
+  `<span class="ln"><span class="d"> 3d</span>  <span class="c">[ISSUE]</span> <span class="rp">JuliaEarth/CoordRefSystems.jl#315</span>  <span class="t">Add support for ESPG:28992</span></span>`,
+  `<span class="ln">             <span class="r">✖ closed</span>   <span class="d">9 comments   jitendravjh commented</span></span>`,
+  `<span class="sep"></span>`,
+  `<span class="ln"><span class="d"> 3d</span>  <span class="b">[PR]   </span> <span class="rp">JuliaEarth/CoordRefSystems.jl#373</span>  <span class="t">Add EPSG code for Amersfoort / RD New</span></span>`,
+  `<span class="ln">             <span class="m">✔ merged</span> <span class="d">·</span> <span class="g">✔ approved</span>   <span class="d">1 comment   juliohm approved</span></span>`,
+  `<span class="sep"></span>`,
+  `<span class="ln"><span class="d"> 5d</span>  <span class="b">[PR]   </span> <span class="rp">JuliaGeometry/Meshes.jl#1428</span>  <span class="t">Add conversion between azimuths and tangents</span></span>`,
+  `<span class="ln">             <span class="m">✔ merged</span> <span class="d">·</span> <span class="g">✔ approved</span>   <span class="d">3 comments   juliohm approved</span></span>`,
+  `<span class="sep"></span>`,
+  `<span class="ln"><span class="d">3mo</span>  <span class="b">[PR]   </span> <span class="rp">SciML/NeuralOperators.jl#134</span>  <span class="t">feat: implement CNO (closes #122)</span></span>`,
+  `<span class="ln">             <span class="g">● open</span> <span class="d">·</span> <span class="r">! conflict</span>   <span class="d">2 comments   jitendravjh commented</span></span>`,
+  `<span class="rule"></span>`,
+  `<span class="ln"><span class="u">https://github.com/screenpipe/screenpipe/pull/6449</span></span>`,
+  `<span class="ln"><span class="mt">by jitendravjh   +255 -17 in 3 files</span></span>`,
+  `<span class="ln"><span class="d">↑↓ move · ←→ filter · enter read · o open · r sync · / search · ? help · q quit</span></span>`,
+].join("");
 
-const termHtml = `<span class="c"><b class="brand-tab">ghdeck</b></span>  <span class="tabs"><b>ATTENTION NEEDED [4]</b>  OPEN [8]  YOURS [46]  TO REVIEW [0]  ALL [50]</span>
-<span class="sel"><span class="d"> 2h</span>  <span class="b">[PR]   </span> <span class="rp">screenpipe/screenpipe#6449</span>  <span class="t">fix(meetings): lock live transcription language</span>
-             <span class="g">● open</span> <span class="d">·</span> <span class="r">✖ ci</span>   <span class="d">6 comments   jitendravjh commented</span></span>
-<span class="d">╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌</span>
-<span class="d"> 3d</span>  <span class="c">[ISSUE]</span> <span class="rp">JuliaEarth/CoordRefSystems.jl#315</span>  <span class="t">Add support for ESPG:28992</span>
-             <span class="r">✖ closed</span>   <span class="d">9 comments   jitendravjh commented</span>
-<span class="d">╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌</span>
-<span class="d"> 3d</span>  <span class="b">[PR]   </span> <span class="rp">JuliaEarth/CoordRefSystems.jl#373</span>  <span class="t">Add EPSG code for Amersfoort / RD New</span>
-             <span class="m">✔ merged</span> <span class="d">·</span> <span class="g">✔ approved</span>   <span class="d">1 comment   juliohm approved</span>
-<span class="d">╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌</span>
-<span class="d"> 5d</span>  <span class="b">[PR]   </span> <span class="rp">JuliaGeometry/Meshes.jl#1428</span>  <span class="t">Add conversion between azimuths and tangents</span>
-             <span class="m">✔ merged</span> <span class="d">·</span> <span class="g">✔ approved</span>   <span class="d">3 comments   juliohm approved</span>
-<span class="d">╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌</span>
-<span class="d">3mo</span>  <span class="b">[PR]   </span> <span class="rp">SciML/NeuralOperators.jl#134</span>  <span class="t">feat: implement CNO (closes #122)</span>
-             <span class="g">● open</span> <span class="d">·</span> <span class="r">! conflict</span>   <span class="d">2 comments   jitendravjh commented</span>
-<span class="hr">────────────────────────────────────────────────────────────────────────────</span>
-<span class="u">https://github.com/screenpipe/screenpipe/pull/6449</span>
-<span class="mt">by jitendravjh   +255 -17 in 3 files</span>
-<span class="d">↑↓ move · ←→ filter · enter read · o open · r sync · / search · ? help · q quit</span>`;
 const structuredData = [
   {
     "@context": "https://schema.org",
@@ -65,7 +67,7 @@ const structuredData = [
       <p>macOS and Linux. One line.</p>
       <pre class="block">brew install jitendravjh/tap/ghdeck</pre>
       <div class="actions">
-        <a class="button" href="/docs/setup/">Setup</a>
+        <a class="button" href="/docs/#connect-your-account">Setup guide</a>
         <a class="button secondary" href="/docs/">Other ways to install</a>
       </div>
     </div>
@@ -96,16 +98,8 @@ const structuredData = [
         <p>Press enter for the body, comments and reviews, with line comments under the review that made them. Bots collapse to one line.</p>
       </div>
       <div class="feature">
-        <h3>Watches itself</h3>
-        <p>Polls notifications with a conditional request. GitHub does not count 304s, so a quiet minute costs nothing at all.</p>
-      </div>
-      <div class="feature">
         <h3>Opens instantly</h3>
         <p>Everything sits in SQLite. The dashboard shows cached data straight away and syncs behind you.</p>
-      </div>
-      <div class="feature">
-        <h3>One small binary</h3>
-        <p>About 2 MB, nothing to install alongside it. Static on Linux, so any distro works.</p>
       </div>
     </div>
   </section>
@@ -117,15 +111,15 @@ const structuredData = [
       <p>Short pages for installing, connecting your account, and living in it.</p>
     </div>
     <div class="feature-grid">
-      <a class="doc-link" href="/docs/">
+      <a class="doc-link" href="/docs/#homebrew">
         <h3>Install</h3>
         <p>Homebrew, or a prebuilt binary for your platform. Nothing to compile.</p>
       </a>
-      <a class="doc-link" href="/docs/setup/">
+      <a class="doc-link" href="/docs/#connect-your-account">
         <h3>Setup</h3>
         <p>Sign in with gh, or set a token with the repo scope. Nothing else to configure.</p>
       </a>
-      <a class="doc-link" href="/docs/use/">
+      <a class="doc-link" href="/docs/#commands">
         <h3>Commands and keys</h3>
         <p>Filters, keys, reading a thread, and the commands that print to stdout.</p>
       </a>

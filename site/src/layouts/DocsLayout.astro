@@ -1,61 +1,28 @@
 ---
 import BaseLayout from "./BaseLayout.astro";
 import TableOfContents from "../components/TableOfContents.astro";
-import { navGroups } from "../data/navigation";
 
 const { frontmatter, headings } = Astro.props;
 const title = frontmatter.title ?? "Docs";
 const description = frontmatter.description ?? "ghdeck documentation.";
-const current = Astro.url.pathname.replace(/\/$/, "") || "/";
-const isCurrent = (href: string) => (href.replace(/\/$/, "") || "/") === current;
 ---
 
 <BaseLayout title={title} description={description}>
   <div class="docs-shell">
-    <aside class="docs-sidebar" aria-label="Documentation navigation">
-      <a class="docs-home" href="/docs/">Documentation</a>
-      {navGroups.map((group) => (
-        <section>
-          <h2>{group.title}</h2>
-          <ul>
-            {group.items.map((item) => (
-              <li><a class:list={{ active: isCurrent(item.href) }} href={item.href}>{item.title}</a></li>
-            ))}
-          </ul>
-        </section>
-      ))}
-    </aside>
-
-    <div class="docs-mobile-panels">
-      <details class="docs-panel">
-        <summary>Documentation</summary>
-        <nav aria-label="Documentation navigation">
-          {navGroups.map((group) => (
-            <section>
-              <h2>{group.title}</h2>
-              <ul>
-                {group.items.map((item) => (
-                  <li><a class:list={{ active: isCurrent(item.href) }} href={item.href}>{item.title}</a></li>
-                ))}
-              </ul>
-            </section>
-          ))}
-        </nav>
-      </details>
-      <details class="docs-panel">
-        <summary>On this page</summary>
-        <TableOfContents headings={headings} />
-      </details>
-    </div>
-
-    <article class="docs-content">
-      <header class="docs-title">
-        <h1>{title}</h1>
-        {description && <span>{description}</span>}
-      </header>
-      <div class="prose"><slot /></div>
-    </article>
+    <header class="docs-title">
+      <h1>{title}</h1>
+      {description && <span>{description}</span>}
+    </header>
 
     <TableOfContents headings={headings} />
+
+    <details class="docs-panel">
+      <summary>On this page</summary>
+      <TableOfContents headings={headings} />
+    </details>
+
+    <article class="docs-content">
+      <div class="prose"><slot /></div>
+    </article>
   </div>
 </BaseLayout>

@@ -60,34 +60,6 @@ const jsonLd = [
     <meta name="theme-color" content="#fcfcfd" media="(prefers-color-scheme: light)" />
     <meta name="theme-color" content="#0b0e14" media="(prefers-color-scheme: dark)" />
     {jsonLd.map((item) => <script type="application/ld+json" set:html={JSON.stringify(item)} />)}
-    <script is:inline>
-      (() => {
-        const links = [...document.querySelectorAll('.toc a[href^="#"]')];
-        if (!links.length) return;
-        const targets = links
-          .map((a) => document.getElementById(decodeURIComponent(a.hash.slice(1))))
-          .filter(Boolean);
-        if (!targets.length) return;
-
-        const mark = (id) => {
-          for (const a of links) {
-            a.setAttribute("aria-current", decodeURIComponent(a.hash.slice(1)) === id ? "true" : "false");
-          }
-        };
-
-        const seen = new Map();
-        const io = new IntersectionObserver(
-          (entries) => {
-            for (const e of entries) seen.set(e.target.id, e.isIntersecting);
-            const first = targets.find((t) => seen.get(t.id));
-            if (first) mark(first.id);
-          },
-          { rootMargin: "-88px 0px -70% 0px", threshold: 0 },
-        );
-        for (const t of targets) io.observe(t);
-        mark(targets[0].id);
-      })();
-    </script>
 
     <script is:inline>
       (() => {
@@ -120,7 +92,6 @@ const jsonLd = [
     <main><slot /></main>
 
     <footer class="site-footer">
-      <div class="footer-divider"></div>
       <div class="footer-inner">
         <div class="footer-brand">
           <Logo class="footer-logo" />
@@ -128,9 +99,9 @@ const jsonLd = [
           <span>All your GitHub work in one list.</span>
         </div>
         <nav class="footer-nav" aria-label="Footer">
-          <a href="/docs/">Install</a>
-          <a href="/docs/setup/">Setup</a>
-          <a href="/docs/use/">Use</a>
+          <a href="/docs/#homebrew">Install</a>
+          <a href="/docs/#connect-your-account">Setup</a>
+          <a href="/docs/#commands">Use</a>
           <a href={`${repo}/releases`}>Releases</a>
         </nav>
         <div class="footer-actions">
