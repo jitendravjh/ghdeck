@@ -19,6 +19,8 @@ usage:
   ghdeck poll         refresh only if github notifications changed, costs nothing otherwise
   ghdeck show <ref>   print the conversation, ref is owner/repo#123
   ghdeck where        print the cache path
+
+  --version, -V       print the version
 ";
 
 fn main() {
@@ -53,6 +55,10 @@ fn run() -> Result<()> {
         Some("show") => show(args.get(1).map(String::as_str)),
         Some("where") => {
             println!("{}", ghdeck_core::cache::default_path()?.display());
+            Ok(())
+        }
+        Some("-V") | Some("--version") | Some("version") => {
+            println!("ghdeck {}", env!("CARGO_PKG_VERSION"));
             Ok(())
         }
         Some("-h") | Some("--help") | Some("help") => {
