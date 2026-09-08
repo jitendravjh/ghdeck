@@ -64,24 +64,36 @@ const jsonLd = [
   </head>
   <body>
     <header class="site-header">
-      <a class="brand" href="/" aria-label="ghdeck home">
-        <Logo />
-        <span>ghdeck</span>
-      </a>
-      <nav class="top-nav" aria-label="Main">
-        <a href="/docs/">Docs</a>
-        <a href="/docs/#install">Install</a>
-        <a class="nav-heart" href={sponsors} target="_blank" rel="noopener">
-          <HeartIcon />Support
+      <div class="header-inner">
+        <a class="brand" href="/" aria-label="ghdeck home">
+          <Logo />
+          <span>ghdeck</span>
         </a>
-        <a class="icon-link" href={repo} target="_blank" rel="noopener">
+        <nav class="top-nav" aria-label="Main">
+          <a href="/docs/">Docs</a>
+          <a href="/docs/#install">Install</a>
+          <a class="nav-heart" href={sponsors} target="_blank" rel="noopener">
+            <HeartIcon />Support
+          </a>
+        </nav>
+        <a class="icon-link always" href={repo} aria-label="GitHub repository" target="_blank" rel="noopener">
           <GitHubIcon /><span>GitHub</span>
         </a>
-      </nav>
       <button class="theme-toggle" type="button" data-theme-toggle aria-label="Toggle dark mode">
         <svg class="sun-icon" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 17.2a5.2 5.2 0 1 0 0-10.4 5.2 5.2 0 0 0 0 10.4Zm0-14.7a1 1 0 0 1 1 1v1.2a1 1 0 1 1-2 0V3.5a1 1 0 0 1 1-1Zm0 16.8a1 1 0 0 1 1 1v1.2a1 1 0 1 1-2 0v-1.2a1 1 0 0 1 1-1Zm9.5-8.3a1 1 0 1 1 0 2h-1.2a1 1 0 1 1 0-2h1.2ZM4.7 11a1 1 0 1 1 0 2H3.5a1 1 0 1 1 0-2h1.2Zm13.74-6.44a1 1 0 0 1 0 1.42l-.85.85a1 1 0 0 1-1.42-1.42l.85-.85a1 1 0 0 1 1.42 0ZM7.83 16.17a1 1 0 0 1 0 1.42l-.85.85a1 1 0 0 1-1.42-1.42l.85-.85a1 1 0 0 1 1.42 0Zm9.76 0 .85.85a1 1 0 1 1-1.42 1.42l-.85-.85a1 1 0 0 1 1.42-1.42ZM6.98 4.56l.85.85a1 1 0 0 1-1.42 1.42l-.85-.85a1 1 0 1 1 1.42-1.42Z"/></svg>
         <svg class="moon-icon" aria-hidden="true" viewBox="0 0 24 24"><path d="M21 14.58A8.2 8.2 0 0 1 9.42 3a9.25 9.25 0 1 0 11.59 11.59Z"/></svg>
       </button>
+      <button class="menu-toggle" type="button" data-menu-toggle aria-label="Menu" aria-expanded="false">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="2"/></svg>
+      </button>
+      </div>
+      <nav class="mobile-menu" data-mobile-menu hidden aria-label="Mobile">
+        <a href="/docs/">Docs</a>
+        <a href="/docs/#install">Install</a>
+        <a href="/docs/#setup">Setup</a>
+        <a href="/docs/#use">Use</a>
+        <a href={sponsors} target="_blank" rel="noopener">Support</a>
+      </nav>
     </header>
 
     <main><slot /></main>
@@ -145,6 +157,22 @@ const jsonLd = [
     </script>
 
     <script is:inline>
+      (() => {
+        const btn = document.querySelector("[data-menu-toggle]");
+        const menu = document.querySelector("[data-mobile-menu]");
+        btn?.addEventListener("click", () => {
+          const open = menu.hidden;
+          menu.hidden = !open;
+          btn.setAttribute("aria-expanded", String(open));
+        });
+        for (const a of menu?.querySelectorAll("a") || []) {
+          a.addEventListener("click", () => {
+            menu.hidden = true;
+            btn?.setAttribute("aria-expanded", "false");
+          });
+        }
+      })();
+
       (() => {
         const key = "ghdeck-theme";
         document.querySelector("[data-theme-toggle]")?.addEventListener("click", () => {
