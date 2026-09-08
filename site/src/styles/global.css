@@ -144,8 +144,8 @@ main { max-width: 1120px; margin: 0 auto; padding: 0 24px; }
   max-width: 1100px; margin: 0 auto; padding: 6rem 0 3.5rem;
 }
 .hero h1 {
-  max-width: 22ch; margin: 0;
-  font-size: clamp(2.6rem, 6vw, 5rem); line-height: 1.06;
+  max-width: 20ch; margin: 0;
+  font-size: clamp(2.6rem, 6vw, 4.4rem); line-height: 1.06;
   letter-spacing: -0.015em; font-weight: 700;
 }
 .hero .lead {
@@ -393,11 +393,14 @@ hr.rule { border: 0; border-top: 1px solid var(--line); margin: 46px 0 8px; }
 }
 .docs-sidebar ul, .docs-panel ul { list-style: none; margin: 0; padding: 0; }
 .docs-sidebar li a, .docs-panel li a {
-  display: block; padding: 0.32rem 0; color: var(--muted);
+  display: block; padding: 0.32rem 0 0.32rem 0.8rem; color: var(--muted);
   text-decoration: none; font-size: 0.92rem;
+  border-left: 2px solid var(--line);
 }
 .docs-sidebar li a:hover, .docs-panel li a:hover { color: var(--text); }
-.docs-sidebar li a.active, .docs-panel li a.active { color: var(--accent); font-weight: 700; }
+.docs-sidebar li a.active, .docs-panel li a.active {
+  color: var(--accent); font-weight: 700; border-left-color: var(--accent);
+}
 
 .docs-content { min-width: 0; }
 .docs-title { margin-bottom: 2rem; }
@@ -418,11 +421,15 @@ hr.rule { border: 0; border-top: 1px solid var(--line); margin: 46px 0 8px; }
 }
 .toc ul { list-style: none; margin: 0; padding: 0; }
 .toc li a {
-  display: block; padding: 0.28rem 0; color: var(--muted);
+  display: block; padding: 0.28rem 0 0.28rem 0.7rem; color: var(--muted);
   text-decoration: none; font-size: 0.86rem; line-height: 1.4;
+  border-left: 2px solid transparent; margin-left: -1rem;
 }
-.toc li.nested a { padding-left: 0.8rem; }
+.toc li.nested a { padding-left: 1.5rem; }
 .toc li a:hover { color: var(--text); }
+.toc li a[aria-current="true"] {
+  color: var(--accent); font-weight: 700; border-left-color: var(--accent);
+}
 
 .docs-mobile-panels { display: none; }
 .docs-panel {
@@ -452,7 +459,13 @@ hr.rule { border: 0; border-top: 1px solid var(--line); margin: 46px 0 8px; }
   background: var(--surface-muted); border: 1px solid var(--line); border-radius: 10px;
   padding: 0.85rem 1rem; overflow-x: auto; margin: 0 0 0.9rem;
   font-family: var(--mono); font-size: 0.84rem; line-height: 1.7;
+  scrollbar-width: thin;
 }
+.prose pre::-webkit-scrollbar { height: 8px; }
+.prose pre::-webkit-scrollbar-thumb {
+  background: var(--line-strong); border-radius: 4px;
+}
+.prose :not(pre) > code { overflow-wrap: anywhere; }
 .prose pre code { background: none; border: 0; padding: 0; font-size: inherit; }
 .prose table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
 .prose th {
