@@ -276,53 +276,7 @@ table.keys td:last-child { color: var(--muted); }
 .site-footer a { color: var(--muted); text-decoration: none; }
 .site-footer a:hover { color: var(--text); }
 
-@media (max-width: 720px) {
-  .hero { padding: 44px 0 30px; }
-  .term-wide { display: none; }
-  .term-narrow { display: block; }
-  .terminal pre { font-size: 11.5px; padding: 13px 11px; }
-  .install-big pre.block { font-size: 11.6px; padding: 13px 12px; }
 
-  .top-nav { display: none; }
-  .menu-toggle {
-    display: grid; place-items: center;
-    width: 34px; height: 34px; flex: none;
-    background: none; border: 1px solid var(--line-strong);
-    border-radius: 8px; color: var(--muted); cursor: pointer;
-  }
-  .menu-toggle svg { width: 18px; height: 18px; }
-  .icon-link.always span { display: none; }
-  .icon-link.always svg { width: 19px; height: 19px; }
-
-  .mobile-menu {
-    display: flex; flex-direction: column;
-    padding: 6px 24px 14px;
-    border-top: 1px solid var(--line);
-  }
-  .mobile-menu[hidden] { display: none; }
-  .mobile-menu a {
-    padding: 11px 0; color: var(--text); text-decoration: none;
-    font-size: 15.5px; border-bottom: 1px solid var(--line);
-  }
-  .mobile-menu a:last-child { border-bottom: 0; }
-  .mobile-menu .nav-heart {
-    align-self: flex-start; margin-top: 10px;
-    border-bottom: 1px solid color-mix(in srgb, var(--accent) 32%, var(--line-strong));
-    display: inline-flex; align-items: center; gap: 7px;
-  }
-  .mobile-menu .nav-heart svg { width: 15px; height: 15px; }
-
-  main { padding: 0 20px; }
-  .header-inner { padding: 13px 20px; }
-  .mobile-menu { padding: 6px 20px 14px; }
-  .site-footer { padding: 26px 20px 48px; }
-  .install-big { padding: 22px 18px 20px; }
-  .install-big pre.block { font-size: 13.5px; }
-  .feature-grid { grid-template-columns: 1fr; }
-  table.keys td:first-child { width: 118px; }
-  .hero h1 { overflow-wrap: break-word; }
-  .doc p, .doc li, p { overflow-wrap: anywhere; }
-}
 
 .nav-heart {
   min-height: 32px; padding: 0 12px;
@@ -382,3 +336,52 @@ hr.rule { border: 0; border-top: 1px solid var(--line); margin: 46px 0 8px; }
   margin: 20px 0 6px; color: var(--text); font-weight: 600; font-size: 14.5px;
 }
 .doc h3 + pre.block, .doc h3 + .code-frame { margin-top: 10px; }
+
+@media (max-width: 720px) {
+  .hero { padding: 44px 0 30px; }
+  .term-wide { display: none; }
+  .term-narrow { display: block; }
+  .terminal pre { font-size: 11.5px; padding: 13px 11px; }
+  .install-big pre.block { font-size: 11.6px; padding: 13px 12px; }
+
+  .top-nav { display: none; }
+  .menu-toggle {
+    display: grid; place-items: center;
+    width: 34px; height: 34px; flex: none;
+    background: none; border: 1px solid var(--line-strong);
+    border-radius: 8px; color: var(--muted); cursor: pointer;
+  }
+  .menu-toggle svg { width: 18px; height: 18px; }
+  .icon-link.always span { display: none; }
+  .icon-link.always svg { width: 19px; height: 19px; }
+
+  .mobile-menu {
+    display: flex; flex-direction: column;
+    padding: 6px 24px 14px;
+    border-top: 1px solid var(--line);
+  }
+  .mobile-menu[hidden] { display: none; }
+  .mobile-menu a {
+    padding: 11px 0; color: var(--text); text-decoration: none;
+    font-size: 15.5px; border-bottom: 1px solid var(--line);
+  }
+  .mobile-menu a:last-child { border-bottom: 0; }
+  .mobile-menu .nav-heart {
+    align-self: flex-start; margin-top: 12px;
+    display: inline-flex; align-items: center; gap: 7px;
+    height: 34px; padding: 0 15px; border-bottom: 0;
+    border: 1px solid color-mix(in srgb, var(--accent) 32%, var(--line-strong));
+    border-radius: 999px;
+  }
+  .mobile-menu .nav-heart svg { width: 15px; height: 15px; }
+
+  main { padding: 0 20px; }
+  .header-inner { padding: 13px 20px; }
+  .mobile-menu { padding: 6px 20px 14px; }
+  .site-footer { padding: 26px 20px 48px; }
+  .install-big { padding: 22px 18px 20px; }
+  .feature-grid { grid-template-columns: 1fr; }
+  table.keys td:first-child { width: 118px; }
+  .hero h1 { overflow-wrap: break-word; }
+  .doc p, .doc li, p { overflow-wrap: anywhere; }
+}
