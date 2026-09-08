@@ -172,7 +172,7 @@ main { max-width: 1120px; margin: 0 auto; padding: 0 24px; }
 .terminal {
   width: 100%; text-align: left;
   background: var(--term-bg); border: 1px solid var(--term-line);
-  border-radius: 12px; overflow: hidden; box-shadow: var(--shadow); margin: 0 0 22px;
+  border-radius: 12px; overflow: hidden; box-shadow: var(--shadow); margin: 2.8rem 0 1.2rem;
 }
 .chrome {
   display: flex; align-items: center; gap: 8px;
@@ -352,6 +352,7 @@ hr.rule { border: 0; border-top: 1px solid var(--line); margin: 46px 0 8px; }
 
 @media (max-width: 720px) {
   .hero { padding: 3.2rem 0 2.2rem; }
+  .terminal { margin: 2.2rem 0 1rem; }
   .terminal pre { padding: 0.7rem 0.55rem; }
   .install-big pre.block { font-size: 0.78rem; padding: 0.75rem 0.8rem; }
 
