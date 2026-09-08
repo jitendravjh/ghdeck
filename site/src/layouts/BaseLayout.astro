@@ -1,42 +1,102 @@
 ---
 import "../styles/global.css";
+import Logo from "../components/Logo.astro";
+import GitHubIcon from "../components/icons/GitHubIcon.astro";
 
 interface Props {
-  title: string;
-  description: string;
+  title?: string;
+  description?: string;
+  structuredData?: Array<Record<string, unknown>>;
 }
-const { title, description } = Astro.props;
+
+const {
+  title = "ghdeck",
+  description = "All your GitHub work in one list. PRs and issues together, newest first, with conflicts, CI and review state on every row.",
+  structuredData = [],
+} = Astro.props;
+
 const repo = "https://github.com/jitendravjh/ghdeck";
+const pageTitle = title === "ghdeck" ? "ghdeck" : `${title} | ghdeck`;
+const canonical = new URL(Astro.url.pathname, Astro.site ?? Astro.url).href;
+const jsonLd = [
+  {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    name: pageTitle,
+    description,
+    url: canonical,
+  },
+  ...structuredData,
+];
 ---
 
 <!doctype html>
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>{title}</title>
+    <meta name="viewport" content="width=device-width" />
+    <title>{pageTitle}</title>
     <meta name="description" content={description} />
-    <meta property="og:title" content={title} />
-    <meta property="og:description" content={description} />
-    <meta property="og:type" content="website" />
-    <meta name="theme-color" content="#0b0e14" />
-    <link rel="canonical" href={new URL(Astro.url.pathname, Astro.site)} />
+    <meta name="generator" content={Astro.generator} />
+    <link rel="canonical" href={canonical} />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="sitemap" href="/sitemap-index.xml" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="ghdeck" />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:title" content={pageTitle} />
+    <meta property="og:description" content={description} />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content={pageTitle} />
+    <meta name="twitter:description" content={description} />
+    <meta name="theme-color" content="#fcfcfd" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0b0e14" media="(prefers-color-scheme: dark)" />
+    {jsonLd.map((item) => <script type="application/ld+json" set:html={JSON.stringify(item)} />)}
+    <script is:inline>
+      (() => {
+        const key = "ghdeck-theme";
+        const preferred = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+        document.documentElement.dataset.theme = localStorage.getItem(key) || preferred;
+      })();
+    </script>
   </head>
   <body>
-    <div class="wrap">
-      <header class="top">
-        <a href="/" class="brand">gh<span>deck</span></a>
-        <nav class="top-links">
-          <a href="/docs/">Docs</a>
-          <a href={repo}>GitHub</a>
-        </nav>
-      </header>
-      <slot />
-      <footer class="bottom">
+    <header class="site-header">
+      <a class="brand" href="/" aria-label="ghdeck home">
+        <Logo />
+        <span>ghdeck</span>
+      </a>
+      <nav class="top-nav" aria-label="Main">
+        <a href="/docs/">Docs</a>
+        <a href="/docs/#install">Install</a>
+        <a href={repo} target="_blank" rel="noopener">
+          <GitHubIcon /><span>GitHub</span>
+        </a>
+      </nav>
+      <button class="theme-toggle" type="button" data-theme-toggle aria-label="Toggle dark mode">
+        <svg class="sun-icon" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 17.2a5.2 5.2 0 1 0 0-10.4 5.2 5.2 0 0 0 0 10.4Zm0-14.7a1 1 0 0 1 1 1v1.2a1 1 0 1 1-2 0V3.5a1 1 0 0 1 1-1Zm0 16.8a1 1 0 0 1 1 1v1.2a1 1 0 1 1-2 0v-1.2a1 1 0 0 1 1-1Zm9.5-8.3a1 1 0 1 1 0 2h-1.2a1 1 0 1 1 0-2h1.2ZM4.7 11a1 1 0 1 1 0 2H3.5a1 1 0 1 1 0-2h1.2Zm13.74-6.44a1 1 0 0 1 0 1.42l-.85.85a1 1 0 0 1-1.42-1.42l.85-.85a1 1 0 0 1 1.42 0ZM7.83 16.17a1 1 0 0 1 0 1.42l-.85.85a1 1 0 0 1-1.42-1.42l.85-.85a1 1 0 0 1 1.42 0Zm9.76 0 .85.85a1 1 0 1 1-1.42 1.42l-.85-.85a1 1 0 0 1 1.42-1.42ZM6.98 4.56l.85.85a1 1 0 0 1-1.42 1.42l-.85-.85a1 1 0 1 1 1.42-1.42Z"/></svg>
+        <svg class="moon-icon" aria-hidden="true" viewBox="0 0 24 24"><path d="M21 14.58A8.2 8.2 0 0 1 9.42 3a9.25 9.25 0 1 0 11.59 11.59Z"/></svg>
+      </button>
+    </header>
+
+    <main><slot /></main>
+
+    <footer class="site-footer">
+      <div class="inner">
         <span>MIT. Built by <a href="https://jitendravjh.in">Jitendra Verma</a>.</span>
         <a href={repo}>jitendravjh/ghdeck</a>
-      </footer>
-    </div>
+      </div>
+    </footer>
+
+    <script is:inline>
+      (() => {
+        const key = "ghdeck-theme";
+        document.querySelector("[data-theme-toggle]")?.addEventListener("click", () => {
+          const next = document.documentElement.dataset.theme === "dark" ? "light" : "dark";
+          document.documentElement.dataset.theme = next;
+          localStorage.setItem(key, next);
+        });
+      })();
+    </script>
   </body>
 </html>

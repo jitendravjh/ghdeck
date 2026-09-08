@@ -1,107 +1,192 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
-const rel = "https://github.com/jitendravjh/ghdeck/releases/latest/download";
+import Terminal from "../components/Terminal.astro";
+
+const repo = "https://github.com/jitendravjh/ghdeck";
+const structuredData = [
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    name: "ghdeck",
+    applicationCategory: "DeveloperApplication",
+    operatingSystem: "macOS, Linux",
+    description:
+      "A terminal dashboard for GitHub. PRs and issues in one list, newest first, with conflicts, CI and review state on every row.",
+    url: "https://ghdeck.jitendravjh.in/",
+    downloadUrl: `${repo}/releases`,
+    license: "https://opensource.org/licenses/MIT",
+    author: { "@type": "Person", name: "Jitendra Verma" },
+    offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: [
+      {
+        "@type": "Question",
+        name: "What is ghdeck?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "ghdeck is a terminal dashboard that puts every GitHub pull request and issue you are involved in into one list, sorted by when it last changed, with merge conflicts, CI state and review decisions shown on each row.",
+        },
+      },
+      {
+        "@type": "Question",
+        name: "How is it different from gh-dash?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "gh-dash keeps pull requests and issues in separate configured sections. ghdeck interleaves them in a single list so an issue and the pull request that closed it sit next to each other.",
+        },
+      },
+      {
+        "@type": "Question",
+        name: "Does it use up my GitHub rate limit?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "Barely. A full sync of 130 items costs about 18 points out of 5000 an hour, and watching for changes is free because it uses a conditional request that GitHub does not count.",
+        },
+      },
+      {
+        "@type": "Question",
+        name: "Do I need Rust to install it?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "No. Install with Homebrew, or download a prebuilt binary for macOS or Linux. Building from source is optional.",
+        },
+      },
+    ],
+  },
+];
 ---
 
-<BaseLayout
-  title="ghdeck, all your GitHub work in one list"
-  description="A terminal dashboard for GitHub. PRs and issues together, newest first, with conflicts, CI and review state on every row."
->
+<BaseLayout structuredData={structuredData}>
   <section class="hero">
-    <h1>ghdeck</h1>
+    <h1>All your GitHub work in one list.</h1>
     <p class="lead">
-      All your GitHub work in one list. PRs and issues together, newest first,
-      with the status of each one sitting right there.
+      PRs and issues together, newest first, with conflicts, failing CI and who
+      you are waiting on visible without opening anything.
     </p>
-    <p class="sub">
-      GitHub splits these across two pages and neither tells you if a PR is
-      conflicting or if CI has gone red. Other terminal dashboards keep PRs and
-      issues in separate tabs. This one does not.
-    </p>
-
-    <div class="install">
-      <code><span class="prompt">$ </span>brew install jitendravjh/tap/ghdeck</code>
+    <div class="actions">
+      <a class="button" href="/docs/#install">Install ghdeck</a>
+      <a class="button secondary" href="/docs/">Read the docs</a>
     </div>
-    <p class="hint">
-      macOS and Linux. No Homebrew? <a href="/docs/#install">Grab a binary</a>, no Rust needed.
+
+    <Terminal title="ghdeck">
+<span class="tabs">ghdeck  <b>ATTENTION NEEDED [6]</b>  OPEN [12]  YOURS [111]  TO REVIEW [0]  ALL [130]</span>
+<span class="sel"> <span class="d">1d</span>  <span class="b">[PR]</span>    <span class="d">kubernetes-sigs/headlamp#7128</span>  <span class="t">i18n: Complete Hindi translations</span>
+             <span class="g">● open</span> <span class="d">·</span> <span class="r">✖ changes requested</span> <span class="d">·</span> <span class="y">◐ ci</span> <span class="d">·</span> <span class="y">@vyncent-t</span>   <span class="d">4 comments</span></span>
+<span class="d">╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌</span>
+<span class="d">21h</span>  <span class="c">[ISSUE]</span> <span class="d">SciML/SciMLBenchmarks.jl#126</span>  <span class="t">Fix AdaptiveSDE benchmarks</span>
+             <span class="r">✖ closed</span>   <span class="d">5 comments</span>
+<span class="d">╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌</span>
+<span class="d">21h</span>  <span class="b">[PR]</span>    <span class="d">SciML/SciMLBenchmarks.jl#1605</span>  <span class="t">Fix and update AdaptiveSDE (#126)</span>
+             <span class="m">✔ merged</span>   <span class="d">37 comments</span>
+<span class="d">╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌</span>
+<span class="d">3mo</span>  <span class="b">[PR]</span>    <span class="d">SciML/NeuralOperators.jl#134</span>  <span class="t">feat: implement CNO (closes #122)</span>
+             <span class="g">● open</span> <span class="d">·</span> <span class="r">! conflict</span>   <span class="d">2 comments</span>
+    </Terminal>
+    <p class="caption">
+      An issue closing and the pull request that closed it, next to each other.
+      That is the thing no other tool does.
     </p>
   </section>
 
-  <div class="term">
-    <div class="bar"><i></i><i></i><i></i></div>
-    <pre><code><span class="tabs">ghdeck  <b>ATTENTION NEEDED [6]</b>  OPEN [12]  YOURS [111]  TO REVIEW [0]  ALL [130]</span>
-<span class="sel"> <span class="d">1d</span>  <span class="b">[PR]</span>    <span class="d">kubernetes-sigs/headlamp#7128</span>  <span class="t">i18n: Complete Hindi translations</span>
-             <span class="g">● open</span> <span class="d">·</span> <span class="r">✖ changes requested</span> <span class="d">·</span> <span class="y">◐ ci</span> <span class="d">·</span> <span class="y">@vyncent-t</span>   <span class="d">4 comments</span></span>
-<span class="d">╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌</span>
- <span class="d">1d</span>  <span class="b">[PR]</span>    <span class="d">screenpipe/screenpipe#6449</span>  <span class="t">fix(meetings): lock transcription</span>
-             <span class="g">● open</span> <span class="d">·</span> <span class="r">✖ ci</span>   <span class="d">6 comments</span>
-<span class="d">╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌</span>
-<span class="d">21h</span>  <span class="c">[ISSUE]</span> <span class="d">SciML/SciMLBenchmarks.jl#126</span>  <span class="t">Fix AdaptiveSDE benchmarks</span>
-             <span class="r">✖ closed</span>   <span class="d">5 comments</span>
-<span class="d">╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌</span>
-<span class="d">21h</span>  <span class="b">[PR]</span>    <span class="d">SciML/SciMLBenchmarks.jl#1605</span>  <span class="t">Fix and update AdaptiveSDE (#126)</span>
-             <span class="m">✔ merged</span>   <span class="d">37 comments</span>
-<span class="d">╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌</span>
-<span class="d">3mo</span>  <span class="b">[PR]</span>    <span class="d">SciML/NeuralOperators.jl#134</span>  <span class="t">feat: implement CNO (closes #122)</span>
-             <span class="g">● open</span> <span class="d">·</span> <span class="r">! conflict</span>   <span class="d">2 comments</span></code></pre>
-  </div>
-
-  <section>
-    <h2>An issue closing and the PR that closed it, side by side</h2>
-    <p>
-      That is the thing no other tool does. Everything you touched, sorted by
-      when it last moved, with conflicts, failing CI and who you are waiting on
-      all visible without opening anything.
-    </p>
-    <div class="grid" style="margin-top: 26px">
-      <div class="card">
+  <section class="section">
+    <div class="section-header">
+      <h2>GitHub splits this across two pages.</h2>
+      <p>
+        And neither one tells you if a pull request is conflicting or if CI has
+        gone red. Other terminal dashboards keep PRs and issues in separate
+        tabs. This one does not.
+      </p>
+    </div>
+    <div class="feature-grid">
+      <div class="feature">
         <h3>One list</h3>
         <p>PRs and issues interleaved, newest first. Filter to what needs you, what is open, what is yours, what waits on your review.</p>
       </div>
-      <div class="card">
-        <h3>Real status</h3>
+      <div class="feature">
+        <h3>Status that GitHub hides</h3>
         <p>Merge conflicts, CI rollup, review decisions and requested reviewers. GitHub search cannot even query conflicts.</p>
       </div>
-      <div class="card">
+      <div class="feature">
         <h3>Read the thread</h3>
         <p>Press enter for the body, comments and reviews, with line comments under the review that made them. Bots collapse to one line.</p>
       </div>
-      <div class="card">
+      <div class="feature">
         <h3>Watches itself</h3>
         <p>Polls notifications with a conditional request. GitHub does not count 304s, so a quiet minute costs nothing at all.</p>
+      </div>
+      <div class="feature">
+        <h3>Opens instantly</h3>
+        <p>Everything sits in SQLite. The dashboard shows cached data straight away and syncs behind you.</p>
+      </div>
+      <div class="feature">
+        <h3>One small binary</h3>
+        <p>Rust, about 2 MB, no runtime to install. Static builds on Linux, so any distro works.</p>
       </div>
     </div>
   </section>
 
-  <hr class="dash" />
-
-  <section>
-    <h2>Install</h2>
-    <pre class="block"><span class="d"># macOS and Linux, with Homebrew</span>
-brew install jitendravjh/tap/ghdeck
-
-<span class="d"># or grab a binary, no Rust needed</span>
-curl -sSfL {rel}/ghdeck-aarch64-apple-darwin.tar.gz | tar xz
-sudo mv ghdeck /usr/local/bin/</pre>
-    <p style="margin-top:18px">
-      Then <code>gh auth login</code>, or set a <code>GITHUB_TOKEN</code> with the
-      <code>repo</code> scope, and run <code>ghdeck</code>. Full instructions in the
-      <a href="/docs/">docs</a>.
-    </p>
+  <section class="section">
+    <div class="section-header">
+      <h2>Start in one line.</h2>
+      <p>macOS and Linux. No Rust, no runtime, no config file to write first.</p>
+    </div>
+    <div class="install-strip">
+      <div>
+        <strong>Homebrew</strong>
+        <span>Handles your PATH and upgrades. Prebuilt binaries are on the release page if you would rather not use brew.</span>
+      </div>
+      <pre><code>brew install jitendravjh/tap/ghdeck</code></pre>
+      <div class="actions" style="margin:0">
+        <a class="button secondary" href="/docs/#install">Other ways to install</a>
+      </div>
+    </div>
   </section>
 
-  <hr class="dash" />
+  <section class="section">
+    <div class="section-header">
+      <h2>Documentation.</h2>
+      <p>Short pages for installing, connecting your account, and living in it.</p>
+    </div>
+    <div class="feature-grid">
+      <a class="doc-link" href="/docs/#install">
+        <h3>Install</h3>
+        <p>Homebrew, a prebuilt binary for your platform, or from source with Rust.</p>
+      </a>
+      <a class="doc-link" href="/docs/#setup">
+        <h3>Setup</h3>
+        <p>Sign in with gh, or set a token with the repo scope. Nothing else to configure.</p>
+      </a>
+      <a class="doc-link" href="/docs/#use">
+        <h3>Use</h3>
+        <p>Filters, keys, reading a thread, and the commands that print to stdout.</p>
+      </a>
+    </div>
+  </section>
 
-  <section>
-    <h2>Keys</h2>
-    <table class="keys">
-      <tr><td>up down</td><td>move</td></tr>
-      <tr><td>left right</td><td>switch filter</td></tr>
-      <tr><td>enter</td><td>read the conversation</td></tr>
-      <tr><td>o</td><td>open in browser</td></tr>
-      <tr><td>/</td><td>search title, repo, label</td></tr>
-      <tr><td>r</td><td>sync now</td></tr>
-      <tr><td>?</td><td>help</td></tr>
-    </table>
+  <section class="section">
+    <div class="section-header">
+      <h2>FAQ</h2>
+    </div>
+    <div class="feature-grid">
+      <div class="feature">
+        <h3>How is it different from gh-dash?</h3>
+        <p>gh-dash keeps PRs and issues in separate configured sections. ghdeck interleaves them, so an issue and the PR that closed it sit together.</p>
+      </div>
+      <div class="feature">
+        <h3>Will it burn my rate limit?</h3>
+        <p>A full sync of 130 items costs about 18 points of 5000 an hour. Watching costs nothing, because 304 responses are not counted.</p>
+      </div>
+      <div class="feature">
+        <h3>Do I need Rust?</h3>
+        <p>No. Homebrew or a prebuilt binary. Building from source is optional.</p>
+      </div>
+      <div class="feature">
+        <h3>Does it work without gh?</h3>
+        <p>Yes. Set a <code>GITHUB_TOKEN</code> with the repo scope and gh is not needed at all.</p>
+      </div>
+    </div>
   </section>
 </BaseLayout>
