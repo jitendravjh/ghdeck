@@ -9,6 +9,8 @@
   },
   "dependencies": {
     "@astrojs/sitemap": "^3.7.2",
-    "astro": "^6.3.1"
+    "@resvg/resvg-js": "^2.6.2",
+    "astro": "^6.3.1",
+    "satori": "^0.33.4"
   }
 }
