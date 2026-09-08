@@ -189,16 +189,17 @@ Bots get collapsed to one line in a conversation, otherwise codecov and CI comme
 
 ## Releasing
 
-Pushing to `main` does not reach anyone. A tag is what ships.
+Bump `version` in `Cargo.toml`, commit, push. That is the whole thing.
 
 ```sh
-# bump version in Cargo.toml, then
-git tag -a v0.1.2 -m "what changed" && git push origin v0.1.2
+git commit -am "Version 0.2.1" && git push
 ```
 
-One run then builds all four binaries, publishes the release, and pushes the
-updated formula to [jitendravjh/homebrew-tap](https://github.com/jitendravjh/homebrew-tap),
-so `brew upgrade ghdeck` works right away. The tap also re-checks daily as a
-safety net if that push ever fails.
+CI reads the version, sees the tag does not exist yet, and then builds all four
+binaries, creates the tag and release, and pushes the formula to
+[jitendravjh/homebrew-tap](https://github.com/jitendravjh/homebrew-tap). Push
+without touching the version and nothing ships, so ordinary commits are safe.
+
+The site is separate. It rebuilds on every push to `main` regardless of version.
 
 MIT

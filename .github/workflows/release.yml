@@ -2,15 +2,42 @@ name: release
 
 on:
   push:
-    tags: ["v*"]
+    branches: [main]
   workflow_dispatch:
 
 permissions:
   contents: write
 
 jobs:
+  check:
+    name: version
+    runs-on: ubuntu-latest
+    outputs:
+      ship: ${{ steps.v.outputs.ship }}
+      tag: ${{ steps.v.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Is this version already released
+        id: v
+        run: |
+          version=$(grep -m1 '^version = ' Cargo.toml | sed 's/version = "\(.*\)"/\1/')
+          tag="v$version"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          if git ls-remote --exit-code --tags origin "refs/tags/$tag" >/dev/null 2>&1; then
+            echo "$tag is already out, nothing to ship"
+            echo "ship=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "$tag is new, shipping"
+            echo "ship=true" >> "$GITHUB_OUTPUT"
+          fi
+
   build:
     name: ${{ matrix.target }}
+    needs: check
+    if: needs.check.outputs.ship == 'true'
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -57,8 +84,7 @@ jobs:
             ghdeck-*.tar.gz.sha256
 
   release:
-    needs: build
-    if: startsWith(github.ref, 'refs/tags/')
+    needs: [check, build]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/download-artifact@v8
@@ -75,27 +101,16 @@ jobs:
 
       - uses: softprops/action-gh-release@v3
         with:
+          tag_name: ${{ needs.check.outputs.tag }}
+          name: ${{ needs.check.outputs.tag }}
           files: dist/*
           generate_release_notes: true
 
   tap:
-    needs: release
-    if: always() && (startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch')
+    needs: [check, release]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-
-      - name: Work out which tag to publish
-        id: tag
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            tag=$(gh release view --repo ${{ github.repository }} --json tagName -q .tagName)
-          else
-            tag=${GITHUB_REF_NAME}
-          fi
-          echo "tag=$tag" >> "$GITHUB_OUTPUT"
 
       - name: Check out the tap
         uses: actions/checkout@v7
@@ -105,16 +120,16 @@ jobs:
           ssh-key: ${{ secrets.TAP_DEPLOY_KEY }}
 
       - name: Rebuild the formula
-        run: bash script/formula.sh "${{ steps.tag.outputs.tag }}" > tap/Formula/ghdeck.rb
+        run: bash script/formula.sh "${{ needs.check.outputs.tag }}" > tap/Formula/ghdeck.rb
 
       - name: Push it
         working-directory: tap
         run: |
           if git diff --quiet Formula/ghdeck.rb; then
-            echo "tap already on ${{ steps.tag.outputs.tag }}"
+            echo "tap already on ${{ needs.check.outputs.tag }}"
             exit 0
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git commit -q -m "ghdeck ${{ steps.tag.outputs.tag }}" Formula/ghdeck.rb
+          git commit -q -m "ghdeck ${{ needs.check.outputs.tag }}" Formula/ghdeck.rb
           git push
