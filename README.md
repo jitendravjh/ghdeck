@@ -187,19 +187,16 @@ Bots get collapsed to one line in a conversation, otherwise codecov and CI comme
 
 ## Releasing
 
-Pushing to `main` does not reach anyone. A release is what ships.
+Pushing to `main` does not reach anyone. A tag is what ships.
 
 ```sh
 # bump version in Cargo.toml, then
-git tag -a v0.1.1 -m "..." && git push origin v0.1.1
+git tag -a v0.1.2 -m "what changed" && git push origin v0.1.2
 ```
 
-That builds all four binaries and publishes the release. The formula in
-[jitendravjh/homebrew-tap](https://github.com/jitendravjh/homebrew-tap) picks up
-the new tag on its daily run, or immediately with:
-
-```sh
-gh workflow run bump.yml --repo jitendravjh/homebrew-tap
-```
+One run then builds all four binaries, publishes the release, and pushes the
+updated formula to [jitendravjh/homebrew-tap](https://github.com/jitendravjh/homebrew-tap),
+so `brew upgrade ghwork` works right away. The tap also re-checks daily as a
+safety net if that push ever fails.
 
 MIT
