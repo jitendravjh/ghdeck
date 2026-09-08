@@ -4,6 +4,26 @@ import Terminal from "../components/Terminal.astro";
 
 const repo = "https://github.com/jitendravjh/ghdeck";
 
+const termNarrow = `<span class="c"><b class="brand-tab">ghdeck</b></span> <span class="tabs"><b>ATTENTION [4]</b> OPEN [8] ALL [50]</span>
+<span class="sel"><span class="d"> 2h</span> <span class="b">[PR]</span> <span class="rp">screenpipe#6449</span>
+    <span class="t">fix(meetings): lock transcription</span>
+    <span class="g">● open</span> <span class="d">·</span> <span class="r">✖ ci</span>  <span class="d">6 comments</span></span>
+<span class="d">╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌</span>
+<span class="d"> 3d</span> <span class="c">[IS]</span> <span class="rp">CoordRefSystems#315</span>
+    <span class="t">Add support for ESPG:28992</span>
+    <span class="r">✖ closed</span>  <span class="d">9 comments</span>
+<span class="d">╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌</span>
+<span class="d"> 3d</span> <span class="b">[PR]</span> <span class="rp">CoordRefSystems#373</span>
+    <span class="t">Add EPSG for Amersfoort / RD New</span>
+    <span class="m">✔ merged</span> <span class="d">·</span> <span class="g">✔ approved</span>  <span class="d">1 comment</span>
+<span class="d">╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌</span>
+<span class="d">3mo</span> <span class="b">[PR]</span> <span class="rp">NeuralOperators#134</span>
+    <span class="t">feat: implement CNO (closes #122)</span>
+    <span class="g">● open</span> <span class="d">·</span> <span class="r">! conflict</span>  <span class="d">2 comments</span>
+<span class="hr">──────────────────────────────────────────</span>
+<span class="mt">by jitendravjh   +255 -17 in 3 files</span>
+<span class="d">↑↓ move · ←→ filter · enter read · ? help</span>`;
+
 const termHtml = `<span class="c"><b class="brand-tab">ghdeck</b></span>  <span class="tabs"><b>ATTENTION NEEDED [4]</b>  OPEN [8]  YOURS [46]  TO REVIEW [0]  ALL [50]</span>
 <span class="sel"><span class="d"> 2h</span>  <span class="b">[PR]   </span> <span class="rp">screenpipe/screenpipe#6449</span>  <span class="t">fix(meetings): lock live transcription language</span>
              <span class="g">● open</span> <span class="d">·</span> <span class="r">✖ ci</span>   <span class="d">6 comments   jitendravjh commented</span></span>
@@ -53,7 +73,7 @@ const structuredData = [
       <a class="button secondary" href="/docs/">Read the docs</a>
     </div>
 
-    <Terminal title="ghdeck" html={termHtml} />
+    <Terminal title="ghdeck" html={termHtml} narrow={termNarrow} />
     <p class="caption">
       An issue closing and the pull request that closed it, next to each other.
       That is the thing no other tool does.
