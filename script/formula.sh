@@ -6,7 +6,7 @@ tag="${1:?usage: formula.sh <tag>}"
 repo="${GHWORK_REPO:-jitendravjh/ghwork}"
 base="https://github.com/$repo/releases/download/$tag"
 
-sums="$(curl -sSfL "$base/SHA256SUMS")"
+sums="$(curl -sSfL --retry 6 --retry-delay 5 --retry-all-errors "$base/SHA256SUMS")"
 sum_for() {
   echo "$sums" | awk -v f="ghwork-$1.tar.gz" '$2 == f { print $1 }'
 }

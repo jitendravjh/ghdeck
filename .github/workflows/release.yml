@@ -77,3 +77,44 @@ jobs:
         with:
           files: dist/*
           generate_release_notes: true
+
+  tap:
+    needs: release
+    if: always() && (startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Work out which tag to publish
+        id: tag
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            tag=$(gh release view --repo ${{ github.repository }} --json tagName -q .tagName)
+          else
+            tag=${GITHUB_REF_NAME}
+          fi
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+
+      - name: Check out the tap
+        uses: actions/checkout@v7
+        with:
+          repository: jitendravjh/homebrew-tap
+          path: tap
+          ssh-key: ${{ secrets.TAP_DEPLOY_KEY }}
+
+      - name: Rebuild the formula
+        run: bash script/formula.sh "${{ steps.tag.outputs.tag }}" > tap/Formula/ghwork.rb
+
+      - name: Push it
+        working-directory: tap
+        run: |
+          if git diff --quiet Formula/ghwork.rb; then
+            echo "tap already on ${{ steps.tag.outputs.tag }}"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -q -m "ghwork ${{ steps.tag.outputs.tag }}" Formula/ghwork.rb
+          git push
