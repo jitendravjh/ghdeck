@@ -1,9 +1,8 @@
 ---
-interface Props { title?: string; html: string; narrow: string; }
-const { title = "ghdeck", html, narrow } = Astro.props;
+interface Props { title?: string; html: string; }
+const { title = "ghdeck", html } = Astro.props;
 ---
 <div class="terminal">
   <div class="chrome"><i></i><i></i><i></i><span>{title}</span></div>
-  <pre class="term-wide"><code set:html={html} /></pre>
-  <pre class="term-narrow"><code set:html={narrow} /></pre>
+  <pre><code set:html={html} /></pre>
 </div>
