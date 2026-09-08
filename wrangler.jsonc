@@ -1,0 +1,8 @@
+{
+  "name": "ghdeck",
+  "compatibility_date": "2026-09-08",
+  "assets": {
+    "directory": "./site/dist",
+    "not_found_handling": "404-page"
+  }
+}

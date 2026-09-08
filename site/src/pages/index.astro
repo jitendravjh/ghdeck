@@ -1,0 +1,107 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+const rel = "https://github.com/jitendravjh/ghdeck/releases/latest/download";
+---
+
+<BaseLayout
+  title="ghdeck, all your GitHub work in one list"
+  description="A terminal dashboard for GitHub. PRs and issues together, newest first, with conflicts, CI and review state on every row."
+>
+  <section class="hero">
+    <h1>ghdeck</h1>
+    <p class="lead">
+      All your GitHub work in one list. PRs and issues together, newest first,
+      with the status of each one sitting right there.
+    </p>
+    <p class="sub">
+      GitHub splits these across two pages and neither tells you if a PR is
+      conflicting or if CI has gone red. Other terminal dashboards keep PRs and
+      issues in separate tabs. This one does not.
+    </p>
+
+    <div class="install">
+      <code><span class="prompt">$ </span>brew install jitendravjh/tap/ghdeck</code>
+    </div>
+    <p class="hint">
+      macOS and Linux. No Homebrew? <a href="/docs/#install">Grab a binary</a>, no Rust needed.
+    </p>
+  </section>
+
+  <div class="term">
+    <div class="bar"><i></i><i></i><i></i></div>
+    <pre><code><span class="tabs">ghdeck  <b>ATTENTION NEEDED [6]</b>  OPEN [12]  YOURS [111]  TO REVIEW [0]  ALL [130]</span>
+<span class="sel"> <span class="d">1d</span>  <span class="b">[PR]</span>    <span class="d">kubernetes-sigs/headlamp#7128</span>  <span class="t">i18n: Complete Hindi translations</span>
+             <span class="g">● open</span> <span class="d">·</span> <span class="r">✖ changes requested</span> <span class="d">·</span> <span class="y">◐ ci</span> <span class="d">·</span> <span class="y">@vyncent-t</span>   <span class="d">4 comments</span></span>
+<span class="d">╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌</span>
+ <span class="d">1d</span>  <span class="b">[PR]</span>    <span class="d">screenpipe/screenpipe#6449</span>  <span class="t">fix(meetings): lock transcription</span>
+             <span class="g">● open</span> <span class="d">·</span> <span class="r">✖ ci</span>   <span class="d">6 comments</span>
+<span class="d">╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌</span>
+<span class="d">21h</span>  <span class="c">[ISSUE]</span> <span class="d">SciML/SciMLBenchmarks.jl#126</span>  <span class="t">Fix AdaptiveSDE benchmarks</span>
+             <span class="r">✖ closed</span>   <span class="d">5 comments</span>
+<span class="d">╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌</span>
+<span class="d">21h</span>  <span class="b">[PR]</span>    <span class="d">SciML/SciMLBenchmarks.jl#1605</span>  <span class="t">Fix and update AdaptiveSDE (#126)</span>
+             <span class="m">✔ merged</span>   <span class="d">37 comments</span>
+<span class="d">╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌</span>
+<span class="d">3mo</span>  <span class="b">[PR]</span>    <span class="d">SciML/NeuralOperators.jl#134</span>  <span class="t">feat: implement CNO (closes #122)</span>
+             <span class="g">● open</span> <span class="d">·</span> <span class="r">! conflict</span>   <span class="d">2 comments</span></code></pre>
+  </div>
+
+  <section>
+    <h2>An issue closing and the PR that closed it, side by side</h2>
+    <p>
+      That is the thing no other tool does. Everything you touched, sorted by
+      when it last moved, with conflicts, failing CI and who you are waiting on
+      all visible without opening anything.
+    </p>
+    <div class="grid" style="margin-top: 26px">
+      <div class="card">
+        <h3>One list</h3>
+        <p>PRs and issues interleaved, newest first. Filter to what needs you, what is open, what is yours, what waits on your review.</p>
+      </div>
+      <div class="card">
+        <h3>Real status</h3>
+        <p>Merge conflicts, CI rollup, review decisions and requested reviewers. GitHub search cannot even query conflicts.</p>
+      </div>
+      <div class="card">
+        <h3>Read the thread</h3>
+        <p>Press enter for the body, comments and reviews, with line comments under the review that made them. Bots collapse to one line.</p>
+      </div>
+      <div class="card">
+        <h3>Watches itself</h3>
+        <p>Polls notifications with a conditional request. GitHub does not count 304s, so a quiet minute costs nothing at all.</p>
+      </div>
+    </div>
+  </section>
+
+  <hr class="dash" />
+
+  <section>
+    <h2>Install</h2>
+    <pre class="block"><span class="d"># macOS and Linux, with Homebrew</span>
+brew install jitendravjh/tap/ghdeck
+
+<span class="d"># or grab a binary, no Rust needed</span>
+curl -sSfL {rel}/ghdeck-aarch64-apple-darwin.tar.gz | tar xz
+sudo mv ghdeck /usr/local/bin/</pre>
+    <p style="margin-top:18px">
+      Then <code>gh auth login</code>, or set a <code>GITHUB_TOKEN</code> with the
+      <code>repo</code> scope, and run <code>ghdeck</code>. Full instructions in the
+      <a href="/docs/">docs</a>.
+    </p>
+  </section>
+
+  <hr class="dash" />
+
+  <section>
+    <h2>Keys</h2>
+    <table class="keys">
+      <tr><td>up down</td><td>move</td></tr>
+      <tr><td>left right</td><td>switch filter</td></tr>
+      <tr><td>enter</td><td>read the conversation</td></tr>
+      <tr><td>o</td><td>open in browser</td></tr>
+      <tr><td>/</td><td>search title, repo, label</td></tr>
+      <tr><td>r</td><td>sync now</td></tr>
+      <tr><td>?</td><td>help</td></tr>
+    </table>
+  </section>
+</BaseLayout>

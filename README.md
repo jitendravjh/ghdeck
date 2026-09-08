@@ -1,5 +1,7 @@
 # ghdeck
 
+[ghdeck.jitendravjh.in](https://ghdeck.jitendravjh.in)
+
 All your GitHub work in one list. PRs and issues together, newest first, with the status of each one sitting right there.
 
 GitHub splits these across two pages and neither one tells you if a PR is conflicting or if CI has gone red. Other terminal dashboards keep PRs and issues in separate tabs. This one does not.

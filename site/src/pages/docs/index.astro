@@ -1,0 +1,114 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+const rel = "https://github.com/jitendravjh/ghdeck/releases/latest/download";
+const platforms = [
+  ["macOS, Apple Silicon", "ghdeck-aarch64-apple-darwin.tar.gz"],
+  ["macOS, Intel", "ghdeck-x86_64-apple-darwin.tar.gz"],
+  ["Linux, x86_64", "ghdeck-x86_64-unknown-linux-musl.tar.gz"],
+  ["Linux, arm64", "ghdeck-aarch64-unknown-linux-musl.tar.gz"],
+];
+---
+
+<BaseLayout title="ghdeck docs" description="Install, set up and use ghdeck, a terminal dashboard for your GitHub work.">
+  <section class="hero" style="padding-bottom:18px">
+    <h1 style="font-size:34px">Docs</h1>
+    <p class="lead">Install, set up, use. Should take about a minute.</p>
+  </section>
+
+  <section id="install">
+    <h2>Install</h2>
+    <p>Pick one, then do <a href="#setup">Setup</a>.</p>
+
+    <h3 style="font-family:var(--mono);font-size:16px;margin:26px 0 10px">Homebrew, macOS and Linux</h3>
+    <p>Handles PATH and upgrades for you. If <code>brew --version</code> gives nothing, install Homebrew first from <a href="https://brew.sh">brew.sh</a>.</p>
+    <pre class="block">brew install jitendravjh/tap/ghdeck</pre>
+    <p>Later, <code>brew upgrade ghdeck</code>. To remove, <code>brew uninstall ghdeck</code>.</p>
+
+    <h3 style="font-family:var(--mono);font-size:16px;margin:32px 0 10px">Download a binary</h3>
+    <p>No Homebrew, no Rust. Run <code>uname -m</code> if you are unsure which Mac you have: <code>arm64</code> is Apple Silicon, <code>x86_64</code> is Intel.</p>
+    {platforms.map(([label, file]) => (
+      <>
+        <p style="margin-bottom:6px"><strong style="color:var(--fg)">{label}</strong></p>
+        <pre class="block">curl -sSfL {rel}/{file} | tar xz
+sudo mv ghdeck /usr/local/bin/</pre>
+      </>
+    ))}
+    <p>
+      Linux builds are static, so any distro works. Checksums live in
+      <code>SHA256SUMS</code> on the <a href="https://github.com/jitendravjh/ghdeck/releases/latest">release</a>.
+      If you download through a browser rather than curl, macOS quarantines the file
+      because the binary is not signed. Clear it with <code>xattr -d com.apple.quarantine ghdeck</code>.
+    </p>
+
+    <h3 style="font-family:var(--mono);font-size:16px;margin:32px 0 10px">From source</h3>
+    <p>Needs Rust 1.88 or newer and a C compiler, because SQLite is built from source.</p>
+    <pre class="block"><span class="d"># macOS</span>
+brew install rust && xcode-select --install
+<span class="d"># Debian or Ubuntu</span>
+sudo apt install cargo build-essential
+
+cargo install --git https://github.com/jitendravjh/ghdeck ghdeck</pre>
+    <p>The binary lands in <code>~/.cargo/bin</code>, so keep that on your PATH.</p>
+  </section>
+
+  <hr class="dash" />
+
+  <section id="setup">
+    <h2>Setup</h2>
+    <p>ghdeck needs GitHub credentials. Either way works.</p>
+    <p>If you have <a href="https://cli.github.com">gh</a>, that is all it takes:</p>
+    <pre class="block">gh auth login</pre>
+    <p>Otherwise make a token with the <code>repo</code> scope at <a href="https://github.com/settings/tokens">github.com/settings/tokens</a> and put this in your <code>.zshrc</code> or <code>.bashrc</code>:</p>
+    <pre class="block">export GITHUB_TOKEN=ghp_your_token_here</pre>
+    <p>gh is not needed if you go this route. Then run it:</p>
+    <pre class="block">ghdeck</pre>
+    <p>The first run fetches everything and caches it, a few seconds. After that it opens instantly and refreshes in the background. Windows is untested.</p>
+  </section>
+
+  <hr class="dash" />
+
+  <section id="use">
+    <h2>Use</h2>
+    <pre class="block">ghdeck                             <span class="d"># dashboard</span>
+ghdeck list                        <span class="d"># print what needs attention</span>
+ghdeck list all                    <span class="d"># print everything</span>
+ghdeck show calcom/cal.diy#29686   <span class="d"># print one conversation</span>
+ghdeck sync                        <span class="d"># refresh now</span></pre>
+    <p>Filters are <code>attention</code>, <code>open</code>, <code>yours</code>, <code>to-review</code> and <code>all</code>. Attention needed means open items that are conflicting, have changes requested, have CI failing, or are waiting on your review.</p>
+
+    <h3 style="font-family:var(--mono);font-size:16px;margin:30px 0 10px">Keys</h3>
+    <table class="keys">
+      <tr><td>up down</td><td>move</td></tr>
+      <tr><td>left right</td><td>switch filter</td></tr>
+      <tr><td>1 to 5</td><td>jump straight to a filter</td></tr>
+      <tr><td>enter</td><td>read the conversation</td></tr>
+      <tr><td>o</td><td>open in browser</td></tr>
+      <tr><td>y</td><td>copy url</td></tr>
+      <tr><td>r</td><td>sync</td></tr>
+      <tr><td>/</td><td>search title, repo, label</td></tr>
+      <tr><td>?</td><td>help</td></tr>
+      <tr><td>q</td><td>quit</td></tr>
+    </table>
+    <p style="margin-top:16px">Inside a conversation, up and down scroll, <code>b</code> expands bot messages, and left or esc takes you back.</p>
+  </section>
+
+  <hr class="dash" />
+
+  <section id="how">
+    <h2>How it stays cheap</h2>
+    <p>One GraphQL query gets PRs and issues interleaved and already sorted. A full sync of 130 items costs about 18 points out of 5000 an hour.</p>
+    <p>Watching costs nothing. It polls notifications with <code>If-Modified-Since</code> and GitHub does not count 304s, so a quiet minute is free. <code>GHDECK_POLL_SECS</code> changes the interval.</p>
+    <p>Everything sits in SQLite, so the dashboard opens on cached data and syncs behind you. Bots collapse to one line in a conversation, otherwise codecov and CI comments bury the actual discussion.</p>
+  </section>
+
+  <hr class="dash" />
+
+  <section id="limits">
+    <h2>Not there yet</h2>
+    <ul style="color:var(--dim)">
+      <li>GitHub search caps at 1000 results, so older history is out of reach</li>
+      <li>No diffs</li>
+      <li>Read only, no approve or merge</li>
+    </ul>
+  </section>
+</BaseLayout>

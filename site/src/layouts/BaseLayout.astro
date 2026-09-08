@@ -1,0 +1,42 @@
+---
+import "../styles/global.css";
+
+interface Props {
+  title: string;
+  description: string;
+}
+const { title, description } = Astro.props;
+const repo = "https://github.com/jitendravjh/ghdeck";
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:type" content="website" />
+    <meta name="theme-color" content="#0b0e14" />
+    <link rel="canonical" href={new URL(Astro.url.pathname, Astro.site)} />
+    <link rel="sitemap" href="/sitemap-index.xml" />
+  </head>
+  <body>
+    <div class="wrap">
+      <header class="top">
+        <a href="/" class="brand">gh<span>deck</span></a>
+        <nav class="top-links">
+          <a href="/docs/">Docs</a>
+          <a href={repo}>GitHub</a>
+        </nav>
+      </header>
+      <slot />
+      <footer class="bottom">
+        <span>MIT. Built by <a href="https://jitendravjh.in">Jitendra Verma</a>.</span>
+        <a href={repo}>jitendravjh/ghdeck</a>
+      </footer>
+    </div>
+  </body>
+</html>
