@@ -1,5 +1,5 @@
 use crate::app::App;
-use ghwork_core::{ago, plural, Filter, Item, Kind, Tone};
+use ghwork_core::{ago, clip, plural, repo_width, Filter, Item, Kind, Tone};
 use ratatui::{
     layout::{Constraint, Layout, Rect},
     style::{Color, Style},
@@ -53,34 +53,38 @@ fn header(f: &mut Frame, area: Rect, app: &App) {
     f.render_widget(Line::from(spans), area);
 }
 
-fn row(it: &Item, width: usize) -> ListItem<'static> {
+const GUTTER: usize = 14;
+
+fn row(it: &Item, width: usize, repo_w: usize) -> ListItem<'static> {
     let (label, colour) = match it.kind {
         Kind::Pr => ("[PR]", Color::Blue),
         Kind::Issue => ("[ISSUE]", Color::Cyan),
     };
-    let kind = Span::styled(format!("{label:<7}"), Style::default().fg(colour).bold());
-    let slug = it.slug();
-    let budget = width.saturating_sub(slug.len() + 19).max(20);
-    let mut title = it.title.clone();
-    if title.chars().count() > budget {
-        title = title.chars().take(budget.saturating_sub(1)).collect::<String>() + "…";
-    }
+    let slug = clip(&it.slug(), repo_w);
+    let budget = width.saturating_sub(GUTTER + repo_w + 2).max(16);
 
     let top = Line::from(vec![
-        Span::styled(format!("{:>4} ", ago(it.updated_at)), Style::default().fg(Color::DarkGray)),
-        kind,
+        Span::styled(
+            format!("{:>4}  ", ago(it.updated_at)),
+            Style::default().fg(Color::DarkGray),
+        ),
+        Span::styled(format!("{label:<7}"), Style::default().fg(colour)),
         Span::raw(" "),
-        Span::styled(slug, Style::default().bold()),
+        Span::styled(
+            format!("{slug:<repo_w$}"),
+            Style::default().fg(Color::Gray),
+        ),
         Span::raw("  "),
-        Span::raw(title),
+        Span::styled(clip(&it.title, budget), Style::default().bold()),
     ]);
 
-    let mut chips: Vec<Span> = vec![Span::raw("     ")];
+    let mut chips: Vec<Span> = vec![Span::raw(" ".repeat(GUTTER))];
     for (text, t) in it.chips() {
         chips.push(Span::styled(text, tone(t)));
-        chips.push(Span::styled(" · ", Style::default().fg(Color::DarkGray)));
+        chips.push(Span::styled(" \u{b7} ", Style::default().fg(Color::DarkGray)));
     }
     chips.pop();
+
     let mut tail = String::new();
     if it.comments > 0 {
         tail.push_str(&format!("   {}", plural(it.comments, "comment")));
@@ -92,7 +96,7 @@ fn row(it: &Item, width: usize) -> ListItem<'static> {
         chips.push(Span::styled(tail, Style::default().fg(Color::DarkGray)));
     }
 
-    ListItem::new(vec![top, Line::from(chips)])
+    ListItem::new(vec![top, Line::from(chips), Line::raw("")])
 }
 
 fn list(f: &mut Frame, area: Rect, app: &mut App) {
@@ -109,7 +113,13 @@ fn list(f: &mut Frame, area: Rect, app: &mut App) {
         return;
     }
     let width = area.width as usize;
-    let rows: Vec<ListItem> = app.view.iter().map(|&i| row(&app.items[i], width)).collect();
+    let slugs: Vec<String> = app.view.iter().map(|&i| app.items[i].slug()).collect();
+    let repo_w = repo_width(slugs.iter().map(String::as_str));
+    let rows: Vec<ListItem> = app
+        .view
+        .iter()
+        .map(|&i| row(&app.items[i], width, repo_w))
+        .collect();
     let mut state = ListState::default().with_selected(Some(app.cursor));
     let widget = List::new(rows)
         .highlight_style(Style::default().bg(Color::Rgb(30, 40, 55)))

@@ -396,7 +396,7 @@ mod tests {
         assert_eq!(it.assignees, vec!["me"]);
         assert_eq!(it.ci, Ci::None);
         assert_eq!(it.additions, 0);
-        assert!(it.chips().iter().any(|(t, _)| t == "not planned"));
+        assert!(it.chips().iter().any(|(t, _)| t.ends_with("not planned")));
     }
 
     #[test]
@@ -415,7 +415,7 @@ mod tests {
         ))
         .unwrap();
         let chips: Vec<String> = it.chips().into_iter().map(|(t, _)| t).collect();
-        assert_eq!(chips, vec!["closed".to_string()]);
+        assert_eq!(chips, vec!["\u{2716} closed".to_string()]);
     }
 
     #[test]

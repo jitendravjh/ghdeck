@@ -95,51 +95,64 @@ impl Item {
     pub fn chips(&self) -> Vec<(String, Tone)> {
         let mut out = Vec::new();
         match self.state {
-            State::Open => out.push(("open".into(), Tone::Good)),
-            State::Draft => out.push(("draft".into(), Tone::Muted)),
-            State::Merged => out.push(("merged".into(), Tone::Info)),
+            State::Open => out.push(("\u{25cf} open".into(), Tone::Good)),
+            State::Draft => out.push(("\u{25d0} draft".into(), Tone::Muted)),
+            State::Merged => out.push(("\u{2714} merged".into(), Tone::Info)),
             State::Closed => out.push((
                 if self.state_reason.as_deref() == Some("NOT_PLANNED") {
-                    "not planned".into()
+                    "\u{2716} not planned".into()
                 } else {
-                    "closed".into()
+                    "\u{2716} closed".into()
                 },
                 Tone::Bad,
             )),
         }
         if !self.is_open() {
             if self.review == Some(Review::Approved) {
-                out.push(("approved".into(), Tone::Good));
+                out.push(("\u{2714} approved".into(), Tone::Good));
             }
             return out;
         }
         if self.review_requested_of_me {
-            out.push(("your review".into(), Tone::Warn));
+            out.push(("\u{25cb} your review".into(), Tone::Warn));
         }
         match self.review {
-            Some(Review::Approved) => out.push(("approved".into(), Tone::Good)),
-            Some(Review::ChangesRequested) => out.push(("changes requested".into(), Tone::Bad)),
-            Some(Review::ReviewRequired) => out.push(("needs review".into(), Tone::Warn)),
+            Some(Review::Approved) => out.push(("\u{2714} approved".into(), Tone::Good)),
+            Some(Review::ChangesRequested) => {
+                out.push(("\u{2716} changes requested".into(), Tone::Bad))
+            }
+            Some(Review::ReviewRequired) => out.push(("\u{25cb} needs review".into(), Tone::Warn)),
             None => {}
         }
         if self.conflicting {
-            out.push(("conflict".into(), Tone::Bad));
+            out.push(("! conflict".into(), Tone::Bad));
         }
         match self.ci {
-            Ci::Success => out.push(("ci pass".into(), Tone::Good)),
-            Ci::Failure => out.push(("ci fail".into(), Tone::Bad)),
-            Ci::Error => out.push(("ci error".into(), Tone::Bad)),
-            Ci::Pending => out.push(("ci running".into(), Tone::Warn)),
+            Ci::Success => out.push(("\u{2714} ci".into(), Tone::Good)),
+            Ci::Failure => out.push(("\u{2716} ci".into(), Tone::Bad)),
+            Ci::Error => out.push(("! ci".into(), Tone::Bad)),
+            Ci::Pending => out.push(("\u{25d0} ci".into(), Tone::Warn)),
             Ci::None => {}
         }
         if self.reviews_left > 0 && self.review.is_none() {
-            out.push(("reviewed".into(), Tone::Info));
+            out.push(("\u{25cf} reviewed".into(), Tone::Info));
         }
-        if !self.waiting_on.is_empty() {
-            out.push((format!("waiting on {}", self.waiting_on.join(", ")), Tone::Warn));
+        for who in &self.waiting_on {
+            out.push((format!("@{who}"), Tone::Warn));
         }
         out
     }
+}
+
+pub fn clip(text: &str, max: usize) -> String {
+    if text.chars().count() <= max {
+        return text.to_string();
+    }
+    text.chars().take(max.saturating_sub(1)).collect::<String>() + "\u{2026}"
+}
+
+pub fn repo_width<'a>(slugs: impl Iterator<Item = &'a str>) -> usize {
+    slugs.map(|s| s.chars().count()).max().unwrap_or(24).clamp(20, 34)
 }
 
 pub fn plural(n: u64, word: &str) -> String {
