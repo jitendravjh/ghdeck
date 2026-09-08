@@ -21,29 +21,51 @@ An issue closing and the PR that closed it, next to each other. Conflicts, faili
 
 ## Install
 
-### Download a binary
+### Homebrew, macOS and Linux
 
-No Rust needed. macOS on Apple Silicon:
+```sh
+brew install jitendravjh/tap/ghwork
+```
+
+Later on, `brew upgrade ghwork`. This is the easy one, it sorts out PATH and updates for you.
+
+### Without Homebrew
+
+Copy the block for your machine, there is nothing to fill in. Run `uname -m` if you are unsure: `arm64` means Apple Silicon, `x86_64` means Intel.
+
+**macOS, Apple Silicon**
 
 ```sh
 curl -sSfL https://github.com/jitendravjh/ghwork/releases/latest/download/ghwork-aarch64-apple-darwin.tar.gz | tar xz
 sudo mv ghwork /usr/local/bin/
 ```
 
-Same thing for the rest, just swap the file name:
+**macOS, Intel**
 
-| platform | file |
-| --- | --- |
-| macOS, Apple Silicon | `ghwork-aarch64-apple-darwin.tar.gz` |
-| macOS, Intel | `ghwork-x86_64-apple-darwin.tar.gz` |
-| Linux, x86_64 | `ghwork-x86_64-unknown-linux-musl.tar.gz` |
-| Linux, arm64 | `ghwork-aarch64-unknown-linux-musl.tar.gz` |
+```sh
+curl -sSfL https://github.com/jitendravjh/ghwork/releases/latest/download/ghwork-x86_64-apple-darwin.tar.gz | tar xz
+sudo mv ghwork /usr/local/bin/
+```
+
+**Linux, x86_64**
+
+```sh
+curl -sSfL https://github.com/jitendravjh/ghwork/releases/latest/download/ghwork-x86_64-unknown-linux-musl.tar.gz | tar xz
+sudo mv ghwork /usr/local/bin/
+```
+
+**Linux, arm64**
+
+```sh
+curl -sSfL https://github.com/jitendravjh/ghwork/releases/latest/download/ghwork-aarch64-unknown-linux-musl.tar.gz | tar xz
+sudo mv ghwork /usr/local/bin/
+```
 
 Linux builds are static, so any distro works. Checksums are in `SHA256SUMS` on the [release](https://github.com/jitendravjh/ghwork/releases/latest).
 
-If you grab it through a browser rather than curl, macOS will quarantine it since the binary is not signed. Clear that with `xattr -d com.apple.quarantine ghwork`.
+If you download through a browser instead of curl, macOS quarantines the file because the binary is not signed. Clear it with `xattr -d com.apple.quarantine ghwork`.
 
-### Build from source
+### From source
 
 Needs Rust 1.88 or newer and a C compiler, because SQLite is built from source.
 
@@ -53,8 +75,6 @@ brew install rust && xcode-select --install
 # Debian or Ubuntu
 sudo apt install cargo build-essential
 ```
-
-Then:
 
 ```sh
 cargo install --git https://github.com/jitendravjh/ghwork ghwork
