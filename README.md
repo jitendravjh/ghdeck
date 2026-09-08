@@ -7,16 +7,22 @@ All your GitHub work in one list. PRs and issues together, newest first, with th
 GitHub splits these across two pages and neither one tells you if a PR is conflicting or if CI has gone red. Other terminal dashboards keep PRs and issues in separate tabs. This one does not.
 
 ```
-ATTENTION NEEDED [7]   OPEN [13]   YOURS [111]   TO REVIEW [0]   ALL [130]
+ATTENTION NEEDED [4]   OPEN [8]   YOURS [46]   TO REVIEW [0]   ALL [50]
 
- 54m  [ISSUE] SciML/SciMLBenchmarks.jl#126  Fix AdaptiveSDE benchmarks
-      closed   5 comments  jitendravjh commented
- 54m  [PR]    SciML/SciMLBenchmarks.jl#1605  Fix and update AdaptiveSDE benchmarks (#126)
-      merged   37 comments  ChrisRackauckas commented
-  1h  [PR]    JuliaGeometry/Meshes.jl#1429  Add Geodesic primitive
-      draft · ci fail · reviewed   3 comments  jitendravjh reviewed
-  5h  [PR]    kubernetes-sigs/headlamp#7128  i18n: Complete Hindi translations for app and glossary
-      open · changes requested · ci running · waiting on vyncent-t   4 comments  kubernetes-prow commented
+  2h  [PR]    screenpipe/screenpipe#6449  fix(meetings): lock live transcription language
+              ● open · ✖ ci   6 comments   jitendravjh commented
+╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌
+  3d  [ISSUE] JuliaEarth/CoordRefSystems.jl#315  Add support for ESPG:28992
+              ✖ closed   9 comments   jitendravjh commented
+╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌
+  3d  [PR]    JuliaEarth/CoordRefSystems.jl#373  Add EPSG code for Amersfoort / RD New
+              ✔ merged · ✔ approved   1 comment   juliohm approved
+╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌
+  5d  [PR]    JuliaGeometry/Meshes.jl#1428  Add conversion between azimuths and tangents
+              ✔ merged · ✔ approved   3 comments   juliohm approved
+╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌
+ 3mo  [PR]    SciML/NeuralOperators.jl#134  feat: implement CNO (closes #122)
+              ● open · ! conflict   2 comments   jitendravjh commented
 ```
 
 An issue closing and the PR that closed it, next to each other. Conflicts, failing CI and who you are waiting on all show up the same way.
@@ -146,7 +152,7 @@ Windows is untested.
 ghdeck                             # dashboard
 ghdeck list                        # print what needs attention
 ghdeck list all                    # print everything
-ghdeck show calcom/cal.diy#29686   # print one conversation
+ghdeck show JuliaGeometry/Meshes.jl#1428   # print one conversation
 ghdeck sync                        # refresh now
 ```
 

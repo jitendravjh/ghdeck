@@ -90,6 +90,43 @@ const jsonLd = [
 
     <script is:inline>
       (() => {
+        for (const pre of document.querySelectorAll("pre.block, .install-strip pre")) {
+          const wrap = document.createElement("div");
+          wrap.className = "code-wrap";
+          pre.parentNode.insertBefore(wrap, pre);
+          wrap.appendChild(pre);
+
+          const btn = document.createElement("button");
+          btn.className = "copy-btn";
+          btn.type = "button";
+          btn.textContent = "copy";
+          btn.setAttribute("aria-label", "Copy to clipboard");
+          btn.addEventListener("click", async () => {
+            const text = pre.innerText.replace(/\ncopy$/, "").trim();
+            try {
+              await navigator.clipboard.writeText(text);
+            } catch {
+              const ta = document.createElement("textarea");
+              ta.value = text;
+              document.body.appendChild(ta);
+              ta.select();
+              document.execCommand("copy");
+              ta.remove();
+            }
+            btn.textContent = "copied";
+            btn.dataset.done = "";
+            setTimeout(() => {
+              btn.textContent = "copy";
+              delete btn.dataset.done;
+            }, 1400);
+          });
+          wrap.appendChild(btn);
+        }
+      })();
+    </script>
+
+    <script is:inline>
+      (() => {
         const key = "ghdeck-theme";
         document.querySelector("[data-theme-toggle]")?.addEventListener("click", () => {
           const next = document.documentElement.dataset.theme === "dark" ? "light" : "dark";
