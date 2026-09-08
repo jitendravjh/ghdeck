@@ -1,7 +1,7 @@
 use crate::worker::{Boot, Cmd, Evt, Worker};
 use anyhow::Result;
 use chrono::{DateTime, Utc};
-use ghwork_core::{Event, Filter, Item, SyncStats};
+use ghdeck_core::{Event, Filter, Item, SyncStats};
 use std::collections::HashMap;
 
 pub struct App {

@@ -1,16 +1,16 @@
 [package]
-name = "ghwork"
+name = "ghdeck"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
 repository.workspace = true
 
 [[bin]]
-name = "ghwork"
+name = "ghdeck"
 path = "src/main.rs"
 
 [dependencies]
-ghwork-core = { path = "../core" }
+ghdeck-core = { path = "../core" }
 anyhow.workspace = true
 chrono.workspace = true
 crossterm = "0.29"

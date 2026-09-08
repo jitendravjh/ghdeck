@@ -8,11 +8,11 @@ pub struct Cache {
 }
 
 pub fn default_path() -> Result<PathBuf> {
-    let dirs = directories::ProjectDirs::from("", "", "ghwork")
+    let dirs = directories::ProjectDirs::from("", "", "ghdeck")
         .context("could not resolve a data directory")?;
     let dir = dirs.data_dir().to_path_buf();
     std::fs::create_dir_all(&dir)?;
-    Ok(dir.join("ghwork.db"))
+    Ok(dir.join("ghdeck.db"))
 }
 
 impl Cache {

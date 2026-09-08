@@ -1,5 +1,5 @@
 use crate::app::App;
-use ghwork_core::{ago, clip, plural, Filter, Item, Kind, Tone};
+use ghdeck_core::{ago, clip, plural, Filter, Item, Kind, Tone};
 use ratatui::{
     layout::{Constraint, Layout, Rect},
     style::{Color, Style},
@@ -36,7 +36,7 @@ pub fn draw(f: &mut Frame, app: &mut App) {
 }
 
 fn header(f: &mut Frame, area: Rect, app: &App) {
-    let mut spans = vec![Span::styled(" ghwork ", Style::default().bold().fg(Color::Cyan))];
+    let mut spans = vec![Span::styled(" ghdeck ", Style::default().bold().fg(Color::Cyan))];
     for filt in Filter::ORDER.iter() {
         let n = app.count(*filt);
         let active = *filt == app.filter;

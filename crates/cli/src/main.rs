@@ -5,25 +5,25 @@ mod worker;
 use anyhow::{Context, Result};
 use app::App;
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyModifiers};
-use ghwork_core::{ago, plural, Filter, Kind};
+use ghdeck_core::{ago, plural, Filter, Kind};
 use worker::Worker;
 use std::time::Duration;
 
 const HELP: &str = "\
-ghwork, all your github work in one list
+ghdeck, all your github work in one list
 
 usage:
-  ghwork              open the dashboard
-  ghwork list [what]  print to stdout, what is one of attention, open, yours, to-review, all
-  ghwork sync         refresh the cache now
-  ghwork poll         refresh only if github notifications changed, costs nothing otherwise
-  ghwork show <ref>   print the conversation, ref is owner/repo#123
-  ghwork where        print the cache path
+  ghdeck              open the dashboard
+  ghdeck list [what]  print to stdout, what is one of attention, open, yours, to-review, all
+  ghdeck sync         refresh the cache now
+  ghdeck poll         refresh only if github notifications changed, costs nothing otherwise
+  ghdeck show <ref>   print the conversation, ref is owner/repo#123
+  ghdeck where        print the cache path
 ";
 
 fn main() {
     if let Err(e) = run() {
-        eprintln!("ghwork: {e:#}");
+        eprintln!("ghdeck: {e:#}");
         std::process::exit(1);
     }
 }
@@ -34,7 +34,7 @@ fn run() -> Result<()> {
         None => dashboard(),
         Some("list") => list(args.get(1).map(String::as_str)),
         Some("sync") => {
-            let st = ghwork_core::open()?.refresh(5)?;
+            let st = ghdeck_core::open()?.refresh(5)?;
             println!("synced {}, {} api pts, {} left", plural(st.fetched as u64, "item"), st.cost, st.remaining);
             if !st.notif_ok {
                 eprintln!("note: could not read notifications, so poll will always do a full sync");
@@ -42,7 +42,7 @@ fn run() -> Result<()> {
             Ok(())
         }
         Some("poll") => {
-            let st = ghwork_core::open()?.poll(5)?;
+            let st = ghdeck_core::open()?.poll(5)?;
             if st.skipped {
                 println!("nothing changed");
             } else {
@@ -52,7 +52,7 @@ fn run() -> Result<()> {
         }
         Some("show") => show(args.get(1).map(String::as_str)),
         Some("where") => {
-            println!("{}", ghwork_core::cache::default_path()?.display());
+            println!("{}", ghdeck_core::cache::default_path()?.display());
             Ok(())
         }
         Some("-h") | Some("--help") | Some("help") => {
@@ -77,7 +77,7 @@ fn parse_filter(name: Option<&str>) -> Filter {
     }
 }
 
-fn ensure_synced(sync: &mut ghwork_core::Sync) -> Result<Vec<ghwork_core::Item>> {
+fn ensure_synced(sync: &mut ghdeck_core::Sync) -> Result<Vec<ghdeck_core::Item>> {
     let items = sync.items()?;
     if items.is_empty() {
         sync.refresh(5)?;
@@ -88,7 +88,7 @@ fn ensure_synced(sync: &mut ghwork_core::Sync) -> Result<Vec<ghwork_core::Item>>
 
 fn list(what: Option<&str>) -> Result<()> {
     let filter = parse_filter(what);
-    let mut sync = ghwork_core::open()?;
+    let mut sync = ghdeck_core::open()?;
     let items = ensure_synced(&mut sync)?;
     let me = sync.login()?;
     let rows: Vec<_> = items.iter().filter(|it| filter.keeps(it, &me)).collect();
@@ -113,7 +113,7 @@ fn show(target: Option<&str>) -> Result<()> {
     let target = target.context("give a ref like owner/repo#123")?;
     let (repo, number) = target.rsplit_once('#').context("expected owner/repo#123")?;
     let number: u64 = number.parse().context("that number did not parse")?;
-    let events = ghwork_core::open()?.thread(repo, number)?;
+    let events = ghdeck_core::open()?.thread(repo, number)?;
     if events.is_empty() {
         println!("nothing on {repo}#{number}");
         return Ok(());

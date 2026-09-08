@@ -1,6 +1,6 @@
 use anyhow::Result;
 use chrono::{DateTime, Utc};
-use ghwork_core::{Event, Item, SyncStats};
+use ghdeck_core::{Event, Item, SyncStats};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc::{self, Receiver, Sender};
 use std::sync::Arc;
@@ -35,7 +35,7 @@ pub struct Boot {
 
 impl Worker {
     pub fn boot() -> Result<Boot> {
-        let mut sync = ghwork_core::open()?;
+        let mut sync = ghdeck_core::open()?;
         let items = sync.items()?;
         let login = sync.login()?;
         let last_sync = sync.last_sync();

@@ -6,7 +6,7 @@ use std::time::Duration;
 
 const API: &str = "https://api.github.com/graphql";
 const REST: &str = "https://api.github.com/notifications";
-const UA: &str = concat!("ghwork/", env!("CARGO_PKG_VERSION"));
+const UA: &str = concat!("ghdeck/", env!("CARGO_PKG_VERSION"));
 const RETRIES: u32 = 3;
 
 fn retryable(e: &ureq::Error) -> bool {

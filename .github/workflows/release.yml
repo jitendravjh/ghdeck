@@ -40,21 +40,21 @@ jobs:
           echo "CC=musl-gcc" >> "$GITHUB_ENV"
 
       - name: Build
-        run: cargo build --release --locked --target ${{ matrix.target }} --package ghwork
+        run: cargo build --release --locked --target ${{ matrix.target }} --package ghdeck
 
       - name: Package
         run: |
-          name=ghwork-${{ matrix.target }}
-          tar -czf "$name.tar.gz" -C target/${{ matrix.target }}/release ghwork
+          name=ghdeck-${{ matrix.target }}
+          tar -czf "$name.tar.gz" -C target/${{ matrix.target }}/release ghdeck
           shasum -a 256 "$name.tar.gz" > "$name.tar.gz.sha256"
           ls -lh "$name.tar.gz"
 
       - uses: actions/upload-artifact@v7
         with:
-          name: ghwork-${{ matrix.target }}
+          name: ghdeck-${{ matrix.target }}
           path: |
-            ghwork-*.tar.gz
-            ghwork-*.tar.gz.sha256
+            ghdeck-*.tar.gz
+            ghdeck-*.tar.gz.sha256
 
   release:
     needs: build
@@ -105,16 +105,16 @@ jobs:
           ssh-key: ${{ secrets.TAP_DEPLOY_KEY }}
 
       - name: Rebuild the formula
-        run: bash script/formula.sh "${{ steps.tag.outputs.tag }}" > tap/Formula/ghwork.rb
+        run: bash script/formula.sh "${{ steps.tag.outputs.tag }}" > tap/Formula/ghdeck.rb
 
       - name: Push it
         working-directory: tap
         run: |
-          if git diff --quiet Formula/ghwork.rb; then
+          if git diff --quiet Formula/ghdeck.rb; then
             echo "tap already on ${{ steps.tag.outputs.tag }}"
             exit 0
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git commit -q -m "ghwork ${{ steps.tag.outputs.tag }}" Formula/ghwork.rb
+          git commit -q -m "ghdeck ${{ steps.tag.outputs.tag }}" Formula/ghdeck.rb
           git push

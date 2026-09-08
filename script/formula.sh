@@ -3,12 +3,12 @@
 set -euo pipefail
 
 tag="${1:?usage: formula.sh <tag>}"
-repo="${GHWORK_REPO:-jitendravjh/ghwork}"
+repo="${GHDECK_REPO:-jitendravjh/ghdeck}"
 base="https://github.com/$repo/releases/download/$tag"
 
 sums="$(curl -sSfL --retry 6 --retry-delay 5 --retry-all-errors "$base/SHA256SUMS")"
 sum_for() {
-  echo "$sums" | awk -v f="ghwork-$1.tar.gz" '$2 == f { print $1 }'
+  echo "$sums" | awk -v f="ghdeck-$1.tar.gz" '$2 == f { print $1 }'
 }
 
 mac_arm="$(sum_for aarch64-apple-darwin)"
@@ -21,39 +21,39 @@ for name in mac_arm mac_x86 linux_arm linux_x86; do
 done
 
 cat <<RB
-class Ghwork < Formula
+class Ghdeck < Formula
   desc "All your GitHub work in one list, PRs and issues together sorted by last update"
   homepage "https://github.com/$repo"
   license "MIT"
 
   on_macos do
     on_arm do
-      url "$base/ghwork-aarch64-apple-darwin.tar.gz"
+      url "$base/ghdeck-aarch64-apple-darwin.tar.gz"
       sha256 "$mac_arm"
     end
     on_intel do
-      url "$base/ghwork-x86_64-apple-darwin.tar.gz"
+      url "$base/ghdeck-x86_64-apple-darwin.tar.gz"
       sha256 "$mac_x86"
     end
   end
 
   on_linux do
     on_arm do
-      url "$base/ghwork-aarch64-unknown-linux-musl.tar.gz"
+      url "$base/ghdeck-aarch64-unknown-linux-musl.tar.gz"
       sha256 "$linux_arm"
     end
     on_intel do
-      url "$base/ghwork-x86_64-unknown-linux-musl.tar.gz"
+      url "$base/ghdeck-x86_64-unknown-linux-musl.tar.gz"
       sha256 "$linux_x86"
     end
   end
 
   def install
-    bin.install "ghwork"
+    bin.install "ghdeck"
   end
 
   test do
-    assert_match "all your github work", shell_output("#{bin}/ghwork --help")
+    assert_match "all your github work", shell_output("#{bin}/ghdeck --help")
   end
 end
 RB

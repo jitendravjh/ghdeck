@@ -43,7 +43,7 @@ impl Sync {
     }
 
     pub fn poll_interval(&self) -> u64 {
-        if let Some(secs) = std::env::var("GHWORK_POLL_SECS").ok().and_then(|v| v.parse::<u64>().ok()) {
+        if let Some(secs) = std::env::var("GHDECK_POLL_SECS").ok().and_then(|v| v.parse::<u64>().ok()) {
             return secs.max(10);
         }
         self.cache

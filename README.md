@@ -1,4 +1,4 @@
-# ghwork
+# ghdeck
 
 All your GitHub work in one list. PRs and issues together, newest first, with the status of each one sitting right there.
 
@@ -36,10 +36,10 @@ Easiest. Handles PATH and upgrades for you.
 Then:
 
 ```sh
-brew install jitendravjh/tap/ghwork
+brew install jitendravjh/tap/ghdeck
 ```
 
-Upgrade later with `brew upgrade ghwork`, uninstall with `brew uninstall ghwork`.
+Upgrade later with `brew upgrade ghdeck`, uninstall with `brew uninstall ghdeck`.
 
 ### 2. Download a binary
 
@@ -50,36 +50,36 @@ Copy the block for your machine, there is nothing to fill in. Run `uname -m` if 
 **macOS, Apple Silicon**
 
 ```sh
-curl -sSfL https://github.com/jitendravjh/ghwork/releases/latest/download/ghwork-aarch64-apple-darwin.tar.gz | tar xz
-sudo mv ghwork /usr/local/bin/
+curl -sSfL https://github.com/jitendravjh/ghdeck/releases/latest/download/ghdeck-aarch64-apple-darwin.tar.gz | tar xz
+sudo mv ghdeck /usr/local/bin/
 ```
 
 **macOS, Intel**
 
 ```sh
-curl -sSfL https://github.com/jitendravjh/ghwork/releases/latest/download/ghwork-x86_64-apple-darwin.tar.gz | tar xz
-sudo mv ghwork /usr/local/bin/
+curl -sSfL https://github.com/jitendravjh/ghdeck/releases/latest/download/ghdeck-x86_64-apple-darwin.tar.gz | tar xz
+sudo mv ghdeck /usr/local/bin/
 ```
 
 **Linux, x86_64**
 
 ```sh
-curl -sSfL https://github.com/jitendravjh/ghwork/releases/latest/download/ghwork-x86_64-unknown-linux-musl.tar.gz | tar xz
-sudo mv ghwork /usr/local/bin/
+curl -sSfL https://github.com/jitendravjh/ghdeck/releases/latest/download/ghdeck-x86_64-unknown-linux-musl.tar.gz | tar xz
+sudo mv ghdeck /usr/local/bin/
 ```
 
 **Linux, arm64**
 
 ```sh
-curl -sSfL https://github.com/jitendravjh/ghwork/releases/latest/download/ghwork-aarch64-unknown-linux-musl.tar.gz | tar xz
-sudo mv ghwork /usr/local/bin/
+curl -sSfL https://github.com/jitendravjh/ghdeck/releases/latest/download/ghdeck-aarch64-unknown-linux-musl.tar.gz | tar xz
+sudo mv ghdeck /usr/local/bin/
 ```
 
-Linux builds are static, so any distro works. Checksums are in `SHA256SUMS` on the [release](https://github.com/jitendravjh/ghwork/releases/latest).
+Linux builds are static, so any distro works. Checksums are in `SHA256SUMS` on the [release](https://github.com/jitendravjh/ghdeck/releases/latest).
 
-To upgrade, run the same command again. To uninstall, `sudo rm /usr/local/bin/ghwork`.
+To upgrade, run the same command again. To uninstall, `sudo rm /usr/local/bin/ghdeck`.
 
-If you download through a browser rather than curl, macOS quarantines the file because the binary is not signed. Clear it with `xattr -d com.apple.quarantine ghwork`.
+If you download through a browser rather than curl, macOS quarantines the file because the binary is not signed. Clear it with `xattr -d com.apple.quarantine ghdeck`.
 
 ### 3. From source
 
@@ -99,7 +99,7 @@ sudo dnf install cargo gcc
 Then:
 
 ```sh
-cargo install --git https://github.com/jitendravjh/ghwork ghwork
+cargo install --git https://github.com/jitendravjh/ghdeck ghdeck
 ```
 
 The binary lands in `~/.cargo/bin`, so keep that on your PATH. Add this to your `.zshrc` or `.bashrc` if it is not there:
@@ -110,7 +110,7 @@ export PATH="$HOME/.cargo/bin:$PATH"
 
 ## Setup
 
-ghwork needs GitHub credentials. Either way works, pick one.
+ghdeck needs GitHub credentials. Either way works, pick one.
 
 **If you have [gh](https://cli.github.com):**
 
@@ -118,7 +118,7 @@ ghwork needs GitHub credentials. Either way works, pick one.
 gh auth login
 ```
 
-Nothing else to do, ghwork borrows its token.
+Nothing else to do, ghdeck borrows its token.
 
 **Otherwise, a token.** Make one at [github.com/settings/tokens](https://github.com/settings/tokens) with the `repo` scope, then:
 
@@ -131,7 +131,7 @@ Put that line in your `.zshrc` or `.bashrc` so it survives a new shell. gh is no
 Then run it:
 
 ```sh
-ghwork
+ghdeck
 ```
 
 The first run fetches everything and caches it, a few seconds. After that it opens instantly and refreshes in the background.
@@ -141,11 +141,11 @@ Windows is untested.
 ## Use
 
 ```sh
-ghwork                             # dashboard
-ghwork list                        # print what needs attention
-ghwork list all                    # print everything
-ghwork show calcom/cal.diy#29686   # print one conversation
-ghwork sync                        # refresh now
+ghdeck                             # dashboard
+ghdeck list                        # print what needs attention
+ghdeck list all                    # print everything
+ghdeck show calcom/cal.diy#29686   # print one conversation
+ghdeck sync                        # refresh now
 ```
 
 Filters are `attention`, `open`, `yours`, `to-review` and `all`.
@@ -173,7 +173,7 @@ Inside a conversation, up and down scroll, `b` expands bot messages, and left or
 
 One GraphQL query gets PRs and issues interleaved and already sorted. A full sync of 130 items costs about 18 points out of 5000 an hour.
 
-Watching costs nothing. It polls notifications with `If-Modified-Since` and GitHub does not count 304s, so a quiet minute is free. `GHWORK_POLL_SECS` changes the interval if you want.
+Watching costs nothing. It polls notifications with `If-Modified-Since` and GitHub does not count 304s, so a quiet minute is free. `GHDECK_POLL_SECS` changes the interval if you want.
 
 Everything sits in SQLite, so the dashboard opens on cached data and syncs behind you.
 
@@ -196,7 +196,7 @@ git tag -a v0.1.2 -m "what changed" && git push origin v0.1.2
 
 One run then builds all four binaries, publishes the release, and pushes the
 updated formula to [jitendravjh/homebrew-tap](https://github.com/jitendravjh/homebrew-tap),
-so `brew upgrade ghwork` works right away. The tap also re-checks daily as a
+so `brew upgrade ghdeck` works right away. The tap also re-checks daily as a
 safety net if that push ever fails.
 
 MIT

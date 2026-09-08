@@ -610,18 +610,18 @@ dependencies = [
 ]
 
 [[package]]
-name = "ghwork"
+name = "ghdeck"
 version = "0.1.2"
 dependencies = [
  "anyhow",
  "chrono",
  "crossterm",
- "ghwork-core",
+ "ghdeck-core",
  "ratatui",
 ]
 
 [[package]]
-name = "ghwork-core"
+name = "ghdeck-core"
 version = "0.1.2"
 dependencies = [
  "anyhow",
