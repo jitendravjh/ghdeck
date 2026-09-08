@@ -18,6 +18,9 @@
   --term-title: #0b0e14;
   --term-faint: #7a838f;
   --term-sel: #dfe8f5;
+  --term-repo: #3d4655;
+  --term-meta: #4a5262;
+  --term-url: #0a58ca;
   --term-good: #1a7f47;
   --term-bad: #c2344b;
   --term-warn: #8a5a00;
@@ -59,6 +62,9 @@
   --term-title: #ffffff;
   --term-faint: #79828f;
   --term-sel: #1e2837;
+  --term-repo: #b6bec9;
+  --term-meta: #9aa4b2;
+  --term-url: #6cb0f5;
   --term-good: #4ec98a;
   --term-bad: #f2687b;
   --term-warn: #e3b341;
@@ -171,6 +177,10 @@ main { max-width: 900px; margin: 0 auto; padding: 0 24px; }
 .g { color: var(--term-good); } .r { color: var(--term-bad); } .y { color: var(--term-warn); }
 .m { color: var(--term-info); } .b { color: var(--term-blue); } .c { color: var(--term-cyan); }
 .d { color: var(--term-faint); }
+.rp { color: var(--term-repo); }
+.mt { color: var(--term-meta); }
+.u { color: var(--term-url); text-decoration: underline; }
+.hr { color: var(--term-faint); }
 .t { color: var(--term-title); font-weight: 600; }
 .sel { display: block; background: var(--term-sel); }
 
@@ -293,3 +303,25 @@ table.keys td:last-child { color: var(--muted); }
 }
 .footer-actions svg { width: 15px; height: 15px; }
 .footer-meta { font-size: 12.5px; text-transform: uppercase; letter-spacing: 0.05em; }
+
+.install-big {
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: 14px; padding: 30px 30px 26px; margin: 34px 0 10px;
+  box-shadow: var(--shadow);
+}
+.install-big h2 { font-size: 24px; margin: 0 0 6px; letter-spacing: -0.02em; }
+.install-big p { color: var(--muted); margin: 0 0 18px; }
+.install-big .code-frame { margin: 0 0 18px; }
+.install-big pre.block {
+  font-size: 15px; padding: 16px 18px; margin: 0;
+  background: var(--surface-muted);
+}
+.install-big .actions { margin: 0; }
+.brand-tab { font-weight: 700; }
+@media (max-width: 640px) { .install-big { padding: 22px 18px 20px; } }
+
+hr.rule { border: 0; border-top: 1px solid var(--line); margin: 46px 0 8px; }
+.doc .plat {
+  margin: 20px 0 6px; color: var(--text); font-weight: 600; font-size: 14.5px;
+}
+.doc h3 + pre.block, .doc h3 + .code-frame { margin-top: 10px; }

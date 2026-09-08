@@ -51,7 +51,7 @@ Upgrade later with `brew upgrade ghdeck`, uninstall with `brew uninstall ghdeck`
 
 ### 2. Download a binary
 
-**You need nothing.** No Homebrew, no Rust.
+**You need nothing else.**
 
 Copy the block for your machine, there is nothing to fill in. Run `uname -m` if you are unsure which Mac you have: `arm64` is Apple Silicon, `x86_64` is Intel.
 
@@ -91,30 +91,13 @@ If you download through a browser rather than curl, macOS quarantines the file b
 
 ### 3. From source
 
-**You need Rust 1.88 or newer and a C compiler**, because SQLite is built from source.
-
-```sh
-# macOS
-brew install rust && xcode-select --install
-
-# Debian or Ubuntu
-sudo apt install cargo build-essential
-
-# Fedora
-sudo dnf install cargo gcc
-```
-
-Then:
+Only if you want to build it yourself. Needs Rust 1.88 or newer and a C compiler, since SQLite is built from source.
 
 ```sh
 cargo install --git https://github.com/jitendravjh/ghdeck ghdeck
 ```
 
-The binary lands in `~/.cargo/bin`, so keep that on your PATH. Add this to your `.zshrc` or `.bashrc` if it is not there:
-
-```sh
-export PATH="$HOME/.cargo/bin:$PATH"
-```
+The binary lands in `~/.cargo/bin`, so keep that on your PATH.
 
 ## Setup
 

@@ -2,92 +2,81 @@
 import BaseLayout from "../../layouts/BaseLayout.astro";
 ---
 
-<BaseLayout
-  title="Docs"
-  description="Install, set up and use ghdeck, a terminal dashboard for your GitHub work."
->
-  <section class="hero" style="padding-bottom:8px">
+<BaseLayout title="Docs" description="Install, set up and use ghdeck.">
+  <section class="hero" style="padding:56px 0 4px">
     <h1 style="font-size:clamp(30px,5vw,40px)">Docs</h1>
-    <p class="lead">Install, set up, use. About a minute end to end.</p>
+    <p class="lead">Install, connect, use.</p>
   </section>
 
   <div class="doc">
     <h2 id="install">Install</h2>
-    <p>Pick one, then do <a href="#setup">Setup</a>.</p>
 
-    <h3>Homebrew, macOS and Linux</h3>
-    <p>Sorts out your PATH and upgrades for you. If <code>brew --version</code> gives nothing, install Homebrew first from <a href="https://brew.sh">brew.sh</a>.</p>
+    <h3>Homebrew</h3>
     <pre class="block">brew install jitendravjh/tap/ghdeck</pre>
-    <p>Later, <code>brew upgrade ghdeck</code>. To remove it, <code>brew uninstall ghdeck</code>.</p>
+    <p>Upgrade with <code>brew upgrade ghdeck</code>.</p>
 
     <h3>Download a binary</h3>
-    <p>No Homebrew, no Rust. Run <code>uname -m</code> if you are unsure which Mac you have: <code>arm64</code> is Apple Silicon, <code>x86_64</code> is Intel.</p>
-    <h3>macOS, Apple Silicon</h3>
+    <p>Nothing else needed. <code>uname -m</code> tells you which Mac you have.</p>
+    <p class="plat">macOS, Apple Silicon</p>
     <pre class="block">curl -sSfL https://github.com/jitendravjh/ghdeck/releases/latest/download/ghdeck-aarch64-apple-darwin.tar.gz | tar xz
 sudo mv ghdeck /usr/local/bin/</pre>
-    <h3>macOS, Intel</h3>
+    <p class="plat">macOS, Intel</p>
     <pre class="block">curl -sSfL https://github.com/jitendravjh/ghdeck/releases/latest/download/ghdeck-x86_64-apple-darwin.tar.gz | tar xz
 sudo mv ghdeck /usr/local/bin/</pre>
-    <h3>Linux, x86_64</h3>
+    <p class="plat">Linux, x86_64</p>
     <pre class="block">curl -sSfL https://github.com/jitendravjh/ghdeck/releases/latest/download/ghdeck-x86_64-unknown-linux-musl.tar.gz | tar xz
 sudo mv ghdeck /usr/local/bin/</pre>
-    <h3>Linux, arm64</h3>
+    <p class="plat">Linux, arm64</p>
     <pre class="block">curl -sSfL https://github.com/jitendravjh/ghdeck/releases/latest/download/ghdeck-aarch64-unknown-linux-musl.tar.gz | tar xz
 sudo mv ghdeck /usr/local/bin/</pre>
-    <p>Linux builds are static, so any distro works. Checksums are in <code>SHA256SUMS</code> on the <a href="https://github.com/jitendravjh/ghdeck/releases/latest">release</a>. If you download through a browser rather than curl, macOS quarantines the file because the binary is not signed. Clear it with <code>xattr -d com.apple.quarantine ghdeck</code>.</p>
+    <p>Linux builds are static, so any distro works. Checksums are on the <a href="https://github.com/jitendravjh/ghdeck/releases/latest">release</a>. Downloading through a browser rather than curl leaves a macOS quarantine flag, cleared with <code>xattr -d com.apple.quarantine ghdeck</code>.</p>
 
     <h3>From source</h3>
-    <p>Needs Rust 1.88 or newer and a C compiler, because SQLite is built from source.</p>
-    <pre class="block"><span class="d"># macOS</span>
-brew install rust &amp;&amp; xcode-select --install
-<span class="d"># Debian or Ubuntu</span>
-sudo apt install cargo build-essential
-<span class="d"># Fedora</span>
-sudo dnf install cargo gcc
+    <p>Only if you want to build it yourself. Needs Rust 1.88 and a C compiler.</p>
+    <pre class="block">cargo install --git https://github.com/jitendravjh/ghdeck ghdeck</pre>
 
-cargo install --git https://github.com/jitendravjh/ghdeck ghdeck</pre>
-    <p>The binary lands in <code>~/.cargo/bin</code>, so keep that on your PATH.</p>
+    <hr class="rule" />
 
     <h2 id="setup">Setup</h2>
-    <p>ghdeck needs GitHub credentials. Either way works, pick one.</p>
+    <p>Pick one, then run <code>ghdeck</code>.</p>
     <h3>With gh</h3>
-    <p>If you have <a href="https://cli.github.com">gh</a>, that is the whole thing. ghdeck borrows its token.</p>
     <pre class="block">gh auth login</pre>
     <h3>With a token</h3>
-    <p>Make one with the <code>repo</code> scope at <a href="https://github.com/settings/tokens">github.com/settings/tokens</a>, then put this in your <code>.zshrc</code> or <code>.bashrc</code> so it survives a new shell. gh is not needed if you go this way.</p>
+    <p>Needs the <code>repo</code> scope, from <a href="https://github.com/settings/tokens">github.com/settings/tokens</a>. Put it in your shell profile. gh is not needed this way.</p>
     <pre class="block">export GITHUB_TOKEN=ghp_your_token_here</pre>
-    <p>Then run it. The first run fetches everything and caches it, a few seconds. After that it opens instantly and refreshes in the background.</p>
-    <pre class="block">ghdeck</pre>
-    <p>Windows is untested.</p>
+    <p>The first run caches everything, a few seconds. After that it opens instantly and refreshes on its own.</p>
+
+    <hr class="rule" />
 
     <h2 id="use">Use</h2>
-    <pre class="block">ghdeck                             <span class="d"># dashboard</span>
-ghdeck list                        <span class="d"># print what needs attention</span>
-ghdeck list all                    <span class="d"># print everything</span>
-ghdeck show JuliaGeometry/Meshes.jl#1428  <span class="d"># print one conversation</span>
-ghdeck sync                        <span class="d"># refresh now</span>
-ghdeck --version</pre>
-    <p>Filters are <code>attention</code>, <code>open</code>, <code>yours</code>, <code>to-review</code> and <code>all</code>. Attention needed means open items that are conflicting, have changes requested, have CI failing, or are waiting on your review.</p>
+    <pre class="block">ghdeck                                    <span class="d"># dashboard</span>
+ghdeck list                               <span class="d"># what needs attention</span>
+ghdeck list all                           <span class="d"># everything</span>
+ghdeck show JuliaGeometry/Meshes.jl#1428  <span class="d"># one conversation</span>
+ghdeck sync                               <span class="d"># refresh now</span></pre>
+    <p>Filters are <code>attention</code>, <code>open</code>, <code>yours</code>, <code>to-review</code> and <code>all</code>. Attention means open items that are conflicting, have changes requested, have CI failing, or wait on your review.</p>
 
     <h3>Keys</h3>
     <table class="keys">
       <tr><td>up down</td><td>move</td></tr>
       <tr><td>left right</td><td>switch filter</td></tr>
-      <tr><td>1 to 5</td><td>jump straight to a filter</td></tr>
+      <tr><td>1 to 5</td><td>jump to a filter</td></tr>
       <tr><td>enter</td><td>read the conversation</td></tr>
       <tr><td>o</td><td>open in browser</td></tr>
       <tr><td>y</td><td>copy url</td></tr>
       <tr><td>r</td><td>sync</td></tr>
-      <tr><td>/</td><td>search title, repo, label</td></tr>
+      <tr><td>/</td><td>search</td></tr>
       <tr><td>?</td><td>help</td></tr>
       <tr><td>q</td><td>quit</td></tr>
     </table>
-    <p>Inside a conversation, up and down scroll, <code>b</code> expands bot messages, and left or esc takes you back.</p>
+    <p>In a conversation, up and down scroll, <code>b</code> expands bot messages, left or esc goes back.</p>
 
-    <h2 id="how">How it stays cheap</h2>
-    <p>One GraphQL query gets PRs and issues interleaved and already sorted. A full sync of 130 items costs about 18 points out of 5000 an hour.</p>
-    <p>Watching costs nothing. It polls notifications with <code>If-Modified-Since</code> and GitHub does not count 304 responses, so a quiet minute is free. <code>GHDECK_POLL_SECS</code> changes the interval.</p>
-    <p>Everything sits in SQLite, so the dashboard opens on cached data and syncs behind you. Bots collapse to one line in a conversation, otherwise codecov and CI comments bury the actual discussion.</p>
+    <hr class="rule" />
+
+    <h2 id="how">Rate limits</h2>
+    <p>A full sync of 130 items costs about 18 points of 5000 an hour. Watching costs nothing, because GitHub does not count the conditional request it uses. <code>GHDECK_POLL_SECS</code> changes the interval.</p>
+
+    <hr class="rule" />
 
     <h2 id="limits">Not there yet</h2>
     <ul>

@@ -4,21 +4,25 @@ import Terminal from "../components/Terminal.astro";
 
 const repo = "https://github.com/jitendravjh/ghdeck";
 
-const termHtml = `<span class="tabs">ghdeck  <b>ATTENTION NEEDED [4]</b>  OPEN [8]  YOURS [46]  TO REVIEW [0]  ALL [50]</span>
-<span class="sel"> <span class="d">2h</span>  <span class="b">[PR]</span>    <span class="d">screenpipe/screenpipe#6449</span>  <span class="t">fix(meetings): lock live transcription</span>
-             <span class="g">● open</span> <span class="d">·</span> <span class="r">✖ ci</span>   <span class="d">6 comments</span></span>
-<span class="d">╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌</span>
- <span class="d">3d</span>  <span class="c">[ISSUE]</span> <span class="d">JuliaEarth/CoordRefSystems.jl#315</span>  <span class="t">Add support for ESPG:28992</span>
-             <span class="r">✖ closed</span>   <span class="d">9 comments</span>
-<span class="d">╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌</span>
- <span class="d">3d</span>  <span class="b">[PR]</span>    <span class="d">JuliaEarth/CoordRefSystems.jl#373</span>  <span class="t">Add EPSG code for Amersfoort / RD New</span>
-             <span class="m">✔ merged</span> <span class="d">·</span> <span class="g">✔ approved</span>   <span class="d">1 comment</span>
-<span class="d">╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌</span>
- <span class="d">5d</span>  <span class="b">[PR]</span>    <span class="d">JuliaGeometry/Meshes.jl#1428</span>  <span class="t">Add conversion between azimuths</span>
-             <span class="m">✔ merged</span> <span class="d">·</span> <span class="g">✔ approved</span>   <span class="d">3 comments</span>
-<span class="d">╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌</span>
-<span class="d">3mo</span>  <span class="b">[PR]</span>    <span class="d">SciML/NeuralOperators.jl#134</span>  <span class="t">feat: implement CNO (closes #122)</span>
-             <span class="g">● open</span> <span class="d">·</span> <span class="r">! conflict</span>   <span class="d">2 comments</span>`;
+const termHtml = `<span class="c"><b class="brand-tab">ghdeck</b></span>  <span class="tabs"><b>ATTENTION NEEDED [4]</b>  OPEN [8]  YOURS [46]  TO REVIEW [0]  ALL [50]</span>
+<span class="sel"><span class="d"> 2h</span>  <span class="b">[PR]   </span> <span class="rp">screenpipe/screenpipe#6449</span>  <span class="t">fix(meetings): lock live transcription language</span>
+             <span class="g">● open</span> <span class="d">·</span> <span class="r">✖ ci</span>   <span class="d">6 comments   jitendravjh commented</span></span>
+<span class="d">╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌</span>
+<span class="d"> 3d</span>  <span class="c">[ISSUE]</span> <span class="rp">JuliaEarth/CoordRefSystems.jl#315</span>  <span class="t">Add support for ESPG:28992</span>
+             <span class="r">✖ closed</span>   <span class="d">9 comments   jitendravjh commented</span>
+<span class="d">╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌</span>
+<span class="d"> 3d</span>  <span class="b">[PR]   </span> <span class="rp">JuliaEarth/CoordRefSystems.jl#373</span>  <span class="t">Add EPSG code for Amersfoort / RD New</span>
+             <span class="m">✔ merged</span> <span class="d">·</span> <span class="g">✔ approved</span>   <span class="d">1 comment   juliohm approved</span>
+<span class="d">╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌</span>
+<span class="d"> 5d</span>  <span class="b">[PR]   </span> <span class="rp">JuliaGeometry/Meshes.jl#1428</span>  <span class="t">Add conversion between azimuths and tangents</span>
+             <span class="m">✔ merged</span> <span class="d">·</span> <span class="g">✔ approved</span>   <span class="d">3 comments   juliohm approved</span>
+<span class="d">╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌</span>
+<span class="d">3mo</span>  <span class="b">[PR]   </span> <span class="rp">SciML/NeuralOperators.jl#134</span>  <span class="t">feat: implement CNO (closes #122)</span>
+             <span class="g">● open</span> <span class="d">·</span> <span class="r">! conflict</span>   <span class="d">2 comments   jitendravjh commented</span>
+<span class="hr">────────────────────────────────────────────────────────────────────────────</span>
+<span class="u">https://github.com/screenpipe/screenpipe/pull/6449</span>
+<span class="mt">by jitendravjh   +255 -17 in 3 files</span>
+<span class="d">↑↓ move · ←→ filter · enter read · o open · r sync · / search · ? help · q quit</span>`;
 const structuredData = [
   {
     "@context": "https://schema.org",
@@ -33,44 +37,6 @@ const structuredData = [
     license: "https://opensource.org/licenses/MIT",
     author: { "@type": "Person", name: "Jitendra Verma" },
     offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
-  },
-  {
-    "@context": "https://schema.org",
-    "@type": "FAQPage",
-    mainEntity: [
-      {
-        "@type": "Question",
-        name: "What is ghdeck?",
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: "ghdeck is a terminal dashboard that puts every GitHub pull request and issue you are involved in into one list, sorted by when it last changed, with merge conflicts, CI state and review decisions shown on each row.",
-        },
-      },
-      {
-        "@type": "Question",
-        name: "How is it different from gh-dash?",
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: "gh-dash keeps pull requests and issues in separate configured sections. ghdeck interleaves them in a single list so an issue and the pull request that closed it sit next to each other.",
-        },
-      },
-      {
-        "@type": "Question",
-        name: "Does it use up my GitHub rate limit?",
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: "Barely. A full sync of 130 items costs about 18 points out of 5000 an hour, and watching for changes is free because it uses a conditional request that GitHub does not count.",
-        },
-      },
-      {
-        "@type": "Question",
-        name: "Do I need Rust to install it?",
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: "No. Install with Homebrew, or download a prebuilt binary for macOS or Linux. Building from source is optional.",
-        },
-      },
-    ],
   },
 ];
 ---
@@ -92,6 +58,17 @@ const structuredData = [
       An issue closing and the pull request that closed it, next to each other.
       That is the thing no other tool does.
     </p>
+
+    <div class="install-big">
+      <h2>Install</h2>
+      <p>macOS and Linux. One line, then you are done.</p>
+      <pre class="block">brew install jitendravjh/tap/ghdeck</pre>
+      <div class="actions">
+        <a class="button" href="/docs/#setup">Connect your account</a>
+        <a class="button secondary" href="/docs/#install">Other ways to install</a>
+      </div>
+    </div>
+
   </section>
 
   <section class="section">
@@ -126,27 +103,11 @@ const structuredData = [
       </div>
       <div class="feature">
         <h3>One small binary</h3>
-        <p>Rust, about 2 MB, no runtime to install. Static builds on Linux, so any distro works.</p>
+        <p>About 2 MB, nothing to install alongside it. Static on Linux, so any distro works.</p>
       </div>
     </div>
   </section>
 
-  <section class="section">
-    <div class="section-header">
-      <h2>Start in one line.</h2>
-      <p>macOS and Linux. No Rust, no runtime, no config file to write first.</p>
-    </div>
-    <div class="install-strip">
-      <div>
-        <strong>Homebrew</strong>
-        <span>Handles your PATH and upgrades. Prebuilt binaries are on the release page if you would rather not use brew.</span>
-      </div>
-      <pre><code>brew install jitendravjh/tap/ghdeck</code></pre>
-      <div class="actions" style="margin:0">
-        <a class="button secondary" href="/docs/#install">Other ways to install</a>
-      </div>
-    </div>
-  </section>
 
   <section class="section">
     <div class="section-header">
@@ -156,7 +117,7 @@ const structuredData = [
     <div class="feature-grid">
       <a class="doc-link" href="/docs/#install">
         <h3>Install</h3>
-        <p>Homebrew, a prebuilt binary for your platform, or from source with Rust.</p>
+        <p>Homebrew, or a prebuilt binary for your platform. Nothing to compile.</p>
       </a>
       <a class="doc-link" href="/docs/#setup">
         <h3>Setup</h3>
@@ -169,27 +130,4 @@ const structuredData = [
     </div>
   </section>
 
-  <section class="section">
-    <div class="section-header">
-      <h2>FAQ</h2>
-    </div>
-    <div class="feature-grid">
-      <div class="feature">
-        <h3>How is it different from gh-dash?</h3>
-        <p>gh-dash keeps PRs and issues in separate configured sections. ghdeck interleaves them, so an issue and the PR that closed it sit together.</p>
-      </div>
-      <div class="feature">
-        <h3>Will it burn my rate limit?</h3>
-        <p>A full sync of 130 items costs about 18 points of 5000 an hour. Watching costs nothing, because 304 responses are not counted.</p>
-      </div>
-      <div class="feature">
-        <h3>Do I need Rust?</h3>
-        <p>No. Homebrew or a prebuilt binary. Building from source is optional.</p>
-      </div>
-      <div class="feature">
-        <h3>Does it work without gh?</h3>
-        <p>Yes. Set a <code>GITHUB_TOKEN</code> with the repo scope and gh is not needed at all.</p>
-      </div>
-    </div>
-  </section>
 </BaseLayout>
