@@ -65,6 +65,8 @@ pub struct Item {
     pub last_actor: Option<String>,
     pub last_action: Option<String>,
     pub review_requested_of_me: bool,
+    #[serde(default)]
+    pub mentioned: bool,
     pub state_reason: Option<String>,
 }
 

@@ -10,7 +10,7 @@ const all: Heading[] = headings ?? [];
 const groups = [
   { title: "Install", slugs: ["homebrew", "download-a-binary", "from-source"] },
   { title: "Setup", slugs: ["connect-your-account", "first-run"] },
-  { title: "Use", slugs: ["commands", "filters", "keys"] },
+  { title: "Use", slugs: ["commands", "filters", "other-people", "keys"] },
 ];
 const byslug = new Map(all.map((h) => [h.slug, h]));
 const nav = groups.map((g) => ({

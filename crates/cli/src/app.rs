@@ -24,6 +24,14 @@ pub struct App {
     pub show_bots: bool,
     pub threads: HashMap<String, Vec<Event>>,
     pub loading: Option<String>,
+    pub who: Option<String>,
+    pub who_total: u64,
+    pub who_loading: bool,
+    pub asking: bool,
+    pub ask: String,
+    ticket: u64,
+    mine: Vec<Item>,
+    mine_filter: Filter,
     worker: Worker,
 }
 
@@ -49,6 +57,14 @@ impl App {
             show_bots: false,
             threads: HashMap::new(),
             loading: None,
+            who: None,
+            who_total: 0,
+            who_loading: false,
+            asking: false,
+            ask: String::new(),
+            ticket: 0,
+            mine: Vec::new(),
+            mine_filter: Filter::Attention,
             worker: boot.worker,
         };
         app.reindex();
@@ -59,14 +75,38 @@ impl App {
         self.worker.is_busy()
     }
 
+    fn subject(&self) -> &str {
+        self.who.as_deref().unwrap_or(&self.me)
+    }
+
+    pub fn filters(&self) -> &'static [Filter] {
+        if self.who.is_some() {
+            &Filter::PERSON
+        } else {
+            &Filter::ORDER
+        }
+    }
+
     pub fn reindex(&mut self) {
-        let q = self.search.to_lowercase();
         let keep = self.selected().map(|it| it.url.clone());
+        self.rebuild(keep);
+    }
+
+    // the old view indexes into the old list, so note the selection before swapping lists
+    fn replace_items(&mut self, items: Vec<Item>) {
+        let keep = self.selected().map(|it| it.url.clone());
+        self.items = items;
+        self.rebuild(keep);
+    }
+
+    fn rebuild(&mut self, keep: Option<String>) {
+        let q = self.search.to_lowercase();
+        let subject = self.subject().to_string();
         self.view = self
             .items
             .iter()
             .enumerate()
-            .filter(|(_, it)| self.filter.keeps(it, &self.me))
+            .filter(|(_, it)| self.filter.keeps(it, &subject))
             .filter(|(_, it)| {
                 q.is_empty()
                     || it.title.to_lowercase().contains(&q)
@@ -82,7 +122,7 @@ impl App {
     }
 
     pub fn selected(&self) -> Option<&Item> {
-        self.view.get(self.cursor).map(|&i| &self.items[i])
+        self.view.get(self.cursor).and_then(|&i| self.items.get(i))
     }
 
     pub fn move_by(&mut self, delta: isize) {
@@ -103,15 +143,59 @@ impl App {
         self.reindex();
     }
 
+    pub fn pick_filter(&mut self, i: usize) {
+        if let Some(&f) = self.filters().get(i) {
+            self.set_filter(f);
+        }
+    }
+
     pub fn cycle_filter(&mut self, forward: bool) {
-        let cur = Filter::ORDER.iter().position(|f| *f == self.filter).unwrap_or(0);
-        let n = Filter::ORDER.len();
+        let order = self.filters();
+        let cur = order.iter().position(|f| *f == self.filter).unwrap_or(0);
+        let n = order.len();
         let next = if forward { (cur + 1) % n } else { (cur + n - 1) % n };
-        self.set_filter(Filter::ORDER[next]);
+        self.set_filter(order[next]);
     }
 
     pub fn count(&self, f: Filter) -> usize {
-        self.items.iter().filter(|it| f.keeps(it, &self.me)).count()
+        let subject = self.subject();
+        self.items.iter().filter(|it| f.keeps(it, subject)).count()
+    }
+
+    pub fn look_up(&mut self, input: &str) {
+        let Some(login) = ghdeck_core::clean_login(input) else {
+            self.status = format!("{} is not a github username", input.trim());
+            return;
+        };
+        if self.who.is_none() {
+            self.mine = std::mem::take(&mut self.items);
+            self.mine_filter = self.filter;
+        } else {
+            self.items.clear();
+        }
+        self.filter = Filter::All;
+        self.cursor = 0;
+        self.search.clear();
+        self.who_total = 0;
+        self.who_loading = true;
+        self.status = format!("loading {login}");
+        self.ticket = self.worker.look_up(login.clone(), 5);
+        self.who = Some(login);
+        self.rebuild(None);
+    }
+
+    pub fn back_to_mine(&mut self) {
+        if self.who.take().is_none() {
+            return;
+        }
+        self.worker.stop_look_up();
+        self.items = std::mem::take(&mut self.mine);
+        self.filter = self.mine_filter;
+        self.who_loading = false;
+        self.cursor = 0;
+        self.search.clear();
+        self.status.clear();
+        self.rebuild(None);
     }
 
     pub fn open_detail(&mut self) {
@@ -155,6 +239,12 @@ impl App {
     }
 
     pub fn refresh(&mut self, pages: usize) {
+        if let Some(login) = self.who.clone() {
+            self.who_loading = true;
+            self.status = format!("loading {login}");
+            self.ticket = self.worker.look_up(login, pages);
+            return;
+        }
         self.status = "syncing".into();
         self.worker.send(Cmd::Refresh(pages));
     }
@@ -167,11 +257,34 @@ impl App {
                     if !login.is_empty() {
                         self.me = login;
                     }
-                    self.items = items;
                     self.stats = Some(stats);
                     self.last_sync = Some(Utc::now());
-                    self.status = format!("{} items, {} api pts", stats.fetched, stats.cost);
-                    self.reindex();
+                    if self.who.is_some() {
+                        self.mine = items;
+                    } else {
+                        self.status = format!("{} items, {} api pts", stats.fetched, stats.cost);
+                        self.replace_items(items);
+                    }
+                }
+                Evt::Activity { ticket, items, total, cost } => {
+                    if self.who.is_none() || ticket != self.ticket {
+                        continue;
+                    }
+                    self.who_total = total;
+                    self.replace_items(items);
+                    if let Some(cost) = cost {
+                        self.who_loading = false;
+                        self.status = format!("{} items, {} api pts", self.items.len(), cost);
+                    }
+                }
+                Evt::ActivityFailed { ticket, error } => {
+                    if ticket != self.ticket {
+                        continue;
+                    }
+                    if let Some(who) = &self.who {
+                        self.who_loading = false;
+                        self.status = format!("could not load {who}: {error}");
+                    }
                 }
                 Evt::Thread { url, events } => {
                     if self.loading.as_deref() == Some(url.as_str()) {

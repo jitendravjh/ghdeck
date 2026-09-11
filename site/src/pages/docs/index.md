@@ -91,6 +91,7 @@ ghdeck                                    # dashboard
 ghdeck list                               # what needs attention
 ghdeck list all                           # everything
 ghdeck show JuliaGeometry/Meshes.jl#1428  # one conversation
+ghdeck user juliohm                       # someone else's prs and issues
 ghdeck sync                               # refresh now
 ghdeck --version
 ```
@@ -100,6 +101,12 @@ ghdeck --version
 `attention`, `open`, `yours`, `to-review` and `all`.
 
 Attention means open items that are conflicting, have changes requested, have CI failing, or wait on your review.
+
+## Other people
+
+Press `u` in the dashboard and type a username, or run `ghdeck user juliohm`. You get their PRs and issues newest first, with the same status on every row. Esc takes you back to your own list.
+
+Filters there are `all`, `authored`, `mentioned` and `open`. You only see what your own token can see, so their work in private repos you have no access to won't show up.
 
 ## Keys
 
@@ -113,6 +120,7 @@ Attention means open items that are conflicting, have changes requested, have CI
 | y | copy url |
 | r | sync |
 | / | search |
+| u | someone else's prs and issues |
 | ? | help |
 | q | quit |
 

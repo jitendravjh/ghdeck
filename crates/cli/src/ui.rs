@@ -1,5 +1,5 @@
 use crate::app::App;
-use ghdeck_core::{ago, clip, plural, Filter, Item, Kind, Tone};
+use ghdeck_core::{ago, clip, plural, Item, Kind, Tone};
 use ratatui::{
     layout::{Constraint, Layout, Rect},
     style::{Color, Style},
@@ -37,7 +37,10 @@ pub fn draw(f: &mut Frame, app: &mut App) {
 
 fn header(f: &mut Frame, area: Rect, app: &App) {
     let mut spans = vec![Span::styled(" ghdeck ", Style::default().bold().fg(Color::Cyan))];
-    for filt in Filter::ORDER.iter() {
+    if let Some(who) = &app.who {
+        spans.push(Span::styled(format!(" @{who} "), Style::default().bold().fg(Color::Yellow)));
+    }
+    for filt in app.filters() {
         let n = app.count(*filt);
         let active = *filt == app.filter;
         let style = if active {
@@ -47,8 +50,15 @@ fn header(f: &mut Frame, area: Rect, app: &App) {
         };
         spans.push(Span::styled(format!(" {} [{}] ", filt.label(), n), style));
     }
-    if app.busy() {
+    if app.who_loading {
+        spans.push(Span::styled("  loading", Style::default().fg(Color::Yellow)));
+    } else if app.busy() {
         spans.push(Span::styled("  syncing", Style::default().fg(Color::Yellow)));
+    } else if app.who.is_some() && app.who_total > app.items.len() as u64 {
+        spans.push(Span::styled(
+            format!("  newest {} of {}", app.items.len(), app.who_total),
+            Style::default().fg(Color::DarkGray),
+        ));
     }
     f.render_widget(Line::from(spans), area);
 }
@@ -100,10 +110,13 @@ fn row(it: &Item, width: usize) -> ListItem<'static> {
 
 fn list(f: &mut Frame, area: Rect, app: &mut App) {
     if app.view.is_empty() {
-        let msg = if app.items.is_empty() {
-            "nothing cached yet, press r to sync"
-        } else {
-            "nothing matches this filter"
+        let msg = match &app.who {
+            Some(who) if app.who_loading => format!("loading {who}"),
+            Some(who) if app.items.is_empty() => {
+                format!("nothing for {who}, check the name, or their work is in repos you cannot see")
+            }
+            None if app.items.is_empty() => "nothing cached yet, press r to sync".into(),
+            _ => "nothing matches this filter".into(),
         };
         f.render_widget(
             Paragraph::new(msg).style(Style::default().fg(Color::DarkGray)),
@@ -257,14 +270,18 @@ fn footer(f: &mut Frame, area: Rect, app: &App) {
         }
     }
 
-    let hint = if app.searching {
+    let hint = if app.asking {
+        format!("username: {}_", app.ask)
+    } else if app.searching {
         format!("search: {}_", app.search)
     } else if !app.status.is_empty() {
         app.status.clone()
     } else if app.detail {
         "↑↓ scroll · b bots · r reload · o open · ← back".into()
+    } else if app.who.is_some() {
+        "↑↓ move · ←→ filter · enter read · o open · r reload · u someone else · esc back to yours".into()
     } else {
-        "↑↓ move · ←→ filter · enter read · o open · r sync · / search · ? help · q quit".into()
+        "↑↓ move · ←→ filter · enter read · o open · r sync · u user · / search · ? help · q quit".into()
     };
     let mut bar = vec![Span::styled(hint, Style::default().fg(Color::DarkGray))];
     bar.push(Span::styled(
@@ -307,7 +324,8 @@ fn help(f: &mut Frame, area: Rect) {
         ("r", "sync now"),
         ("R", "deep sync, more pages"),
         ("/", "search title, repo, label"),
-        ("esc", "clear search"),
+        ("u", "someone else's prs and issues"),
+        ("esc", "clear search, or back to your list"),
         ("?", "close help"),
         ("q", "quit"),
         ("", ""),

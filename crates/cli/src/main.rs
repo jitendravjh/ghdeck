@@ -2,11 +2,12 @@ mod app;
 mod ui;
 mod worker;
 
-use anyhow::{Context, Result};
+use anyhow::{bail, Context, Result};
 use app::App;
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyModifiers};
 use ghdeck_core::{ago, plural, Filter, Kind};
 use worker::Worker;
+use std::io::{IsTerminal, Write};
 use std::time::Duration;
 
 const HELP: &str = "\
@@ -18,6 +19,8 @@ usage:
   ghdeck sync         refresh the cache now
   ghdeck poll         refresh only if github notifications changed, costs nothing otherwise
   ghdeck show <ref>   print the conversation, ref is owner/repo#123
+  ghdeck user <name>  print someone's prs and issues, newest first
+                      add authored, mentioned or open to narrow it
   ghdeck where        print the cache path
 
   --version, -V       print the version
@@ -25,6 +28,12 @@ usage:
 
 fn main() {
     if let Err(e) = run() {
+        let closed = e.chain().any(|c| {
+            c.downcast_ref::<std::io::Error>().is_some_and(|io| io.kind() == std::io::ErrorKind::BrokenPipe)
+        });
+        if closed {
+            return;
+        }
         eprintln!("ghdeck: {e:#}");
         std::process::exit(1);
     }
@@ -53,6 +62,7 @@ fn run() -> Result<()> {
             Ok(())
         }
         Some("show") => show(args.get(1).map(String::as_str)),
+        Some("user") => user(args.get(1).map(String::as_str), args.get(2).map(String::as_str)),
         Some("where") => {
             println!("{}", ghdeck_core::cache::default_path()?.display());
             Ok(())
@@ -98,10 +108,54 @@ fn list(what: Option<&str>) -> Result<()> {
     let items = ensure_synced(&mut sync)?;
     let me = sync.login()?;
     let rows: Vec<_> = items.iter().filter(|it| filter.keeps(it, &me)).collect();
-    println!("{}, {}\n", plural(rows.len() as u64, "item"), filter.label().to_lowercase());
+    let mut out = std::io::stdout().lock();
+    writeln!(out, "{}, {}\n", plural(rows.len() as u64, "item"), filter.label().to_lowercase())?;
+    print_rows(&mut out, &rows)?;
+    Ok(())
+}
+
+fn user(who: Option<&str>, what: Option<&str>) -> Result<()> {
+    let who = who.context("give a username, like ghdeck user juliohm")?;
+    let login = ghdeck_core::clean_login(who).with_context(|| format!("{who} is not a github username"))?;
+    let filter = match what {
+        None | Some("all") => Filter::All,
+        Some("authored") => Filter::Authored,
+        Some("mentioned") => Filter::Mentioned,
+        Some("open") => Filter::Open,
+        Some(other) => bail!("{other} is not a filter here, use all, authored, mentioned or open"),
+    };
+    let tty = std::io::stderr().is_terminal();
+    let mut progress = |items: &[ghdeck_core::Item], _: u64| {
+        if tty {
+            eprint!("\rloading {login}, {} so far", items.len());
+        }
+        true
+    };
+    let got = ghdeck_core::open()?.activity(&login, 5, &mut progress);
+    if tty {
+        eprint!("\r\x1b[K");
+    }
+    let got = got?;
+
+    let mut out = std::io::stdout().lock();
+    if got.involved_total == 0 {
+        writeln!(out, "nothing for {login}, check the name, or their work is in repos you cannot see")?;
+        return Ok(());
+    }
+    let rows: Vec<_> = got.items.iter().filter(|it| filter.keeps(it, &login)).collect();
+    writeln!(out, "{}, {} for {login}", plural(rows.len() as u64, "item"), filter.label().to_lowercase())?;
+    if got.involved_total > got.items.len() as u64 {
+        writeln!(out, "from the newest {} of {} they are involved in", got.items.len(), got.involved_total)?;
+    }
+    writeln!(out)?;
+    print_rows(&mut out, &rows)?;
+    Ok(())
+}
+
+fn print_rows(out: &mut impl Write, rows: &[&ghdeck_core::Item]) -> std::io::Result<()> {
     for it in rows {
         let kind = if it.kind == Kind::Pr { "[PR]" } else { "[ISSUE]" };
-        println!("{:>4}  {kind:<7} {}  {}", ago(it.updated_at), it.slug(), it.title);
+        writeln!(out, "{:>4}  {kind:<7} {}  {}", ago(it.updated_at), it.slug(), it.title)?;
         let chips: Vec<String> = it.chips().into_iter().map(|(t, _)| t).collect();
         let mut line = format!("{:<14}{}", "", chips.join(" \u{b7} "));
         if it.comments > 0 {
@@ -110,7 +164,7 @@ fn list(what: Option<&str>) -> Result<()> {
         if let Some(a) = it.activity() {
             line.push_str(&format!("   {a}"));
         }
-        println!("{line}");
+        writeln!(out, "{line}")?;
     }
     Ok(())
 }
@@ -120,23 +174,24 @@ fn show(target: Option<&str>) -> Result<()> {
     let (repo, number) = target.rsplit_once('#').context("expected owner/repo#123")?;
     let number: u64 = number.parse().context("that number did not parse")?;
     let events = ghdeck_core::open()?.thread(repo, number)?;
+    let mut out = std::io::stdout().lock();
     if events.is_empty() {
-        println!("nothing on {repo}#{number}");
+        writeln!(out, "nothing on {repo}#{number}")?;
         return Ok(());
     }
     for e in events {
-        println!("{} {} {}", e.at.format("%Y-%m-%d %H:%M"), e.who, e.label);
+        writeln!(out, "{} {} {}", e.at.format("%Y-%m-%d %H:%M"), e.who, e.label)?;
         if e.bot {
             let gist = e.gist();
             if !gist.is_empty() {
-                println!("    {gist}");
+                writeln!(out, "    {gist}")?;
             }
         } else {
             for line in e.body.lines() {
-                println!("    {line}");
+                writeln!(out, "    {line}")?;
             }
         }
-        println!();
+        writeln!(out)?;
     }
     Ok(())
 }
@@ -180,6 +235,28 @@ fn loop_events(
 }
 
 fn handle(app: &mut App, key: KeyEvent) {
+    if app.asking {
+        match key.code {
+            KeyCode::Esc => {
+                app.asking = false;
+                app.ask.clear();
+            }
+            KeyCode::Enter => {
+                app.asking = false;
+                let who = std::mem::take(&mut app.ask);
+                if !who.trim().is_empty() {
+                    app.look_up(&who);
+                }
+            }
+            KeyCode::Backspace => {
+                app.ask.pop();
+            }
+            KeyCode::Char(c) if !c.is_whitespace() && app.ask.len() < 40 => app.ask.push(c),
+            _ => {}
+        }
+        return;
+    }
+
     if app.searching {
         match key.code {
             KeyCode::Esc => {
@@ -227,6 +304,7 @@ fn handle(app: &mut App, key: KeyEvent) {
             app.reindex();
         }
         KeyCode::Esc if app.help => app.help = false,
+        KeyCode::Esc if app.who.is_some() => app.back_to_mine(),
         KeyCode::Char('?') => app.help = !app.help,
         KeyCode::Down => app.move_by(1),
         KeyCode::Up => app.move_by(-1),
@@ -236,10 +314,7 @@ fn handle(app: &mut App, key: KeyEvent) {
         KeyCode::Char('G') | KeyCode::End => app.jump_to_end(),
         KeyCode::Right | KeyCode::Tab => app.cycle_filter(true),
         KeyCode::Left | KeyCode::BackTab => app.cycle_filter(false),
-        KeyCode::Char(c @ '1'..='5') => {
-            let i = c as usize - '1' as usize;
-            app.set_filter(Filter::ORDER[i]);
-        }
+        KeyCode::Char(c @ '1'..='5') => app.pick_filter(c as usize - '1' as usize),
         KeyCode::Enter => app.open_detail(),
         KeyCode::Char('o') => app.open_in_browser(),
         KeyCode::Char('y') => copy_url(app),
@@ -248,6 +323,10 @@ fn handle(app: &mut App, key: KeyEvent) {
         KeyCode::Char('/') => {
             app.searching = true;
             app.search.clear();
+        }
+        KeyCode::Char('u') => {
+            app.asking = true;
+            app.ask.clear();
         }
         _ => {}
     }

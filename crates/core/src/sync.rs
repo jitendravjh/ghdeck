@@ -103,6 +103,16 @@ impl Sync {
         Ok(poll.changed)
     }
 
+    // 20 a page, bigger pages for busy accounts run past github's ten second limit and 502
+    pub fn activity(
+        &self,
+        login: &str,
+        pages: usize,
+        on_page: &mut dyn FnMut(&[Item], u64) -> bool,
+    ) -> Result<crate::github::Fetched> {
+        self.client.activity(login, pages, 20, on_page)
+    }
+
     pub fn thread(&self, repo: &str, number: u64) -> Result<Vec<crate::thread::Event>> {
         self.client.thread(repo, number)
     }

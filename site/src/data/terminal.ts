@@ -17,5 +17,5 @@ export const termHtml = [
   `<span class="rule"></span>`,
   `<span class="ln"><span class="u">https://github.com/screenpipe/screenpipe/pull/6449</span></span>`,
   `<span class="ln"><span class="mt">by jitendravjh   +255 -17 in 3 files</span></span>`,
-  `<span class="ln"><span class="d">↑↓ move · ←→ filter · enter read · o open · r sync · / search · ? help · q quit</span></span>`,
+  `<span class="ln"><span class="d">↑↓ move · ←→ filter · enter read · o open · r sync · u user · / search · ? help · q quit</span></span>`,
 ].join("");

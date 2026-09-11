@@ -18,11 +18,11 @@ fn retryable(e: &ureq::Error) -> bool {
 }
 
 const QUERY: &str = r#"
-query($involves:String!,$reviews:String!,$n:Int!,$c1:String,$c2:String){
+query($main:String!,$extra:String!,$n:Int!,$c1:String,$c2:String){
   viewer{login}
-  involves: search(query:$involves,type:ISSUE,first:$n,after:$c1){
+  main: search(query:$main,type:ISSUE,first:$n,after:$c1){
     issueCount pageInfo{hasNextPage endCursor} nodes{...Row} }
-  reviews: search(query:$reviews,type:ISSUE,first:$n,after:$c2){
+  extra: search(query:$extra,type:ISSUE,first:$n,after:$c2){
     issueCount pageInfo{hasNextPage endCursor} nodes{...Row} }
   rateLimit{cost remaining}
 }
@@ -94,6 +94,43 @@ impl Client {
     }
 
     pub fn fetch(&self, pages: usize, per_page: u64) -> Result<Fetched> {
+        self.collect(
+            "involves:@me sort:updated-desc",
+            "is:pr review-requested:@me sort:updated-desc",
+            |it| it.review_requested_of_me = true,
+            pages,
+            per_page,
+            &mut |_, _| true,
+        )
+    }
+
+    pub fn activity(
+        &self,
+        login: &str,
+        pages: usize,
+        per_page: u64,
+        on_page: &mut dyn FnMut(&[Item], u64) -> bool,
+    ) -> Result<Fetched> {
+        self.collect(
+            &format!("involves:{login} sort:updated-desc"),
+            &format!("mentions:{login} sort:updated-desc"),
+            |it| it.mentioned = true,
+            pages,
+            per_page,
+            on_page,
+        )
+    }
+
+    // on_page sees everything so far after each page, and stops the fetch by returning false
+    fn collect(
+        &self,
+        main: &str,
+        extra: &str,
+        mark: fn(&mut Item),
+        pages: usize,
+        per_page: u64,
+        on_page: &mut dyn FnMut(&[Item], u64) -> bool,
+    ) -> Result<Fetched> {
         let mut items: Vec<Item> = Vec::new();
         let mut seen = std::collections::HashSet::new();
         let (mut c1, mut c2) = (Value::Null, Value::Null);
@@ -102,8 +139,8 @@ impl Client {
 
         for _ in 0..pages {
             let data = self.graphql(QUERY, json!({
-                "involves": "involves:@me sort:updated-desc",
-                "reviews": "is:pr review-requested:@me sort:updated-desc",
+                "main": main,
+                "extra": extra,
                 "n": per_page,
                 "c1": c1,
                 "c2": c2,
@@ -115,36 +152,41 @@ impl Client {
             cost += data["rateLimit"]["cost"].as_u64().unwrap_or(0);
             remaining = data["rateLimit"]["remaining"].as_u64().unwrap_or(remaining);
             if total == 0 {
-                total = data["involves"]["issueCount"].as_u64().unwrap_or(0);
+                total = data["main"]["issueCount"].as_u64().unwrap_or(0);
             }
 
-            for bucket in ["involves", "reviews"] {
-                let requested = bucket == "reviews";
+            for bucket in ["main", "extra"] {
+                let marked = bucket == "extra";
                 for node in data[bucket]["nodes"].as_array().into_iter().flatten() {
                     if node.is_null() {
                         continue;
                     }
                     if let Some(mut it) = parse(node) {
-                        it.review_requested_of_me = requested;
+                        if marked {
+                            mark(&mut it);
+                        }
                         if seen.insert(it.url.clone()) {
                             items.push(it);
-                        } else if requested {
+                        } else if marked {
                             if let Some(e) = items.iter_mut().find(|e| e.url == it.url) {
-                                e.review_requested_of_me = true;
+                                mark(e);
                             }
                         }
                     }
                 }
             }
 
-            c1 = next_cursor(&data["involves"]["pageInfo"]);
-            c2 = next_cursor(&data["reviews"]["pageInfo"]);
+            items.sort_by_key(|i| std::cmp::Reverse(i.updated_at));
+            if !on_page(&items, total) {
+                break;
+            }
+            c1 = next_cursor(&data["main"]["pageInfo"]);
+            c2 = next_cursor(&data["extra"]["pageInfo"]);
             if c1.is_null() && c2.is_null() {
                 break;
             }
         }
 
-        items.sort_by_key(|i| std::cmp::Reverse(i.updated_at));
         Ok(Fetched { items, login, involved_total: total, cost, remaining })
     }
 
@@ -296,6 +338,7 @@ fn parse(n: &Value) -> Option<Item> {
         last_actor: last.as_ref().map(|(_, w, _)| w.clone()),
         last_action: last.as_ref().map(|(_, _, a)| a.clone()),
         review_requested_of_me: false,
+        mentioned: false,
         state_reason: n["stateReason"].as_str().map(String::from),
     })
 }

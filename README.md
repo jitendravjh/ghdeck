@@ -121,11 +121,14 @@ ghdeck list                        # print what needs attention
 ghdeck list all                    # print everything
 ghdeck show JuliaGeometry/Meshes.jl#1428   # print one conversation
 ghdeck sync                        # refresh now
+ghdeck user juliohm                # print someone's prs and issues
 ```
 
 Filters are `attention`, `open`, `yours`, `to-review` and `all`.
 
 Attention needed means open items that are conflicting, have changes requested, have CI failing, or are waiting on your review.
+
+For someone else, press `u` or run `ghdeck user <name>`. Their filters are `all`, `authored`, `mentioned` and `open`, and you only see what your own token can see.
 
 ## Keys
 
@@ -138,6 +141,7 @@ o             open in browser
 y             copy url
 r             sync
 /             search
+u             someone else's prs and issues, esc to come back
 ?             help
 q             quit
 ```
