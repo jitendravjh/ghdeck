@@ -20,17 +20,7 @@ One line for macOS and Linux, nothing else needed. It picks the right build for 
 curl -fsSL https://raw.githubusercontent.com/jitendravjh/ghdeck/main/install.sh | sh
 ```
 
-Linux builds are static, so any distro works. To install somewhere else, put the folder before `sh`:
-
-```sh
-curl -fsSL https://raw.githubusercontent.com/jitendravjh/ghdeck/main/install.sh | GHDECK_BIN_DIR="$HOME/.local/bin" sh
-```
-
-Or pin a version the same way:
-
-```sh
-curl -fsSL https://raw.githubusercontent.com/jitendravjh/ghdeck/main/install.sh | GHDECK_VERSION=v0.2.0 sh
-```
+Linux builds are static, so any distro works.
 
 ## Windows
 

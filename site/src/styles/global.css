@@ -392,6 +392,7 @@ pre.block, .prose pre {
 /* ── install block ────────────────────────────────────────────── */
 .install { padding: 24px; display: flex; flex-direction: column; gap: 14px; }
 .install h2 { color: var(--text-strong); }
+.install p a { color: var(--link); text-decoration: underline; text-underline-offset: 2px; }
 .install .code-frame { width: 100%; }
 .install pre.block { font-size: 0.9rem; padding: 14px 16px; }
 .install-actions { display: flex; flex-direction: column; gap: 8px; }
