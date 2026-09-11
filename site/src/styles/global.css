@@ -448,7 +448,7 @@ pre.block, .prose pre {
   -webkit-mask-image: linear-gradient(to bottom, #000, rgba(0, 0, 0, 0.7));
   mask-image: linear-gradient(to bottom, #000, rgba(0, 0, 0, 0.7));
 }
-.engrave-art { width: min(940px, 100%); aspect-ratio: 1026 / 181; overflow: hidden; }
+.engrave-art { width: min(940px, 100%); aspect-ratio: 1026 / 178.6; overflow: hidden; }
 .engrave svg { width: 100%; height: auto; opacity: 0.4; }
 .engrave svg * { fill: #fff; fill-opacity: 0.025; stroke: #fff; stroke-opacity: 0.2; stroke-width: 1.2; stroke-linejoin: round; }
 .engrave g * { stroke-width: 0.52; }
