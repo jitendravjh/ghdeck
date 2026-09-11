@@ -115,7 +115,7 @@ fn list(what: Option<&str>) -> Result<()> {
 }
 
 fn user(who: Option<&str>, what: Option<&str>) -> Result<()> {
-    let who = who.context("give a username, like ghdeck user juliohm")?;
+    let who = who.context("give a username, like ghdeck user jitendravjh")?;
     let login = ghdeck_core::clean_login(who).with_context(|| format!("{who} is not a github username"))?;
     let filter = match what {
         None | Some("all") => Filter::All,

@@ -99,7 +99,7 @@ ghdeck list                        # print what needs attention
 ghdeck list all                    # print everything
 ghdeck show JuliaGeometry/Meshes.jl#1428   # print one conversation
 ghdeck sync                        # refresh now
-ghdeck user juliohm                # print someone's prs and issues
+ghdeck user jitendravjh            # print anyone's prs and issues
 ```
 
 Filters are `attention`, `open`, `yours`, `to-review` and `all`.
