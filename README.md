@@ -31,47 +31,15 @@ Then:
 brew install jitendravjh/tap/ghdeck
 ```
 
-Upgrade later with `brew upgrade ghdeck`, uninstall with `brew uninstall ghdeck`.
+### 2. Install script, on macOS or Linux
 
-### 2. Download a binary
-
-**You need nothing else.**
-
-Copy the block for your machine, there is nothing to fill in. Run `uname -m` if you are unsure which Mac you have: `arm64` is Apple Silicon, `x86_64` is Intel.
-
-**macOS, Apple Silicon**
+**You need nothing else.** One line, it picks the right build for your machine and checks it against the release checksums.
 
 ```sh
-curl -sSfL https://github.com/jitendravjh/ghdeck/releases/latest/download/ghdeck-aarch64-apple-darwin.tar.gz | tar xz
-sudo mv ghdeck /usr/local/bin/
+curl -fsSL https://raw.githubusercontent.com/jitendravjh/ghdeck/main/install.sh | sh
 ```
 
-**macOS, Intel**
-
-```sh
-curl -sSfL https://github.com/jitendravjh/ghdeck/releases/latest/download/ghdeck-x86_64-apple-darwin.tar.gz | tar xz
-sudo mv ghdeck /usr/local/bin/
-```
-
-**Linux, x86_64**
-
-```sh
-curl -sSfL https://github.com/jitendravjh/ghdeck/releases/latest/download/ghdeck-x86_64-unknown-linux-musl.tar.gz | tar xz
-sudo mv ghdeck /usr/local/bin/
-```
-
-**Linux, arm64**
-
-```sh
-curl -sSfL https://github.com/jitendravjh/ghdeck/releases/latest/download/ghdeck-aarch64-unknown-linux-musl.tar.gz | tar xz
-sudo mv ghdeck /usr/local/bin/
-```
-
-Linux builds are static, so any distro works. Checksums are in `SHA256SUMS` on the [release](https://github.com/jitendravjh/ghdeck/releases/latest).
-
-To upgrade, run the same command again. To uninstall, `sudo rm /usr/local/bin/ghdeck`.
-
-If you download through a browser rather than curl, macOS quarantines the file because the binary is not signed. Clear it with `xattr -d com.apple.quarantine ghdeck`.
+It goes to `/usr/local/bin` and asks for your password only if that folder needs it. Put `GHDECK_BIN_DIR=~/.local/bin` before `sh` to install somewhere else, or `GHDECK_VERSION=v0.2.0` for a specific version. Linux builds are static, so any distro works.
 
 ### 3. From source
 
@@ -82,6 +50,16 @@ cargo install --git https://github.com/jitendravjh/ghdeck ghdeck
 ```
 
 The binary lands in `~/.cargo/bin`, so keep that on your PATH.
+
+### Update and uninstall
+
+| Installed with | Update | Uninstall |
+| --- | --- | --- |
+| Homebrew | `brew upgrade ghdeck` | `brew uninstall ghdeck` |
+| Install script | run the same command again | `sudo rm /usr/local/bin/ghdeck` |
+| Source | `cargo install --git https://github.com/jitendravjh/ghdeck ghdeck --force` | `cargo uninstall ghdeck` |
+
+The cache stays in `~/Library/Application Support/ghdeck` on macOS and `~/.local/share/ghdeck` on Linux, delete it too for a clean removal.
 
 ## Setup
 
