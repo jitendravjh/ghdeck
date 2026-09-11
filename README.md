@@ -23,7 +23,7 @@ Pick one, then do [Setup](#setup).
 
 ### On macOS or Linux
 
-**Homebrew:** (If you don't have Homebrew, install it first, from [brew.sh](https://brew.sh/).
+**Homebrew.** If you don't have it, install it first from [brew.sh](https://brew.sh/).
 
 ```sh
 brew install jitendravjh/tap/ghdeck
@@ -34,6 +34,7 @@ brew install jitendravjh/tap/ghdeck
 ```sh
 curl -fsSL https://raw.githubusercontent.com/jitendravjh/ghdeck/main/install.sh | sh
 ```
+
 Linux builds are static, so any distro works.
 
 ### Windows
@@ -106,7 +107,7 @@ ghdeck                                    # dashboard
 ghdeck list                               # print what needs attention
 ghdeck list all                           # print everything
 ghdeck show JuliaGeometry/Meshes.jl#1428  # print one conversation
-ghdeck user [username]                    # print anyone's prs and issues
+ghdeck user [username]                    # print anyone's PRs and issues
 ghdeck sync                               # refresh now
 ```
 
@@ -129,7 +130,7 @@ o             open in browser
 y             copy url
 r             sync
 /             search
-u             someone else's prs and issues, esc to come back
+u             someone else's PRs and issues, esc to come back
 ?             help
 q             quit
 ```
@@ -144,6 +145,6 @@ It polls notifications with `If-Modified-Since` and GitHub does not count 304s, 
 
 Bots get collapsed to one line in a conversation, otherwise codecov and CI comments bury the actual discussion.
 
-## MIT LICENSED
+## License
 
 MIT, see [LICENSE](LICENSE).
