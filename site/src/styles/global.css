@@ -433,6 +433,26 @@ pre.block, .prose pre {
 .footer-about hr { width: 80px; border-top: 1px solid rgba(255, 255, 255, 0.14); margin: 4px 0; }
 .ext { color: rgba(255, 255, 255, 0.5); margin-left: 6px; }
 
+.engrave {
+  position: relative; isolation: isolate; display: flex; justify-content: center;
+  padding: 24px 16px 0; margin-bottom: -64px; border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+.engrave::before, .engrave::after { content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none; }
+.engrave::before {
+  background: repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.2) 0 1.5px, transparent 1.5px 4px);
+  opacity: 0.35;
+}
+.engrave::after {
+  background: repeating-linear-gradient(to bottom, var(--blue-500) 0 1px, transparent 1px 10px);
+  opacity: 0.2;
+  -webkit-mask-image: linear-gradient(to bottom, #000, rgba(0, 0, 0, 0.7));
+  mask-image: linear-gradient(to bottom, #000, rgba(0, 0, 0, 0.7));
+}
+.engrave svg { width: min(824px, 100%); height: auto; opacity: 0.4; overflow: visible; }
+.engrave svg * { fill: #fff; fill-opacity: 0.025; stroke: #fff; stroke-opacity: 0.2; stroke-width: 1.2; stroke-linejoin: round; }
+.engrave g * { stroke-width: 0.6; }
+.engrave text { font-family: var(--font-serif); font-size: 232px; font-weight: 340; letter-spacing: -0.02em; }
+
 /* ── docs ─────────────────────────────────────────────────────── */
 .docs { display: block; }
 .docs-nav, .docs-toc { display: none; }
