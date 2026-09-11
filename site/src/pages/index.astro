@@ -61,11 +61,11 @@ const structuredData = [
         <div class="hero-buttons">
           <a class="button primary" href="/docs/#homebrew">
             <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 1a.75.75 0 0 1 .75.75v6.69l2.22-2.22a.75.75 0 1 1 1.06 1.06l-3.5 3.5a.75.75 0 0 1-1.06 0l-3.5-3.5a.75.75 0 0 1 1.06-1.06l2.22 2.22V1.75A.75.75 0 0 1 8 1ZM2.75 12.5a.75.75 0 0 1 .75.75v.25h9v-.25a.75.75 0 0 1 1.5 0v.5a1.25 1.25 0 0 1-1.25 1.25H3.25A1.25 1.25 0 0 1 2 13.75v-.5a.75.75 0 0 1 .75-.75Z"/></svg>
-            Install ghdeck<kbd>I</kbd>
+            Install ghdeck<kbd aria-hidden="true">I</kbd>
           </a>
           <a class="button secondary" href="/docs/">
             <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M2 2.75A1.75 1.75 0 0 1 3.75 1h5.5A1.75 1.75 0 0 1 11 2.75v10.5A1.75 1.75 0 0 1 9.25 15h-5.5A1.75 1.75 0 0 1 2 13.25V2.75Zm2 1.5a.75.75 0 0 1 .75-.75h3.5a.75.75 0 0 1 0 1.5h-3.5A.75.75 0 0 1 4 4.25Zm0 3a.75.75 0 0 1 .75-.75h3.5a.75.75 0 0 1 0 1.5h-3.5A.75.75 0 0 1 4 7.25Zm.75 2.25a.75.75 0 0 0 0 1.5H7a.75.75 0 0 0 0-1.5H4.75ZM12.5 4.5a.75.75 0 0 1 .75.75v8a.75.75 0 0 1-1.5 0v-8a.75.75 0 0 1 .75-.75Z"/></svg>
-            Read the docs<kbd>D</kbd>
+            Read the docs<kbd aria-hidden="true">D</kbd>
           </a>
         </div>
         <p class="hero-note">Free and open source. macOS and Linux.</p>
@@ -95,7 +95,7 @@ const structuredData = [
       <Terminal title="ghdeck" html={termHtml} />
     </div>
     <p class="caption">
-      Five rows, five different states. Nothing here needed a browser tab.
+      Failing CI, a closed issue, two merges and a conflict. Nothing here needed a browser tab.
     </p>
   </Band>
 
@@ -122,14 +122,6 @@ const structuredData = [
       <div class="cell">
         <h3>Read the thread</h3>
         <p>Press enter for the body, comments and reviews, with line comments under the review that made them. Bots collapse to one line.</p>
-      </div>
-      <div class="cell">
-        <h3>Watches itself</h3>
-        <p>Polls notifications with a conditional request. GitHub does not count a 304, so a quiet minute costs nothing at all.</p>
-      </div>
-      <div class="cell">
-        <h3>One small binary</h3>
-        <p>About 2 MB with nothing to install alongside it. Static on Linux, so any distro works.</p>
       </div>
     </div>
   </Band>

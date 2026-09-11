@@ -85,7 +85,7 @@ const year = new Date().getFullYear();
               <svg class="sun-icon" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 17.2a5.2 5.2 0 1 0 0-10.4 5.2 5.2 0 0 0 0 10.4Zm0-14.7a1 1 0 0 1 1 1v1.2a1 1 0 1 1-2 0V3.5a1 1 0 0 1 1-1Zm0 16.8a1 1 0 0 1 1 1v1.2a1 1 0 1 1-2 0v-1.2a1 1 0 0 1 1-1Zm9.5-8.3a1 1 0 1 1 0 2h-1.2a1 1 0 1 1 0-2h1.2ZM4.7 11a1 1 0 1 1 0 2H3.5a1 1 0 1 1 0-2h1.2Zm13.74-6.44a1 1 0 0 1 0 1.42l-.85.85a1 1 0 0 1-1.42-1.42l.85-.85a1 1 0 0 1 1.42 0ZM7.83 16.17a1 1 0 0 1 0 1.42l-.85.85a1 1 0 0 1-1.42-1.42l.85-.85a1 1 0 0 1 1.42 0Zm9.76 0 .85.85a1 1 0 1 1-1.42 1.42l-.85-.85a1 1 0 0 1 1.42-1.42ZM6.98 4.56l.85.85a1 1 0 0 1-1.42 1.42l-.85-.85a1 1 0 1 1 1.42-1.42Z"/></svg>
               <svg class="moon-icon" aria-hidden="true" viewBox="0 0 24 24"><path d="M21 14.58A8.2 8.2 0 0 1 9.42 3a9.25 9.25 0 1 0 11.59 11.59Z"/></svg>
             </button>
-            <a class="button primary" href="/docs/#homebrew" data-kbd="I">Install<kbd>I</kbd></a>
+            <a class="button primary" href="/docs/#homebrew">Install<kbd aria-hidden="true">I</kbd></a>
           </div>
         </nav>
       </div>
@@ -178,15 +178,21 @@ const year = new Date().getFullYear();
     <script is:inline>
       (() => {
         const links = [...document.querySelectorAll('.docs-nav a[href^="#"], .docs-toc a[href^="#"]')];
-        if (!links.length) return;
-        const targets = [...new Set(links.map((a) => decodeURIComponent(a.hash.slice(1))))]
-          .map((id) => document.getElementById(id))
-          .filter(Boolean);
-        if (!targets.length) return;
+        const targets = [...document.querySelectorAll(".prose h2[id], .prose h3[id]")];
+        if (!links.length || !targets.length) return;
+
+        // the side nav only lists sections, so a subsection lights up the section it sits in
+        const section = new Map();
+        let current = null;
+        for (const t of targets) {
+          if (t.tagName === "H2") current = t.id;
+          section.set(t.id, current);
+        }
 
         const mark = (id) => {
           for (const a of links) {
-            a.setAttribute("aria-current", decodeURIComponent(a.hash.slice(1)) === id ? "true" : "false");
+            const want = a.closest(".docs-nav") ? section.get(id) : id;
+            a.setAttribute("aria-current", decodeURIComponent(a.hash.slice(1)) === want ? "true" : "false");
           }
         };
 

@@ -1,13 +1,20 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
+import Band from "../components/Band.astro";
 ---
 <BaseLayout title="Not found" description="That page does not exist.">
-  <section class="hero">
-    <h1>404</h1>
-    <p class="lead">That page does not exist.</p>
-    <div class="actions">
-      <a class="button" href="/">Back to the start</a>
-      <a class="button secondary" href="/docs/">Read the docs</a>
-    </div>
-  </section>
+  <Band nodes="b" seed={5}>
+    <div class="pat grid"></div>
+    <div class="pat glow"></div>
+    <section class="hero">
+      <div>
+        <h1 class="h0">404</h1>
+        <p class="lead">That page does not exist.</p>
+      </div>
+      <div class="hero-buttons">
+        <a class="button primary" href="/">Back to the start</a>
+        <a class="button secondary" href="/docs/">Read the docs</a>
+      </div>
+    </section>
+  </Band>
 </BaseLayout>
