@@ -99,14 +99,14 @@ ghdeck list                        # print what needs attention
 ghdeck list all                    # print everything
 ghdeck show JuliaGeometry/Meshes.jl#1428   # print one conversation
 ghdeck sync                        # refresh now
-ghdeck user jitendravjh            # print anyone's prs and issues
+ghdeck user [username]             # print anyone's prs and issues
 ```
 
 Filters are `attention`, `open`, `yours`, `to-review` and `all`.
 
 Attention needed means open items that are conflicting, have changes requested, have CI failing, or are waiting on your review.
 
-For someone else, press `u` or run `ghdeck user <name>`. Their filters are `all`, `authored`, `mentioned` and `open`, and you only see what your own token can see. If GitHub keeps someone out of search, ghdeck falls back to their public activity, which covers their last 300 events.
+For someone else, press `u` or run `ghdeck user [username]`. Their filters are `all`, `authored`, `mentioned` and `open`, and you only see what your own token can see. If GitHub keeps someone out of search, ghdeck falls back to their public activity, which covers their last 300 events.
 
 ## Keys
 
