@@ -21,19 +21,15 @@ An issue closing and the PR that closed it, next to each other. Conflicts, faili
 
 Pick one, then do [Setup](#setup).
 
-### Homebrew: on macOS or Linux
+### On macOS or Linux
 
-**If you don't have Homebrew**, install it first, from [brew.sh](https://brew.sh/)
-
-Then:
+**Homebrew:** (If you don't have Homebrew, install it first, from [brew.sh](https://brew.sh/).
 
 ```sh
 brew install jitendravjh/tap/ghdeck
 ```
 
-### Install script: on macOS or Linux
-
-**You need nothing else.** It picks the right build for your machine, checks it against the release checksums and puts it in `/usr/local/bin`, asking for your password only if that folder needs it.
+**Install script:** It picks the right build for your machine, checks it against the release checksums and puts it in `/usr/local/bin`, asking for your password only if that folder needs it.
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/jitendravjh/ghdeck/main/install.sh | sh
