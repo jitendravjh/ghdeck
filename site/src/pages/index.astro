@@ -1,5 +1,6 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
+import Band from "../components/Band.astro";
 import Terminal from "../components/Terminal.astro";
 
 const repo = "https://github.com/jitendravjh/ghdeck";
@@ -45,85 +46,137 @@ const structuredData = [
 ---
 
 <BaseLayout structuredData={structuredData}>
-  <section class="hero">
-    <h1>All your GitHub work in one list.</h1>
-    <p class="lead">
-      PRs and issues together, newest first, with conflicts, failing CI and who
-      you are waiting on visible without opening anything.
-    </p>
-    <div class="actions">
-      <a class="button" href="/docs/">Install ghdeck</a>
-      <a class="button secondary" href="/docs/">Read the docs</a>
-    </div>
-
-    <Terminal title="ghdeck" html={termHtml} />
-    <p class="caption">
-      An issue closing and the pull request that closed it, next to each other.
-      That is the thing no other tool does.
-    </p>
-
-    <div class="install-big">
-      <h2>Install</h2>
-      <p>macOS and Linux. One line.</p>
-      <pre class="block">brew install jitendravjh/tap/ghdeck</pre>
-      <div class="actions">
-        <a class="button" href="/docs/#connect-your-account">Setup guide</a>
-        <a class="button secondary" href="/docs/">Other ways to install</a>
+  <Band nodes="b" seed={5}>
+    <div class="pat grid"></div>
+    <div class="pat glow"></div>
+    <section class="hero">
+      <div>
+        <h1 class="h0">All your GitHub work in one list.</h1>
+        <p class="lead">
+          PRs and issues together, newest first, with conflicts, failing CI and
+          who you are waiting on visible without opening anything.
+        </p>
       </div>
-    </div>
+      <div class="hero-actions">
+        <div class="hero-buttons">
+          <a class="button primary" href="/docs/#homebrew">
+            <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 1a.75.75 0 0 1 .75.75v6.69l2.22-2.22a.75.75 0 1 1 1.06 1.06l-3.5 3.5a.75.75 0 0 1-1.06 0l-3.5-3.5a.75.75 0 0 1 1.06-1.06l2.22 2.22V1.75A.75.75 0 0 1 8 1ZM2.75 12.5a.75.75 0 0 1 .75.75v.25h9v-.25a.75.75 0 0 1 1.5 0v.5a1.25 1.25 0 0 1-1.25 1.25H3.25A1.25 1.25 0 0 1 2 13.75v-.5a.75.75 0 0 1 .75-.75Z"/></svg>
+            Install ghdeck<kbd>I</kbd>
+          </a>
+          <a class="button secondary" href="/docs/">
+            <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M2 2.75A1.75 1.75 0 0 1 3.75 1h5.5A1.75 1.75 0 0 1 11 2.75v10.5A1.75 1.75 0 0 1 9.25 15h-5.5A1.75 1.75 0 0 1 2 13.25V2.75Zm2 1.5a.75.75 0 0 1 .75-.75h3.5a.75.75 0 0 1 0 1.5h-3.5A.75.75 0 0 1 4 4.25Zm0 3a.75.75 0 0 1 .75-.75h3.5a.75.75 0 0 1 0 1.5h-3.5A.75.75 0 0 1 4 7.25Zm.75 2.25a.75.75 0 0 0 0 1.5H7a.75.75 0 0 0 0-1.5H4.75ZM12.5 4.5a.75.75 0 0 1 .75.75v8a.75.75 0 0 1-1.5 0v-8a.75.75 0 0 1 .75-.75Z"/></svg>
+            Read the docs<kbd>D</kbd>
+          </a>
+        </div>
+        <p class="hero-note">Free and open source. macOS and Linux.</p>
+      </div>
+    </section>
+  </Band>
 
-  </section>
-
-  <section class="section">
-    <div class="section-header">
-      <h2>Your work is spread across two pages.</h2>
-      <p>
-        GitHub keeps pull requests and issues on separate lists, so an issue and
-        the pull request that closes it never appear together. Merge conflicts
-        are worse, they cannot be searched or filtered for at all. Other
-        terminal dashboards inherit the same split. This one does not.
-      </p>
-    </div>
-    <div class="feature-grid">
-      <div class="feature">
+  <Band nodes="b" seed={23}>
+    <div class="strip">
+      <div>
         <h3>One list</h3>
-        <p>PRs and issues interleaved, newest first. Filter to what needs you, what is open, what is yours, what waits on your review.</p>
+        <p>PRs and issues interleaved, newest first. An issue and the pull request that closed it, next to each other.</p>
       </div>
-      <div class="feature">
-        <h3>Status that GitHub hides</h3>
-        <p>Merge conflicts, CI rollup, review decisions and requested reviewers. GitHub search cannot even query conflicts.</p>
+      <div>
+        <h3>Status GitHub hides</h3>
+        <p>Merge conflicts, CI rollup and review decisions on every row. GitHub search cannot even query conflicts.</p>
       </div>
-      <div class="feature">
+      <div>
+        <h3>Opens instantly</h3>
+        <p>Everything sits in SQLite. Cached data shows straight away while a sync runs behind you.</p>
+      </div>
+    </div>
+  </Band>
+
+  <Band nodes="b" seed={47}>
+    <div style="padding:24px">
+      <Terminal title="ghdeck" html={termHtml} />
+    </div>
+    <p class="caption">
+      Five rows, five different states. Nothing here needed a browser tab.
+    </p>
+  </Band>
+
+  <Band nodes="b" seed={71}>
+    <div class="sec-head">
+      <hgroup>
+        <h2 class="h2">Your work is spread across two pages.</h2>
+        <p>
+          GitHub keeps pull requests and issues on separate lists, so an issue and
+          the pull request that closes it never appear together. Merge conflicts
+          are worse, they cannot be searched or filtered for at all.
+        </p>
+      </hgroup>
+      <div class="sec-actions">
+        <a class="button ghost" href="/docs/#filters">Filters<svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M6.22 3.22a.75.75 0 0 1 1.06 0l4.25 4.25a.75.75 0 0 1 0 1.06l-4.25 4.25a.75.75 0 1 1-1.06-1.06L9.94 8 6.22 4.28a.75.75 0 0 1 0-1.06Z"/></svg></a>
+        <a class="button secondary" href="/docs/#keys">Keys<svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M6.22 3.22a.75.75 0 0 1 1.06 0l4.25 4.25a.75.75 0 0 1 0 1.06l-4.25 4.25a.75.75 0 1 1-1.06-1.06L9.94 8 6.22 4.28a.75.75 0 0 1 0-1.06Z"/></svg></a>
+      </div>
+    </div>
+    <div class="cards">
+      <div class="cell">
+        <h3>Five filters</h3>
+        <p>Attention needed, open, yours, waiting on your review, and everything. Left and right arrows move between them.</p>
+      </div>
+      <div class="cell">
         <h3>Read the thread</h3>
         <p>Press enter for the body, comments and reviews, with line comments under the review that made them. Bots collapse to one line.</p>
       </div>
-      <div class="feature">
-        <h3>Opens instantly</h3>
-        <p>Everything sits in SQLite. The dashboard shows cached data straight away and syncs behind you.</p>
+      <div class="cell">
+        <h3>Watches itself</h3>
+        <p>Polls notifications with a conditional request. GitHub does not count a 304, so a quiet minute costs nothing at all.</p>
+      </div>
+      <div class="cell">
+        <h3>One small binary</h3>
+        <p>About 2 MB with nothing to install alongside it. Static on Linux, so any distro works.</p>
       </div>
     </div>
-  </section>
+  </Band>
 
-
-  <section class="section">
-    <div class="section-header">
-      <h2>Documentation.</h2>
-      <p>Short pages for installing, connecting your account, and living in it.</p>
+  <Band nodes="b" seed={97}>
+    <div class="pat dots"></div>
+    <div class="install">
+      <hgroup>
+        <h2 class="h2">Install</h2>
+        <p>One line on macOS and Linux. Homebrew sorts out your PATH and upgrades.</p>
+      </hgroup>
+      <div class="code-frame">
+        <pre class="block">brew install jitendravjh/tap/ghdeck</pre>
+      </div>
+      <div class="install-actions">
+        <a class="button primary" href="/docs/#connect-your-account">Setup guide</a>
+        <a class="button secondary" href="/docs/#download-a-binary">Other ways to install</a>
+      </div>
     </div>
-    <div class="feature-grid">
-      <a class="doc-link" href="/docs/#homebrew">
+  </Band>
+
+  <Band nodes="b" seed={131}>
+    <div class="sec-head">
+      <hgroup>
+        <h2 class="h2">Documentation</h2>
+        <p>Short and to the point. Install it, connect your account, learn the keys.</p>
+      </hgroup>
+      <div class="sec-actions">
+        <a class="button secondary" href="/docs/">Read the docs<svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M6.22 3.22a.75.75 0 0 1 1.06 0l4.25 4.25a.75.75 0 0 1 0 1.06l-4.25 4.25a.75.75 0 1 1-1.06-1.06L9.94 8 6.22 4.28a.75.75 0 0 1 0-1.06Z"/></svg></a>
+      </div>
+    </div>
+    <div class="cards three">
+      <a class="cell" href="/docs/#homebrew">
         <h3>Install</h3>
         <p>Homebrew, or a prebuilt binary for your platform. Nothing to compile.</p>
+        <span class="more">Read &rarr;</span>
       </a>
-      <a class="doc-link" href="/docs/#connect-your-account">
+      <a class="cell" href="/docs/#connect-your-account">
         <h3>Setup</h3>
         <p>Sign in with gh, or set a token with the repo scope. Nothing else to configure.</p>
+        <span class="more">Read &rarr;</span>
       </a>
-      <a class="doc-link" href="/docs/#commands">
+      <a class="cell" href="/docs/#commands">
         <h3>Commands and keys</h3>
         <p>Filters, keys, reading a thread, and the commands that print to stdout.</p>
+        <span class="more">Read &rarr;</span>
       </a>
     </div>
-  </section>
-
+  </Band>
 </BaseLayout>

@@ -1,28 +1,81 @@
 ---
 import BaseLayout from "./BaseLayout.astro";
-import TableOfContents from "../components/TableOfContents.astro";
 
+interface Heading { depth: number; slug: string; text: string }
 const { frontmatter, headings } = Astro.props;
 const title = frontmatter.title ?? "Docs";
 const description = frontmatter.description ?? "ghdeck documentation.";
+
+const all: Heading[] = headings ?? [];
+const groups = [
+  { title: "Install", slugs: ["homebrew", "download-a-binary", "from-source"] },
+  { title: "Setup", slugs: ["connect-your-account", "first-run"] },
+  { title: "Use", slugs: ["commands", "filters", "keys"] },
+];
+const byslug = new Map(all.map((h) => [h.slug, h]));
+const nav = groups.map((g) => ({
+  title: g.title,
+  items: g.slugs.map((s) => byslug.get(s)).filter(Boolean) as Heading[],
+}));
+const toc = all.filter((h) => h.depth >= 2 && h.depth <= 3);
 ---
 
 <BaseLayout title={title} description={description}>
-  <div class="docs-shell">
-    <header class="docs-title">
-      <h1>{title}</h1>
-      {description && <span>{description}</span>}
-    </header>
+  <div class="band">
+    <span class="gutter"></span>
+    <span class="rail"></span>
+    <div class="hold">
+      <div class="inner">
+        <div class="docs">
+          <aside class="docs-nav" aria-label="Documentation sections">
+            {nav.map((g) => (
+              <section>
+                <h2>{g.title}</h2>
+                <ul>
+                  {g.items.map((h) => (
+                    <li><a href={`#${h.slug}`}>{h.text}</a></li>
+                  ))}
+                </ul>
+              </section>
+            ))}
+          </aside>
 
-    <TableOfContents headings={headings} />
+          <article class="docs-main">
+            <header class="docs-title">
+              <h1 class="h0">{title}</h1>
+              {description && <p>{description}</p>}
+            </header>
 
-    <details class="docs-panel">
-      <summary>On this page</summary>
-      <TableOfContents headings={headings} />
-    </details>
+            <details class="docs-panel">
+              <summary>On this page</summary>
+              <nav class="docs-toc">
+                <ul>
+                  {toc.map((h) => (
+                    <li class:list={{ nested: h.depth === 3 }}>
+                      <a href={`#${h.slug}`}>{h.text}</a>
+                    </li>
+                  ))}
+                </ul>
+              </nav>
+            </details>
 
-    <article class="docs-content">
-      <div class="prose"><slot /></div>
-    </article>
+            <div class="prose"><slot /></div>
+          </article>
+
+          <aside class="docs-toc" aria-label="On this page">
+            <h2>On this page</h2>
+            <ul>
+              {toc.map((h) => (
+                <li class:list={{ nested: h.depth === 3 }}>
+                  <a href={`#${h.slug}`}>{h.text}</a>
+                </li>
+              ))}
+            </ul>
+          </aside>
+        </div>
+      </div>
+    </div>
+    <span class="rail"></span>
+    <span class="gutter right"></span>
   </div>
 </BaseLayout>

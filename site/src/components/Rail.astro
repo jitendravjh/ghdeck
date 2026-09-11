@@ -1,0 +1,14 @@
+---
+interface Props { side: "l" | "r"; seed: number; }
+const { side, seed } = Astro.props;
+
+const next = (() => { let x = (seed * 2654435761) >>> 0;
+  return () => { x = (x * 1664525 + 1013904223) >>> 0; return x / 4294967296; }; })();
+const bits = Array.from({ length: 4 + Math.floor(next() * 2) }, () => ({
+  flex: (1.3 + next() * 3.6).toFixed(4),
+  dash: next() < 0.3,
+}));
+---
+<span class:list={["rail-line", `side-${side}`]}>
+  {bits.map((b) => <i style={`flex:${b.flex}`} class={b.dash ? "dash" : ""} />)}
+</span>

@@ -2,7 +2,9 @@
 interface Props { title?: string; html: string; }
 const { title = "ghdeck", html } = Astro.props;
 ---
-<div class="terminal">
-  <div class="chrome"><i></i><i></i><i></i><span>{title}</span></div>
-  <pre><code set:html={html} /></pre>
+<div class="frame">
+  <div class="framed terminal">
+    <div class="chrome"><i></i><i></i><i></i><span>{title}</span></div>
+    <pre><code set:html={html} /></pre>
+  </div>
 </div>

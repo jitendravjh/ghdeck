@@ -1,0 +1,18 @@
+---
+interface Props { class?: string; nodes?: string; seed?: number; }
+const { class: cls, nodes = "", seed = 3 } = Astro.props;
+import Rail from "./Rail.astro";
+---
+<div class:list={["band", cls]}>
+  {nodes.includes("t") && <><i class="node tl" /><i class="node tr" /></>}
+  {nodes.includes("b") && <><i class="node bl" /><i class="node br" /></>}
+  <span class="gutter"><Rail side="r" seed={seed} /></span>
+  <span class="rail"><Rail side="r" seed={seed + 17} /></span>
+  <div class="hold">
+    {nodes.includes("t") && <><i class="node tl" /><i class="node tr" /></>}
+    {nodes.includes("b") && <><i class="node bl" /><i class="node br" /></>}
+    <div class="inner"><slot /></div>
+  </div>
+  <span class="rail"><Rail side="l" seed={seed + 41} /></span>
+  <span class="gutter right"><Rail side="l" seed={seed + 63} /></span>
+</div>

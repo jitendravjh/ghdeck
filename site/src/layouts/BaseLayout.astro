@@ -1,8 +1,8 @@
 ---
 import "../styles/global.css";
+import Band from "../components/Band.astro";
 import Logo from "../components/Logo.astro";
 import GitHubIcon from "../components/icons/GitHubIcon.astro";
-import HeartIcon from "../components/icons/HeartIcon.astro";
 
 interface Props {
   title?: string;
@@ -22,15 +22,10 @@ const pageTitle = title === "ghdeck" ? "ghdeck" : `${title} | ghdeck`;
 const canonical = new URL(Astro.url.pathname, Astro.site ?? Astro.url).href;
 const ogImage = new URL("/og.png", Astro.site ?? Astro.url).href;
 const jsonLd = [
-  {
-    "@context": "https://schema.org",
-    "@type": "WebPage",
-    name: pageTitle,
-    description,
-    url: canonical,
-  },
+  { "@context": "https://schema.org", "@type": "WebPage", name: pageTitle, description, url: canonical },
   ...structuredData,
 ];
+const year = new Date().getFullYear();
 ---
 
 <!doctype html>
@@ -44,6 +39,8 @@ const jsonLd = [
     <link rel="canonical" href={canonical} />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="sitemap" href="/sitemap-index.xml" />
+    <link rel="preload" as="font" type="font/woff2" href="/fonts/writer-regular.woff2" crossorigin />
+    <link rel="preload" as="font" type="font/woff2" href="/fonts/plexserif-var-italic.woff2" crossorigin />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="ghdeck" />
     <meta property="og:url" content={canonical} />
@@ -57,10 +54,9 @@ const jsonLd = [
     <meta name="twitter:title" content={pageTitle} />
     <meta name="twitter:description" content={description} />
     <meta name="twitter:image" content={ogImage} />
-    <meta name="theme-color" content="#fcfcfd" media="(prefers-color-scheme: light)" />
-    <meta name="theme-color" content="#0b0e14" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#f6f5f4" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#111318" media="(prefers-color-scheme: dark)" />
     {jsonLd.map((item) => <script type="application/ld+json" set:html={JSON.stringify(item)} />)}
-
     <script is:inline>
       (() => {
         const key = "ghdeck-theme";
@@ -70,60 +66,77 @@ const jsonLd = [
     </script>
   </head>
   <body>
-    <header class="site-header">
-      <div class="header-inner">
-        <a class="brand" href="/" aria-label="ghdeck home">
-          <Logo />
-          <span>ghdeck</span>
-        </a>
-        <nav class="top-nav" aria-label="Main">
-          <a href="/docs/">Docs</a>
+    <div class="noise"></div>
+
+    <header class="band site-header">
+      <i class="node bl"></i><i class="node br"></i>
+      <span class="gutter"></span>
+      <span class="rail"></span>
+      <div class="hold">
+        <i class="node bl"></i><i class="node br"></i>
+        <nav class="nav" aria-label="Main">
+          <a class="brand" href="/"><Logo /><span>ghdeck</span></a>
+          <div class="nav-right">
+            <div class="nav-links">
+              <a href="/docs/">Docs</a>
+              <a href={repo} target="_blank" rel="noopener" aria-label="GitHub"><GitHubIcon /><span class="label">GitHub</span></a>
+            </div>
+            <button class="theme-toggle" type="button" data-theme-toggle aria-label="Toggle dark mode">
+              <svg class="sun-icon" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 17.2a5.2 5.2 0 1 0 0-10.4 5.2 5.2 0 0 0 0 10.4Zm0-14.7a1 1 0 0 1 1 1v1.2a1 1 0 1 1-2 0V3.5a1 1 0 0 1 1-1Zm0 16.8a1 1 0 0 1 1 1v1.2a1 1 0 1 1-2 0v-1.2a1 1 0 0 1 1-1Zm9.5-8.3a1 1 0 1 1 0 2h-1.2a1 1 0 1 1 0-2h1.2ZM4.7 11a1 1 0 1 1 0 2H3.5a1 1 0 1 1 0-2h1.2Zm13.74-6.44a1 1 0 0 1 0 1.42l-.85.85a1 1 0 0 1-1.42-1.42l.85-.85a1 1 0 0 1 1.42 0ZM7.83 16.17a1 1 0 0 1 0 1.42l-.85.85a1 1 0 0 1-1.42-1.42l.85-.85a1 1 0 0 1 1.42 0Zm9.76 0 .85.85a1 1 0 1 1-1.42 1.42l-.85-.85a1 1 0 0 1 1.42-1.42ZM6.98 4.56l.85.85a1 1 0 0 1-1.42 1.42l-.85-.85a1 1 0 1 1 1.42-1.42Z"/></svg>
+              <svg class="moon-icon" aria-hidden="true" viewBox="0 0 24 24"><path d="M21 14.58A8.2 8.2 0 0 1 9.42 3a9.25 9.25 0 1 0 11.59 11.59Z"/></svg>
+            </button>
+            <a class="button primary" href="/docs/#homebrew" data-kbd="I">Install<kbd>I</kbd></a>
+          </div>
         </nav>
-        <a class="icon-link always" href={repo} aria-label="GitHub repository" target="_blank" rel="noopener">
-          <GitHubIcon /><span>GitHub</span>
-        </a>
-      <button class="theme-toggle" type="button" data-theme-toggle aria-label="Toggle dark mode">
-        <svg class="sun-icon" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 17.2a5.2 5.2 0 1 0 0-10.4 5.2 5.2 0 0 0 0 10.4Zm0-14.7a1 1 0 0 1 1 1v1.2a1 1 0 1 1-2 0V3.5a1 1 0 0 1 1-1Zm0 16.8a1 1 0 0 1 1 1v1.2a1 1 0 1 1-2 0v-1.2a1 1 0 0 1 1-1Zm9.5-8.3a1 1 0 1 1 0 2h-1.2a1 1 0 1 1 0-2h1.2ZM4.7 11a1 1 0 1 1 0 2H3.5a1 1 0 1 1 0-2h1.2Zm13.74-6.44a1 1 0 0 1 0 1.42l-.85.85a1 1 0 0 1-1.42-1.42l.85-.85a1 1 0 0 1 1.42 0ZM7.83 16.17a1 1 0 0 1 0 1.42l-.85.85a1 1 0 0 1-1.42-1.42l.85-.85a1 1 0 0 1 1.42 0Zm9.76 0 .85.85a1 1 0 1 1-1.42 1.42l-.85-.85a1 1 0 0 1 1.42-1.42ZM6.98 4.56l.85.85a1 1 0 0 1-1.42 1.42l-.85-.85a1 1 0 1 1 1.42-1.42Z"/></svg>
-        <svg class="moon-icon" aria-hidden="true" viewBox="0 0 24 24"><path d="M21 14.58A8.2 8.2 0 0 1 9.42 3a9.25 9.25 0 1 0 11.59 11.59Z"/></svg>
-      </button>
       </div>
+      <span class="rail"></span>
+      <span class="gutter right"></span>
     </header>
 
     <main><slot /></main>
 
-    <footer class="site-footer">
-      <div class="footer-inner">
-        <div class="footer-brand">
-          <Logo class="footer-logo" />
-          <strong>ghdeck</strong>
-          <span>All your GitHub work in one list.</span>
+    <Band class="site-footer" nodes="t" seed={91}>
+      <div class="noise"></div>
+      <div class="footer-grid">
+        <div class="footer-col footer-about">
+          <h3>ghdeck &copy; {year}</h3>
+          <hr />
+          <p>A terminal dashboard for GitHub. Built by <a href="https://jitendravjh.in" target="_blank" rel="noopener">Jitendra Verma</a>.</p>
+          <p><a href={`${repo}/blob/main/LICENSE`} target="_blank" rel="noopener">MIT licensed</a></p>
         </div>
-        <nav class="footer-nav" aria-label="Footer">
-          <a href="/docs/#homebrew">Install</a>
-          <a href="/docs/#connect-your-account">Setup</a>
-          <a href="/docs/#commands">Use</a>
-          <a href={`${repo}/releases`}>Releases</a>
-        </nav>
-        <div class="footer-actions">
-          <a class="nav-heart" href={sponsors} target="_blank" rel="noopener">
-            <HeartIcon />Support
-          </a>
-          <a class="icon-link" href={repo} target="_blank" rel="noopener">
-            <GitHubIcon />GitHub
-          </a>
+        <div class="footer-col">
+          <h3>Install</h3>
+          <ul>
+            <li><a href="/docs/#homebrew">Homebrew</a></li>
+            <li><a href="/docs/#download-a-binary">Binaries</a></li>
+            <li><a href="/docs/#from-source">From source</a></li>
+            <li><a href={`${repo}/releases`} target="_blank" rel="noopener">Releases<span class="ext">&#8599;</span></a></li>
+          </ul>
         </div>
-        <p class="footer-meta">
-          &copy; 2026 <a href="https://jitendravjh.in" target="_blank">Jitendra Verma</a>
-          {" ("}<a href={`${repo}/blob/main/LICENSE`} target="_blank">MIT licensed</a>{")"}
-        </p>
+        <div class="footer-col">
+          <h3>Docs</h3>
+          <ul>
+            <li><a href="/docs/#connect-your-account">Setup</a></li>
+            <li><a href="/docs/#commands">Commands</a></li>
+            <li><a href="/docs/#filters">Filters</a></li>
+            <li><a href="/docs/#keys">Keys</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h3>Project</h3>
+          <ul>
+            <li><a href={repo} target="_blank" rel="noopener">GitHub<span class="ext">&#8599;</span></a></li>
+            <li><a href={`${repo}/issues`} target="_blank" rel="noopener">Issues<span class="ext">&#8599;</span></a></li>
+            <li><a href={sponsors} target="_blank" rel="noopener">Sponsor<span class="ext">&#8599;</span></a></li>
+          </ul>
+        </div>
       </div>
-    </footer>
+    </Band>
 
     <script is:inline>
       (() => {
         for (const pre of document.querySelectorAll("main pre")) {
           if (pre.closest(".terminal") || pre.parentElement?.classList.contains("code-frame")) continue;
-
           const frame = document.createElement("div");
           frame.className = "code-frame";
           const button = document.createElement("button");
@@ -131,10 +144,8 @@ const jsonLd = [
           button.type = "button";
           button.textContent = "Copy";
           button.setAttribute("aria-label", "Copy code block");
-
           pre.parentNode?.insertBefore(frame, pre);
           frame.append(pre, button);
-
           button.addEventListener("click", async () => {
             try {
               await navigator.clipboard.writeText(pre.textContent || "");
@@ -150,10 +161,10 @@ const jsonLd = [
 
     <script is:inline>
       (() => {
-        const links = [...document.querySelectorAll('.toc a[href^="#"]')];
+        const links = [...document.querySelectorAll('.docs-nav a[href^="#"], .docs-toc a[href^="#"]')];
         if (!links.length) return;
-        const targets = links
-          .map((a) => document.getElementById(decodeURIComponent(a.hash.slice(1))))
+        const targets = [...new Set(links.map((a) => decodeURIComponent(a.hash.slice(1))))]
+          .map((id) => document.getElementById(id))
           .filter(Boolean);
         if (!targets.length) return;
 
@@ -170,7 +181,7 @@ const jsonLd = [
             const first = targets.find((t) => seen.get(t.id));
             if (first) mark(first.id);
           },
-          { rootMargin: "-88px 0px -70% 0px", threshold: 0 },
+          { rootMargin: "-80px 0px -70% 0px", threshold: 0 },
         );
         for (const t of targets) io.observe(t);
         mark(targets[0].id);
