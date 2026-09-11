@@ -5,7 +5,7 @@ import { defineConfig } from "astro/config";
 export default defineConfig({
   site: "https://ghdeck.jitendravjh.in",
   integrations: [
-    sitemap({ filter: (page) => !/\/docs\/(setup|use)\/?$/.test(page) }),
+    sitemap({ filter: (page) => !/\/(docs\/setup|docs\/use|og-card)\/?$/.test(page) }),
   ],
   redirects: {
     "/docs/setup/": "/docs/#connect-your-account",

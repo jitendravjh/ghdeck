@@ -396,6 +396,27 @@ pre.block, .prose pre {
 .install pre.block { font-size: 0.9rem; padding: 14px 16px; }
 .install-actions { display: flex; flex-direction: column; gap: 8px; }
 
+/* ── 404 ──────────────────────────────────────────────────────── */
+.lost { display: flex; flex-direction: column; align-items: center; text-align: center; padding: 72px 16px 88px; }
+.lost-art { position: relative; isolation: isolate; padding: 56px 80px; }
+.lost-art svg { width: min(420px, 72vw); height: auto; overflow: visible; }
+.lost-art svg * {
+  fill: none; stroke: var(--accent-blue); stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round;
+}
+:root[data-theme="dark"] .lost-art svg * { stroke: #5a84ea; }
+.lost-art svg .n { fill: var(--bg); }
+.pat.fine {
+  background-image:
+    linear-gradient(to right, var(--grid-line) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--grid-line) 1px, transparent 1px);
+  background-size: 14px 14px;
+  -webkit-mask-image: radial-gradient(closest-side, #000 40%, transparent);
+  mask-image: radial-gradient(closest-side, #000 40%, transparent);
+}
+.lost h1 { color: var(--text-strong); margin-top: 20px; }
+.lost p { margin-top: 10px; max-width: 30rem; text-wrap: balance; }
+.lost a { color: var(--link); text-decoration: underline; text-underline-offset: 3px; }
+
 /* ── footer ───────────────────────────────────────────────────── */
 .site-footer { background: var(--accent-blue); color: var(--offgray-50); }
 .site-footer .gutter, .site-footer .rail { border-color: rgba(255, 255, 255, 0.14); }

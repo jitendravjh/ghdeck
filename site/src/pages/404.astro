@@ -1,20 +1,31 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
 import Band from "../components/Band.astro";
+
+const four = (x: number) => ({
+  lines: [`M${x} 0V120H${x + 120}`, `M${x + 120} 0V240`],
+  nodes: [[x, 0], [x, 120], [x + 120, 0], [x + 120, 120], [x + 120, 240]],
+});
+const zero = (x: number) => ({
+  lines: [`M${x} 0H${x + 120}V240H${x}Z`, `M${x} 0L${x + 120} 240`],
+  nodes: [[x, 0], [x + 120, 0], [x, 240], [x + 120, 240]],
+});
+const digits = [four(0), zero(200), four(400)];
 ---
-<BaseLayout title="Not found" description="That page does not exist.">
+<BaseLayout title="Not found" description="We couldn't find the page you were looking for.">
   <Band nodes="b" seed={5}>
-    <div class="pat grid"></div>
-    <div class="pat glow"></div>
-    <section class="hero">
-      <div>
-        <h1 class="h0">404</h1>
-        <p class="lead">That page does not exist.</p>
+    <section class="lost">
+      <div class="lost-art">
+        <div class="pat fine"></div>
+        <svg viewBox="-16 -16 552 272" aria-hidden="true">
+          {digits.map((d) => d.lines.map((path) => <path d={path} />))}
+          {digits.map((d) => d.nodes.map(([x, y]) => (
+            <rect class="n" x="-8" y="-8" width="16" height="16" rx="3" transform={`translate(${x} ${y}) rotate(45)`} />
+          )))}
+        </svg>
       </div>
-      <div class="hero-buttons">
-        <a class="button primary" href="/">Back to the start</a>
-        <a class="button secondary" href="/docs/">Read the docs</a>
-      </div>
+      <h1 class="h2">Page Not Found</h1>
+      <p>We couldn't find the page you were looking for. <a href="/">Back to home</a>.</p>
     </section>
   </Band>
 </BaseLayout>

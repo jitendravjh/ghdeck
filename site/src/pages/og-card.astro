@@ -1,0 +1,58 @@
+---
+import "../styles/global.css";
+import Logo from "../components/Logo.astro";
+import { termHtml } from "../data/terminal";
+---
+
+<!doctype html>
+<html lang="en" data-theme="dark">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="robots" content="noindex" />
+    <title>ghdeck link preview</title>
+  </head>
+  <body>
+    <div class="noise"></div>
+    <div class="card">
+      <span class="v" style="left:24px"></span>
+      <span class="v" style="left:1176px"></span>
+      <span class="h" style="top:120px"></span>
+      <span class="h" style="top:268px"></span>
+      <i class="node" style="left:24px;top:120px"></i>
+      <i class="node" style="left:1176px;top:120px"></i>
+      <i class="node" style="left:24px;top:268px"></i>
+      <i class="node" style="left:1176px;top:268px"></i>
+
+      <div class="brand"><Logo /><span>ghdeck</span></div>
+      <p class="title">All your GitHub work in one list.</p>
+
+      <div class="shot framed terminal">
+        <div class="chrome"><i></i><i></i><i></i><span>ghdeck</span></div>
+        <pre><code set:html={termHtml} /></pre>
+      </div>
+    </div>
+  </body>
+</html>
+
+<style>
+  body { width: 1200px; height: 630px; min-height: 0; overflow: hidden; }
+  .card { position: relative; width: 1200px; height: 630px; }
+  .v, .h { position: absolute; background: var(--border); }
+  .v { top: 0; bottom: 0; width: 1px; }
+  .h { left: 0; right: 0; height: 1px; }
+  .node { width: 9px; height: 9px; margin: -4px 0 0 -4px; }
+  .brand {
+    position: absolute; left: 0; right: 0; top: 0; height: 120px;
+    display: flex; align-items: center; justify-content: center; gap: 16px;
+    font-family: var(--font-serif); font-size: 52px; letter-spacing: -0.01em; color: var(--text-strong);
+  }
+  .brand :global(svg) { width: 52px; height: 52px; }
+  .title {
+    position: absolute; left: 0; right: 0; top: 120px; height: 148px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--font-serif); font-style: italic; font-weight: 340;
+    font-size: 64px; letter-spacing: -0.02em; color: var(--blue-300);
+  }
+  .shot { position: absolute; left: 50px; right: 50px; top: 296px; border-radius: 8px 8px 0 0; }
+  .shot pre { font-size: 15px; }
+</style>
