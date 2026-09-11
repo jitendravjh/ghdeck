@@ -189,6 +189,16 @@ const year = new Date().getFullYear();
     </script>
 
     <script is:inline>
+      document.addEventListener("keydown", (e) => {
+        if (e.metaKey || e.ctrlKey || e.altKey || e.repeat) return;
+        if (e.target.closest?.("input, textarea, select, [contenteditable]")) return;
+        const key = e.key.toUpperCase();
+        const hit = [...document.querySelectorAll("a kbd")].find((k) => k.textContent.trim() === key);
+        if (hit) { e.preventDefault(); hit.closest("a").click(); }
+      });
+    </script>
+
+    <script is:inline>
       (() => {
         const key = "ghdeck-theme";
         document.querySelector("[data-theme-toggle]")?.addEventListener("click", () => {
