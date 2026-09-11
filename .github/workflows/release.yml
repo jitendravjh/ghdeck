@@ -133,3 +133,30 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git commit -q -m "ghdeck ${{ needs.check.outputs.tag }}" Formula/ghdeck.rb
           git push
+
+  # windows builds after the release is out and may fail without holding up anything above
+  windows:
+    needs: [check, release]
+    runs-on: windows-latest
+    continue-on-error: true
+    env:
+      RUSTFLAGS: -C target-feature=+crt-static
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Set up Rust
+        run: rustup update stable --no-self-update
+
+      - name: Build
+        run: cargo build --release --locked --package ghdeck
+
+      - name: Package and upload
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $name = "ghdeck-x86_64-pc-windows-msvc"
+          Compress-Archive -Path target/release/ghdeck.exe -DestinationPath "$name.zip"
+          $hash = (Get-FileHash "$name.zip" -Algorithm SHA256).Hash.ToLower()
+          Set-Content -Path "$name.zip.sha256" -Value "$hash  $name.zip" -NoNewline -Encoding ascii
+          gh release upload "${{ needs.check.outputs.tag }}" "$name.zip" "$name.zip.sha256" --clobber

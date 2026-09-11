@@ -341,6 +341,8 @@ fn copy_url(app: &mut App) {
     let Some(url) = app.selected().map(|it| it.url.clone()) else { return };
     let candidates: &[(&str, &[&str])] = if cfg!(target_os = "macos") {
         &[("pbcopy", &[])]
+    } else if cfg!(windows) {
+        &[("clip", &[])]
     } else {
         &[("wl-copy", &[]), ("xclip", &["-selection", "clipboard"]), ("xsel", &["--clipboard", "--input"])]
     };

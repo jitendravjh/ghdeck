@@ -18,6 +18,7 @@ need() { command -v "$1" >/dev/null 2>&1 || die "needs $1"; }
 case "$(uname -s)" in
   Darwin) os="apple-darwin" ;;
   Linux) os="unknown-linux-musl" ;;
+  MINGW* | MSYS* | CYGWIN*) die "on windows use the powershell installer: irm https://raw.githubusercontent.com/$repo/main/install.ps1 | iex" ;;
   *) die "there is no build for $(uname -s), only macOS and Linux" ;;
 esac
 case "$(uname -m)" in

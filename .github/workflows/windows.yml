@@ -1,0 +1,48 @@
+name: windows
+
+# builds and tests on windows without touching releases, the installer job is started by hand
+on:
+  push:
+    branches: [main]
+    paths: ["crates/**", "Cargo.toml", "Cargo.lock", "install.ps1", ".github/workflows/windows.yml"]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    env:
+      RUSTFLAGS: -C target-feature=+crt-static
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Set up Rust
+        run: rustup update stable --no-self-update
+
+      - name: Test
+        run: cargo test --locked
+
+      - name: Build
+        run: cargo build --release --locked --package ghdeck
+
+      - name: Run it
+        shell: pwsh
+        run: |
+          ./target/release/ghdeck.exe --version
+          ./target/release/ghdeck.exe --help
+          ./target/release/ghdeck.exe where
+
+  installer:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: windows-latest
+    steps:
+      - name: Install from the latest release
+        shell: pwsh
+        run: irm https://raw.githubusercontent.com/jitendravjh/ghdeck/main/install.ps1 | iex
+
+      - name: Run the installed copy
+        shell: pwsh
+        run: |
+          $exe = Join-Path $env:LOCALAPPDATA "Programs\ghdeck\ghdeck.exe"
+          & $exe --version
+          & $exe where
+          [Environment]::GetEnvironmentVariable("Path", "User")

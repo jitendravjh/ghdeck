@@ -305,6 +305,10 @@ impl App {
 
     pub fn open_in_browser(&self) {
         if let Some(it) = self.selected() {
+            if cfg!(windows) {
+                let _ = std::process::Command::new("cmd").args(["/C", "start", "", it.url.as_str()]).spawn();
+                return;
+            }
             let cmd = if cfg!(target_os = "macos") { "open" } else { "xdg-open" };
             let _ = std::process::Command::new(cmd).arg(&it.url).spawn();
         }
