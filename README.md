@@ -6,20 +6,17 @@ All your GitHub work in one list. PRs and issues together, newest first, with th
 
 GitHub splits these across two pages and neither one tells you if a PR is conflicting or if CI has gone red. Other terminal dashboards keep PRs and issues in separate tabs. This one does not.
 
-<img width="1074" height="448" alt="Screenshot 2026-09-11 at 10 38 52 AM" src="https://github.com/user-attachments/assets/bb758f14-479a-402b-9987-453b4f26d705" />
+<img width="1074" height="448" alt="Screenshot 2026-09-11 at 10 38 52 AM" src="https://github.com/user-attachments/assets/bb758f14-479a-402b-9987-453b4f26d705" />
 
-
-An issue closing and the PR that closed it, next to each other. Conflicts, failing CI and who you are waiting on all show up the same way.
+An issue closing and the PR that closed it, next to each other. Conflicts, failing CI and who you are waiting on all show up the same way. Press `u` and you can look at anyone else's work like this too.
 
 ## Install
 
-Three ways. Pick one, then do [Setup](#setup).
+Pick one, then do [Setup](#setup).
 
-### 1. Homebrew, on macOS or Linux
+### Homebrew, on macOS or Linux
 
-Easiest. Handles PATH and upgrades for you.
-
-**You need Homebrew.** If `brew --version` gives nothing:
+Handles PATH and upgrades for you. **You need Homebrew**, so if `brew --version` gives nothing:
 
 ```sh
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
@@ -31,19 +28,29 @@ Then:
 brew install jitendravjh/tap/ghdeck
 ```
 
-### 2. Install script, on macOS or Linux
+### Install script, on macOS or Linux
 
-**You need nothing else.** One line, it picks the right build for your machine and checks it against the release checksums.
+**You need nothing else.** It picks the right build for your machine, checks it against the release checksums and puts it in `/usr/local/bin`, asking for your password only if that folder needs it.
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/jitendravjh/ghdeck/main/install.sh | sh
 ```
 
-It goes to `/usr/local/bin` and asks for your password only if that folder needs it. Put `GHDECK_BIN_DIR=~/.local/bin` before `sh` to install somewhere else, or `GHDECK_VERSION=v0.2.0` for a specific version. Linux builds are static, so any distro works.
+Put `GHDECK_BIN_DIR=~/.local/bin` before `sh` to install somewhere else, or `GHDECK_VERSION=v0.2.0` for a specific version. Linux builds are static, so any distro works.
 
-### 3. From source
+### Windows
 
-Only if you want to build it yourself. Needs Rust 1.88 or newer and a C compiler, since SQLite is built from source.
+Run this in PowerShell. It puts ghdeck in `%LOCALAPPDATA%\Programs\ghdeck` and adds that folder to your PATH, no admin needed.
+
+```powershell
+irm https://raw.githubusercontent.com/jitendravjh/ghdeck/main/install.ps1 | iex
+```
+
+Windows is new and untested. I don't have a Windows machine, so if you do, give it a go and [open an issue](https://github.com/jitendravjh/ghdeck/issues) saying what works and what doesn't. A screenshot helps a lot.
+
+### From source
+
+Needs Rust 1.88 or newer and a C compiler, since SQLite is built from source.
 
 ```sh
 cargo install --git https://github.com/jitendravjh/ghdeck ghdeck
@@ -57,13 +64,14 @@ The binary lands in `~/.cargo/bin`, so keep that on your PATH.
 | --- | --- | --- |
 | Homebrew | `brew upgrade ghdeck` | `brew uninstall ghdeck` |
 | Install script | run the same command again | `sudo rm /usr/local/bin/ghdeck` |
+| Windows | run the same command again | `Remove-Item "$env:LOCALAPPDATA\Programs\ghdeck" -Recurse` |
 | Source | `cargo install --git https://github.com/jitendravjh/ghdeck ghdeck --force` | `cargo uninstall ghdeck` |
 
-The cache stays in `~/Library/Application Support/ghdeck` on macOS and `~/.local/share/ghdeck` on Linux, delete it too for a clean removal.
+The cache stays behind in `~/Library/Application Support/ghdeck` on macOS, `~/.local/share/ghdeck` on Linux and `%APPDATA%\ghdeck` on Windows, so delete that too for a clean removal. On Windows, also take the folder off your PATH.
 
 ## Setup
 
-ghdeck needs GitHub credentials. Either way works, pick one.
+ghdeck needs GitHub credentials. Pick one.
 
 **If you have [gh](https://cli.github.com):**
 
@@ -73,13 +81,17 @@ gh auth login
 
 Nothing else to do, ghdeck borrows its token.
 
-**Otherwise, a token.** Make one at [github.com/settings/tokens](https://github.com/settings/tokens) with the `repo` scope, then:
+**Otherwise, a token.** Make one at [github.com/settings/tokens](https://github.com/settings/tokens) with the `repo` scope. On macOS or Linux, put this in your `.zshrc` or `.bashrc` so it survives a new shell:
 
 ```sh
 export GITHUB_TOKEN=ghp_your_token_here
 ```
 
-Put that line in your `.zshrc` or `.bashrc` so it survives a new shell. gh is not needed if you go this route.
+On Windows, run this once and open a new terminal:
+
+```powershell
+setx GITHUB_TOKEN ghp_your_token_here
+```
 
 Then run it:
 
@@ -87,26 +99,26 @@ Then run it:
 ghdeck
 ```
 
-The first run fetches everything and caches it, a few seconds. After that it opens instantly and refreshes in the background.
-
-Windows is untested.
+The first run caches everything, a few seconds. After that it opens straight away from the cache while a sync runs behind you.
 
 ## Use
 
 ```sh
-ghdeck                             # dashboard
-ghdeck list                        # print what needs attention
-ghdeck list all                    # print everything
-ghdeck show JuliaGeometry/Meshes.jl#1428   # print one conversation
-ghdeck sync                        # refresh now
-ghdeck user [username]             # print anyone's prs and issues
+ghdeck                                    # dashboard
+ghdeck list                               # print what needs attention
+ghdeck list all                           # print everything
+ghdeck show JuliaGeometry/Meshes.jl#1428  # print one conversation
+ghdeck user [username]                    # print anyone's prs and issues
+ghdeck sync                               # refresh now
 ```
 
-Filters are `attention`, `open`, `yours`, `to-review` and `all`.
+Filters are `attention`, `open`, `yours`, `to-review` and `all`. Attention needed means open items that are conflicting, have changes requested, have CI failing, or are waiting on your review.
 
-Attention needed means open items that are conflicting, have changes requested, have CI failing, or are waiting on your review.
+### Someone else's work
 
-For someone else, press `u` or run `ghdeck user [username]`. Their filters are `all`, `authored`, `mentioned` and `open`, and you only see what your own token can see. If GitHub keeps someone out of search, ghdeck falls back to their public activity, which covers their last 300 events.
+Press `u` in the dashboard and type a username, or run `ghdeck user [username]`. You get their PRs and issues newest first with the same status on every row, and esc takes you back to yours. Their filters are `all`, `authored`, `mentioned` and `open`, and you only see what your own token can see.
+
+GitHub keeps some accounts out of search. For those, ghdeck shows their public activity instead, which covers their last 300 events.
 
 ## Keys
 
@@ -132,8 +144,6 @@ One GraphQL query gets PRs and issues interleaved and already sorted. A full syn
 
 Watching costs nothing. It polls notifications with `If-Modified-Since` and GitHub does not count 304s, so a quiet minute is free. `GHDECK_POLL_SECS` changes the interval if you want.
 
-Everything sits in SQLite, so the dashboard opens on cached data and syncs behind you.
-
 Bots get collapsed to one line in a conversation, otherwise codecov and CI comments bury the actual discussion.
 
 ## Not there yet
@@ -147,13 +157,10 @@ Bots get collapsed to one line in a conversation, otherwise codecov and CI comme
 Bump `version` in `Cargo.toml`, commit, push. That is the whole thing.
 
 ```sh
-git commit -am "Version 0.2.1" && git push
+git commit -am "Version 0.2.2" && git push
 ```
 
-CI reads the version, sees the tag does not exist yet, and then builds all four
-binaries, creates the tag and release, and pushes the formula to
-[jitendravjh/homebrew-tap](https://github.com/jitendravjh/homebrew-tap). Push
-without touching the version and nothing ships, so ordinary commits are safe.
+CI reads the version, sees the tag does not exist yet, then builds the macOS and Linux binaries, creates the tag and release, and pushes the formula to [jitendravjh/homebrew-tap](https://github.com/jitendravjh/homebrew-tap). The Windows build runs last in its own job, so if it ever breaks, everything else still ships. Push without touching the version and nothing ships, so ordinary commits are safe.
 
 The site is separate. It rebuilds on every push to `main` regardless of version.
 

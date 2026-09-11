@@ -32,6 +32,16 @@ Or pin a version the same way:
 curl -fsSL https://raw.githubusercontent.com/jitendravjh/ghdeck/main/install.sh | GHDECK_VERSION=v0.2.0 sh
 ```
 
+## Windows
+
+Run this in PowerShell. It puts ghdeck in `%LOCALAPPDATA%\Programs\ghdeck` and adds that folder to your PATH, no admin needed.
+
+```powershell
+irm https://raw.githubusercontent.com/jitendravjh/ghdeck/main/install.ps1 | iex
+```
+
+Windows is new and untested. If you are on Windows, give it a go and [open an issue](https://github.com/jitendravjh/ghdeck/issues) saying what works and what doesn't.
+
 ## From source
 
 Only if you want to build it yourself. Needs Rust 1.88 and a C compiler.
@@ -54,6 +64,12 @@ With the install script, run it again. It replaces the old binary with the newes
 curl -fsSL https://raw.githubusercontent.com/jitendravjh/ghdeck/main/install.sh | sh
 ```
 
+On Windows, run the installer again:
+
+```powershell
+irm https://raw.githubusercontent.com/jitendravjh/ghdeck/main/install.ps1 | iex
+```
+
 From source:
 
 ```sh
@@ -74,13 +90,19 @@ With the install script:
 sudo rm /usr/local/bin/ghdeck
 ```
 
+On Windows, then take the folder off your PATH:
+
+```powershell
+Remove-Item "$env:LOCALAPPDATA\Programs\ghdeck" -Recurse
+```
+
 From source:
 
 ```sh
 cargo uninstall ghdeck
 ```
 
-The cache stays behind in `~/Library/Application Support/ghdeck` on macOS and `~/.local/share/ghdeck` on Linux, delete that folder too for a clean removal. If you put `GITHUB_TOKEN` in your `.zshrc` or `.bashrc`, take that line out as well.
+The cache stays behind in `~/Library/Application Support/ghdeck` on macOS, `~/.local/share/ghdeck` on Linux and `%APPDATA%\ghdeck` on Windows, delete that folder too for a clean removal. If you put `GITHUB_TOKEN` in your `.zshrc` or `.bashrc`, take that line out as well.
 
 ## Connect your account
 
@@ -100,6 +122,12 @@ Make one with the `repo` scope at [github.com/settings/tokens](https://github.co
 
 ```sh
 export GITHUB_TOKEN=ghp_your_token_here
+```
+
+On Windows, run this once and open a new terminal:
+
+```powershell
+setx GITHUB_TOKEN ghp_your_token_here
 ```
 
 ## First run

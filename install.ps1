@@ -42,7 +42,7 @@
 
     $userPath = [Environment]::GetEnvironmentVariable("Path", "User")
     if (-not (($userPath -split ";") -contains $binDir)) {
-        $newPath = if ($userPath) { "$userPath;$binDir" } else { $binDir }
+        $newPath = if ($userPath) { "$($userPath.TrimEnd(';'));$binDir" } else { $binDir }
         [Environment]::SetEnvironmentVariable("Path", $newPath, "User")
         Write-Host "added $binDir to your PATH, open a new terminal to use ghdeck"
     }
