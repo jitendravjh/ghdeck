@@ -40,6 +40,10 @@
   --warn: #cd8900;
   --info: #7038c8;
 
+  --logo-good: #2da44e;
+  --logo-bad: #cf3f57;
+  --logo-accent: #1f6feb;
+
   --bg: #f6f5f4;
   --nav-bg: var(--cream-50);
   --panel: #ffffff;
@@ -101,6 +105,10 @@
   --bad: #ff6568;
   --warn: #fac800;
   --info: #a78bfa;
+
+  --logo-good: #4ec98a;
+  --logo-bad: #f2687b;
+  --logo-accent: #6cb0f5;
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; border: 0 solid var(--border); }
