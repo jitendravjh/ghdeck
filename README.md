@@ -1,12 +1,12 @@
 # ghdeck
 
-[ghdeck.jitendravjh.in](https://ghdeck.jitendravjh.in)
+### [ghdeck.jitendravjh.in](https://ghdeck.jitendravjh.in)
 
 All your GitHub work in one list. PRs and issues together, newest first, with the status of each one sitting right there.
 
 GitHub splits these across two pages and neither one tells you if a PR is conflicting or if CI has gone red. Other terminal dashboards keep PRs and issues in separate tabs. This one does not.
 
-<img width="1076" height="532" alt="Screenshot 2026-09-08 at 7 14 39 PM" src="https://github.com/user-attachments/assets/c1e7404f-3608-4aef-9780-7d7cc3f17f9a" />
+<img width="1074" height="448" alt="Screenshot 2026-09-11 at 10 38 52 AM" src="https://github.com/user-attachments/assets/bb758f14-479a-402b-9987-453b4f26d705" />
 
 
 An issue closing and the PR that closed it, next to each other. Conflicts, failing CI and who you are waiting on all show up the same way.
