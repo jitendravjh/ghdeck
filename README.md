@@ -1,4 +1,11 @@
-# ghdeck
+<h1 align="left">
+  <a href="https://ghdeck.jitendravjh.in">
+    <img
+      src="https://readme-typing-svg.demolab.com/?font=Fira+Code&weight=600&size=40&duration=3000&pause=1000&color=08C225&vCenter=true&width=600&height=70&lines=ghdeck"
+      alt="ghdeck"
+    />
+  </a>
+</h1>
 
 ### [ghdeck.jitendravjh.in](https://ghdeck.jitendravjh.in)
 
@@ -14,13 +21,9 @@ An issue closing and the PR that closed it, next to each other. Conflicts, faili
 
 Pick one, then do [Setup](#setup).
 
-### Homebrew, on macOS or Linux
+### Homebrew: on macOS or Linux
 
-Handles PATH and upgrades for you. **You need Homebrew**, so if `brew --version` gives nothing:
-
-```sh
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-```
+**If you don't have Homebrew**, install it first, from [brew.sh](https://brew.sh/)
 
 Then:
 
@@ -28,15 +31,14 @@ Then:
 brew install jitendravjh/tap/ghdeck
 ```
 
-### Install script, on macOS or Linux
+### Install script: on macOS or Linux
 
 **You need nothing else.** It picks the right build for your machine, checks it against the release checksums and puts it in `/usr/local/bin`, asking for your password only if that folder needs it.
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/jitendravjh/ghdeck/main/install.sh | sh
 ```
-
-Put `GHDECK_BIN_DIR=~/.local/bin` before `sh` to install somewhere else, or `GHDECK_VERSION=v0.2.0` for a specific version. Linux builds are static, so any distro works.
+Linux builds are static, so any distro works.
 
 ### Windows
 
@@ -138,30 +140,12 @@ q             quit
 
 Inside a conversation, up and down scroll, `b` expands bot messages, and left or esc takes you back.
 
-## How it stays cheap
+## Watching costs nothing
 
 One GraphQL query gets PRs and issues interleaved and already sorted. A full sync of 130 items costs about 18 points out of 5000 an hour.
 
-Watching costs nothing. It polls notifications with `If-Modified-Since` and GitHub does not count 304s, so a quiet minute is free. `GHDECK_POLL_SECS` changes the interval if you want.
+It polls notifications with `If-Modified-Since` and GitHub does not count 304s, so a quiet minute is free. `GHDECK_POLL_SECS` changes the interval if you want.
 
 Bots get collapsed to one line in a conversation, otherwise codecov and CI comments bury the actual discussion.
 
-## Not there yet
-
-- GitHub search caps at 1000 results, so older history is out of reach
-- No diffs
-- Read only, no approve or merge
-
-## Releasing
-
-Bump `version` in `Cargo.toml`, commit, push. That is the whole thing.
-
-```sh
-git commit -am "Version 0.2.2" && git push
-```
-
-CI reads the version, sees the tag does not exist yet, then builds the macOS and Linux binaries, creates the tag and release, and pushes the formula to [jitendravjh/homebrew-tap](https://github.com/jitendravjh/homebrew-tap). The Windows build runs last in its own job, so if it ever breaks, everything else still ships. Push without touching the version and nothing ships, so ordinary commits are safe.
-
-The site is separate. It rebuilds on every push to `main` regardless of version.
-
-MIT
+## MIT LICENSED
