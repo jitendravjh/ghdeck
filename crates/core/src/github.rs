@@ -6,6 +6,7 @@ use std::time::Duration;
 
 const API: &str = "https://api.github.com/graphql";
 const REST: &str = "https://api.github.com/notifications";
+const HOST: &str = "https://api.github.com";
 const UA: &str = concat!("ghdeck/", env!("CARGO_PKG_VERSION"));
 const RETRIES: u32 = 3;
 
@@ -17,7 +18,7 @@ fn retryable(e: &ureq::Error) -> bool {
     }
 }
 
-const QUERY: &str = r#"
+const SEARCH: &str = r#"
 query($main:String!,$extra:String!,$n:Int!,$c1:String,$c2:String){
   viewer{login}
   main: search(query:$main,type:ISSUE,first:$n,after:$c1){
@@ -26,6 +27,9 @@ query($main:String!,$extra:String!,$n:Int!,$c1:String,$c2:String){
     issueCount pageInfo{hasNextPage endCursor} nodes{...Row} }
   rateLimit{cost remaining}
 }
+"#;
+
+const ROW: &str = r#"
 fragment Row on SearchResultItem{
   ... on Issue{ __typename number title url state stateReason updatedAt
     repository{nameWithOwner} author{login}
@@ -53,6 +57,7 @@ pub struct Fetched {
     pub involved_total: u64,
     pub cost: u64,
     pub remaining: u64,
+    pub feed_since: Option<DateTime<Utc>>,
 }
 
 impl Client {
@@ -61,6 +66,23 @@ impl Client {
     }
 
     fn graphql(&self, query: &str, vars: Value) -> Result<Value> {
+        let v = self.post(query, vars)?;
+        if let Some(errs) = v.get("errors") {
+            bail!("github returned errors: {errs}");
+        }
+        v.get("data").cloned().context("graphql response had no data")
+    }
+
+    // keeps what came back when only some fields failed, like a repo deleted since the event
+    fn graphql_partial(&self, query: &str, vars: Value) -> Result<Value> {
+        let v = self.post(query, vars)?;
+        match v.get("data") {
+            Some(d) if !d.is_null() => Ok(d.clone()),
+            _ => bail!("github returned errors: {}", v.get("errors").cloned().unwrap_or_default()),
+        }
+    }
+
+    fn post(&self, query: &str, vars: Value) -> Result<Value> {
         let body = json!({ "query": query, "variables": vars });
         let mut last: Option<anyhow::Error> = None;
 
@@ -84,11 +106,7 @@ impl Client {
                 Err(e) => return Err(e).context("github graphql request failed"),
             };
 
-            let v: Value = res.body_mut().read_json().context("bad graphql response")?;
-            if let Some(errs) = v.get("errors") {
-                bail!("github returned errors: {errs}");
-            }
-            return v.get("data").cloned().context("graphql response had no data");
+            return res.body_mut().read_json().context("bad graphql response");
         }
         Err(last.unwrap_or_else(|| anyhow::anyhow!("github graphql request failed")))
     }
@@ -111,14 +129,96 @@ impl Client {
         per_page: u64,
         on_page: &mut dyn FnMut(&[Item], u64) -> bool,
     ) -> Result<Fetched> {
-        self.collect(
+        let got = self.collect(
             &format!("involves:{login} sort:updated-desc"),
             &format!("mentions:{login} sort:updated-desc"),
             |it| it.mentioned = true,
             pages,
             per_page,
             on_page,
-        )
+        )?;
+        if !got.items.is_empty() {
+            return Ok(got);
+        }
+        // graphql says zero both for no public work and for an account github keeps out of search,
+        // the rest search says which, and the user lookup tells a hidden account from a missing one
+        let (status, _) = self.rest(&format!("{HOST}/search/issues?q=author:{login}&per_page=1"))?;
+        if status != 422 {
+            return Ok(got);
+        }
+        let (status, _) = self.rest(&format!("{HOST}/users/{login}"))?;
+        if status == 404 {
+            bail!("there is no github user called {login}");
+        }
+        self.activity_feed(login, per_page, on_page)
+    }
+
+    fn activity_feed(
+        &self,
+        login: &str,
+        per_page: u64,
+        on_page: &mut dyn FnMut(&[Item], u64) -> bool,
+    ) -> Result<Fetched> {
+        // github keeps 300 events over three pages, and a page can come back short with more after it
+        let mut events = Vec::new();
+        for page in 1..=3 {
+            let url = format!("{HOST}/users/{login}/events/public?per_page=100&page={page}");
+            match self.rest(&url)? {
+                (200, Value::Array(batch)) if !batch.is_empty() => events.extend(batch),
+                _ => break,
+            }
+        }
+        let (refs, since) = feed_refs(&events);
+
+        let mut items: Vec<Item> = Vec::new();
+        let (mut cost, mut remaining) = (0u64, 0u64);
+        for chunk in refs.chunks(per_page.max(1) as usize) {
+            let data = self.by_refs(chunk)?;
+            cost += data["rateLimit"]["cost"].as_u64().unwrap_or(0);
+            remaining = data["rateLimit"]["remaining"].as_u64().unwrap_or(remaining);
+            items.extend((0..chunk.len()).filter_map(|i| parse(&data[format!("r{i}")]["issueOrPullRequest"])));
+            items.sort_by_key(|i| std::cmp::Reverse(i.updated_at));
+            if !on_page(&items, items.len() as u64) {
+                break;
+            }
+        }
+        Ok(Fetched { involved_total: items.len() as u64, items, login: String::new(), cost, remaining, feed_since: since })
+    }
+
+    fn by_refs(&self, refs: &[(String, u64)]) -> Result<Value> {
+        let mut decl = Vec::new();
+        let mut fields = String::new();
+        let mut vars = serde_json::Map::new();
+        for (i, (repo, number)) in refs.iter().enumerate() {
+            let Some((owner, name)) = repo.split_once('/') else { continue };
+            decl.push(format!("$o{i}:String!,$n{i}:String!,$k{i}:Int!"));
+            fields.push_str(&format!("r{i}: repository(owner:$o{i},name:$n{i}){{issueOrPullRequest(number:$k{i}){{...Row}}}}\n"));
+            vars.insert(format!("o{i}"), owner.into());
+            vars.insert(format!("n{i}"), name.into());
+            vars.insert(format!("k{i}"), (*number).into());
+        }
+        if decl.is_empty() {
+            return Ok(Value::Null);
+        }
+        let query = format!("query({}){{\n{fields}rateLimit{{cost remaining}}\n}}\n{ROW}", decl.join(","));
+        self.graphql_partial(&query, Value::Object(vars))
+    }
+
+    fn rest(&self, url: &str) -> Result<(u16, Value)> {
+        let sent = self
+            .agent
+            .get(url)
+            .header("Authorization", format!("Bearer {}", self.token))
+            .header("User-Agent", UA)
+            .call();
+        match sent {
+            Ok(mut res) => {
+                let status = res.status().as_u16();
+                Ok((status, res.body_mut().read_json().unwrap_or_default()))
+            }
+            Err(ureq::Error::StatusCode(c)) => Ok((c, Value::Null)),
+            Err(e) => Err(e).context("github was unreachable"),
+        }
     }
 
     // on_page sees everything so far after each page, and stops the fetch by returning false
@@ -136,9 +236,10 @@ impl Client {
         let (mut c1, mut c2) = (Value::Null, Value::Null);
         let (mut cost, mut remaining, mut total) = (0u64, 0u64, 0u64);
         let mut login = String::new();
+        let query = format!("{SEARCH}{ROW}");
 
         for _ in 0..pages {
-            let data = self.graphql(QUERY, json!({
+            let data = self.graphql(&query, json!({
                 "main": main,
                 "extra": extra,
                 "n": per_page,
@@ -187,7 +288,7 @@ impl Client {
             }
         }
 
-        Ok(Fetched { items, login, involved_total: total, cost, remaining })
+        Ok(Fetched { items, login, involved_total: total, cost, remaining, feed_since: None })
     }
 
     pub fn thread(&self, repo: &str, number: u64) -> Result<Vec<crate::thread::Event>> {
@@ -233,6 +334,30 @@ fn next_cursor(page_info: &Value) -> Value {
     } else {
         Value::Null
     }
+}
+
+// the prs and issues someone touched, once each and newest first, plus how far back the feed goes
+fn feed_refs(events: &[Value]) -> (Vec<(String, u64)>, Option<DateTime<Utc>>) {
+    let mut seen = std::collections::HashSet::new();
+    let mut refs = Vec::new();
+    let mut oldest: Option<DateTime<Utc>> = None;
+    for e in events {
+        if let Some(t) = e["created_at"].as_str().and_then(|s| s.parse::<DateTime<Utc>>().ok()) {
+            oldest = Some(oldest.map_or(t, |o| o.min(t)));
+        }
+        let key = match e["type"].as_str() {
+            Some("PullRequestEvent" | "PullRequestReviewEvent" | "PullRequestReviewCommentEvent") => "pull_request",
+            Some("IssuesEvent" | "IssueCommentEvent") => "issue",
+            _ => continue,
+        };
+        let (Some(repo), Some(number)) = (e["repo"]["name"].as_str(), e["payload"][key]["number"].as_u64()) else {
+            continue;
+        };
+        if seen.insert((repo.to_string(), number)) {
+            refs.push((repo.to_string(), number));
+        }
+    }
+    (refs, oldest)
 }
 
 fn names(v: &Value, path: &str) -> Vec<String> {
@@ -465,5 +590,22 @@ mod tests {
     fn unknown_typename_is_skipped() {
         assert!(parse(&node(r#"{"__typename":"Repository"}"#)).is_none());
         assert!(parse(&node(r#"{}"#)).is_none());
+    }
+
+    #[test]
+    fn feed_keeps_each_pr_and_issue_once_newest_first() {
+        let events: Vec<Value> = serde_json::from_str(
+            r#"[
+              {"type":"PullRequestEvent","created_at":"2026-09-10T00:00:00Z","repo":{"name":"o/a"},"payload":{"pull_request":{"number":7}}},
+              {"type":"PushEvent","created_at":"2026-09-09T00:00:00Z","repo":{"name":"o/a"},"payload":{}},
+              {"type":"IssueCommentEvent","created_at":"2026-09-08T00:00:00Z","repo":{"name":"o/b"},"payload":{"issue":{"number":3}}},
+              {"type":"PullRequestReviewEvent","created_at":"2026-09-07T00:00:00Z","repo":{"name":"o/a"},"payload":{"pull_request":{"number":7}}},
+              {"type":"IssuesEvent","created_at":"2026-09-01T00:00:00Z","repo":{"name":"o/c"},"payload":{"issue":{"number":1}}}
+            ]"#,
+        )
+        .unwrap();
+        let (refs, since) = feed_refs(&events);
+        assert_eq!(refs, vec![("o/a".to_string(), 7), ("o/b".to_string(), 3), ("o/c".to_string(), 1)]);
+        assert_eq!(since.unwrap().to_rfc3339(), "2026-09-01T00:00:00+00:00");
     }
 }

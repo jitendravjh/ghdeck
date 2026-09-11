@@ -17,7 +17,7 @@ pub enum Cmd {
 pub enum Evt {
     Synced { stats: SyncStats, items: Vec<Item>, login: String },
     Thread { url: String, events: Vec<Event> },
-    Activity { ticket: u64, items: Vec<Item>, total: u64, cost: Option<u64> },
+    Activity { ticket: u64, items: Vec<Item>, total: u64, cost: Option<u64>, since: Option<DateTime<Utc>> },
     ActivityFailed { ticket: u64, error: String },
     Quiet,
     Failed(String),
@@ -90,7 +90,7 @@ impl Worker {
                                     other => later.push_back(other),
                                 }
                             }
-                            let _ = evt_tx.send(Evt::Activity { ticket, items: items.to_vec(), total, cost: None });
+                            let _ = evt_tx.send(Evt::Activity { ticket, items: items.to_vec(), total, cost: None, since: None });
                             live()
                         };
                         match sync.activity(&login, pages, &mut on_page) {
@@ -99,6 +99,7 @@ impl Worker {
                                 items: got.items,
                                 total: got.involved_total,
                                 cost: Some(got.cost),
+                                since: got.feed_since,
                             },
                             Err(e) => Evt::ActivityFailed { ticket, error: format!("{e:#}") },
                         }

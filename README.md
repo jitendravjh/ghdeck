@@ -128,7 +128,7 @@ Filters are `attention`, `open`, `yours`, `to-review` and `all`.
 
 Attention needed means open items that are conflicting, have changes requested, have CI failing, or are waiting on your review.
 
-For someone else, press `u` or run `ghdeck user <name>`. Their filters are `all`, `authored`, `mentioned` and `open`, and you only see what your own token can see.
+For someone else, press `u` or run `ghdeck user <name>`. Their filters are `all`, `authored`, `mentioned` and `open`, and you only see what your own token can see. If GitHub keeps someone out of search, ghdeck falls back to their public activity, which covers their last 300 events.
 
 ## Keys
 

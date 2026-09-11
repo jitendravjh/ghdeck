@@ -27,6 +27,7 @@ pub struct App {
     pub who: Option<String>,
     pub who_total: u64,
     pub who_loading: bool,
+    pub who_since: Option<DateTime<Utc>>,
     pub asking: bool,
     pub ask: String,
     ticket: u64,
@@ -60,6 +61,7 @@ impl App {
             who: None,
             who_total: 0,
             who_loading: false,
+            who_since: None,
             asking: false,
             ask: String::new(),
             ticket: 0,
@@ -177,6 +179,7 @@ impl App {
         self.cursor = 0;
         self.search.clear();
         self.who_total = 0;
+        self.who_since = None;
         self.who_loading = true;
         self.status = format!("loading {login}");
         self.ticket = self.worker.look_up(login.clone(), 5);
@@ -266,7 +269,7 @@ impl App {
                         self.replace_items(items);
                     }
                 }
-                Evt::Activity { ticket, items, total, cost } => {
+                Evt::Activity { ticket, items, total, cost, since } => {
                     if self.who.is_none() || ticket != self.ticket {
                         continue;
                     }
@@ -274,6 +277,7 @@ impl App {
                     self.replace_items(items);
                     if let Some(cost) = cost {
                         self.who_loading = false;
+                        self.who_since = since;
                         self.status = format!("{} items, {} api pts", self.items.len(), cost);
                     }
                 }

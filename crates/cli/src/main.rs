@@ -138,13 +138,18 @@ fn user(who: Option<&str>, what: Option<&str>) -> Result<()> {
     let got = got?;
 
     let mut out = std::io::stdout().lock();
-    if got.involved_total == 0 {
-        writeln!(out, "nothing for {login}, check the name, or their work is in repos you cannot see")?;
+    if got.items.is_empty() {
+        writeln!(out, "nothing for {login} that you can see")?;
         return Ok(());
     }
     let rows: Vec<_> = got.items.iter().filter(|it| filter.keeps(it, &login)).collect();
     writeln!(out, "{}, {} for {login}", plural(rows.len() as u64, "item"), filter.label().to_lowercase())?;
-    if got.involved_total > got.items.len() as u64 {
+    if let Some(since) = got.feed_since {
+        writeln!(out, "github hides {login} from search, so this is their public activity since {}", since.format("%-d %b"))?;
+        if filter == Filter::Mentioned {
+            writeln!(out, "mentions are not in that activity, so this filter stays empty")?;
+        }
+    } else if got.involved_total > got.items.len() as u64 {
         writeln!(out, "from the newest {} of {} they are involved in", got.items.len(), got.involved_total)?;
     }
     writeln!(out)?;

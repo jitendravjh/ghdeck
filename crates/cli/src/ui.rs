@@ -54,6 +54,11 @@ fn header(f: &mut Frame, area: Rect, app: &App) {
         spans.push(Span::styled("  loading", Style::default().fg(Color::Yellow)));
     } else if app.busy() {
         spans.push(Span::styled("  syncing", Style::default().fg(Color::Yellow)));
+    } else if let Some(since) = app.who_since.filter(|_| app.who.is_some()) {
+        spans.push(Span::styled(
+            format!("  hidden from search, showing their activity since {}", since.format("%-d %b")),
+            Style::default().fg(Color::Yellow),
+        ));
     } else if app.who.is_some() && app.who_total > app.items.len() as u64 {
         spans.push(Span::styled(
             format!("  newest {} of {}", app.items.len(), app.who_total),
@@ -113,7 +118,7 @@ fn list(f: &mut Frame, area: Rect, app: &mut App) {
         let msg = match &app.who {
             Some(who) if app.who_loading => format!("loading {who}"),
             Some(who) if app.items.is_empty() => {
-                format!("nothing for {who}, check the name, or their work is in repos you cannot see")
+                format!("nothing for {who} that you can see")
             }
             None if app.items.is_empty() => "nothing cached yet, press r to sync".into(),
             _ => "nothing matches this filter".into(),

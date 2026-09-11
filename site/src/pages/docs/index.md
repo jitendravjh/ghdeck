@@ -108,6 +108,8 @@ Press `u` in the dashboard and type a username, or run `ghdeck user juliohm`. Yo
 
 Filters there are `all`, `authored`, `mentioned` and `open`. You only see what your own token can see, so their work in private repos you have no access to won't show up.
 
+GitHub keeps some accounts out of search. For those, ghdeck shows their public activity instead. That feed only holds their last 300 events, so for a busy person it covers a couple of weeks, and mentions are not in it.
+
 ## Keys
 
 | key | does |
