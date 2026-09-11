@@ -108,7 +108,7 @@ export GITHUB_TOKEN=ghp_your_token_here
 ghdeck
 ```
 
-The first run caches everything, a few seconds. After that it opens instantly and refreshes on its own. Windows is untested.
+The first run caches everything, a few seconds. Everything sits in SQLite. Cached data shows straight away while a sync runs behind you.
 
 ## Commands
 
