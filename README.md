@@ -145,3 +145,5 @@ It polls notifications with `If-Modified-Since` and GitHub does not count 304s, 
 Bots get collapsed to one line in a conversation, otherwise codecov and CI comments bury the actual discussion.
 
 ## MIT LICENSED
+
+MIT, see [LICENSE](LICENSE).
