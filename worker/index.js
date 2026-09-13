@@ -16,7 +16,7 @@ fragment Row on SearchResultItem{
     merged mergeable reviewDecision
     comments(last:1){totalCount nodes{author{login} createdAt}}
     reviews(last:10){totalCount nodes{state author{login} submittedAt}}
-    reviewRequests(first:8){nodes{requestedReviewer{... on User{login} ... on Team{name}}}}
+    reviewRequests(first:8){nodes{requestedReviewer{... on User{login}}}}
     commits(last:1){nodes{commit{statusCheckRollup{state}}}} }
 }`;
 
