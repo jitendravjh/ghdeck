@@ -1,0 +1,185 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import Band from "../components/Band.astro";
+---
+
+<BaseLayout
+  title="Try it"
+  description="Search any GitHub username and see their PRs and issues the way ghdeck shows them."
+>
+  <Band nodes="b" seed={5}>
+    <div class="pat grid"></div>
+    <div class="pat glow"></div>
+    <section class="try">
+      <h1 class="h2">Look up anyone</h1>
+      <p class="lead">
+        The same list ghdeck shows in your terminal, for any GitHub username. Public work only, since
+        the site searches as itself.
+      </p>
+
+      <form class="try-form" id="try-form">
+        <input
+          id="try-name"
+          name="name"
+          type="text"
+          placeholder="github username"
+          autocomplete="off"
+          autocapitalize="off"
+          spellcheck="false"
+          aria-label="GitHub username"
+        />
+        <button class="button primary" type="submit">Search</button>
+      </form>
+
+      <p class="try-note" id="try-note">Try torvalds, juliohm, or your own username.</p>
+
+      <div class="frame" id="try-frame" hidden>
+        <div class="framed terminal">
+          <div class="chrome"><i></i><i></i><i></i><span id="try-title">ghdeck</span></div>
+          <pre><code id="try-rows"></code></pre>
+        </div>
+      </div>
+    </section>
+  </Band>
+</BaseLayout>
+
+<script is:inline>
+  (() => {
+    const form = document.getElementById("try-form");
+    const input = document.getElementById("try-name");
+    const note = document.getElementById("try-note");
+    const frame = document.getElementById("try-frame");
+    const title = document.getElementById("try-title");
+    const rows = document.getElementById("try-rows");
+    const FILTERS = ["ALL", "AUTHORED", "MENTIONED", "OPEN"];
+    let state = null;
+
+    const ago = (iso) => {
+      const s = Math.max(0, (Date.now() - Date.parse(iso)) / 1000);
+      if (s < 3600) return `${Math.floor(s / 60)}m`;
+      if (s < 86400) return `${Math.floor(s / 3600)}h`;
+      if (s < 2592000) return `${Math.floor(s / 86400)}d`;
+      if (s < 31536000) return `${Math.floor(s / 2592000)}mo`;
+      return `${Math.floor(s / 31536000)}y`;
+    };
+
+    const span = (cls, text) => {
+      const el = document.createElement("span");
+      if (cls) el.className = cls;
+      el.textContent = text;
+      return el;
+    };
+
+    const keeps = (row, filter) =>
+      filter === "ALL"
+        ? true
+        : filter === "AUTHORED"
+          ? row.author.toLowerCase() === state.login.toLowerCase()
+          : filter === "MENTIONED"
+            ? row.mentioned
+            : row.open;
+
+    const tone = { good: "g", bad: "r", warn: "y", info: "m", muted: "d" };
+
+    const draw = () => {
+      rows.textContent = "";
+      const head = document.createElement("span");
+      head.className = "ln";
+      head.append(span("c", "ghdeck"), span("", "  "), span("b", `@${state.login}`), span("", "  "));
+      const tabs = span("tabs", "");
+      for (const f of FILTERS) {
+        const n = state.rows.filter((r) => keeps(r, f)).length;
+        const label = document.createElement(f === state.filter ? "b" : "span");
+        label.textContent = ` ${f} [${n}] `;
+        label.dataset.filter = f;
+        label.className = "try-tab";
+        tabs.append(label);
+      }
+      head.append(tabs);
+      rows.append(head);
+
+      const shown = state.rows.filter((r) => keeps(r, state.filter));
+      if (!shown.length) {
+        rows.append(span("ln d", `nothing for ${state.login} under this filter`));
+        return;
+      }
+
+      shown.forEach((row, i) => {
+        if (i) rows.append(span("sep", ""));
+        const top = document.createElement("span");
+        top.className = "ln";
+        top.append(
+          span("d", `${ago(row.updatedAt).padStart(3)}  `),
+          span(row.kind === "pr" ? "b" : "c", (row.kind === "pr" ? "[PR]" : "[ISSUE]").padEnd(7)),
+          span("", " "),
+          span("rp", `${row.repo}#${row.number}`),
+          span("", "  "),
+          span("t", row.title),
+        );
+        const bottom = document.createElement("span");
+        bottom.className = "ln";
+        bottom.append(span("", " ".repeat(13)));
+        row.chips.forEach((chip, k) => {
+          if (k) bottom.append(span("d", " · "));
+          bottom.append(span(tone[chip.tone] || "d", chip.text));
+        });
+        let tail = "";
+        if (row.comments) tail += `   ${row.comments} comment${row.comments === 1 ? "" : "s"}`;
+        if (row.activity) tail += `   ${row.activity}`;
+        if (tail) bottom.append(span("d", tail));
+        rows.append(top, bottom);
+      });
+    };
+
+    rows.addEventListener("click", (e) => {
+      const f = e.target?.dataset?.filter;
+      if (f && state) {
+        state.filter = f;
+        draw();
+      }
+    });
+
+    const search = async (name) => {
+      note.textContent = `looking up ${name}`;
+      frame.hidden = true;
+      let res, body;
+      try {
+        res = await fetch(`/api/user?name=${encodeURIComponent(name)}`);
+        body = await res.json();
+      } catch {
+        note.textContent = "could not reach the search, try again in a minute";
+        return;
+      }
+      if (!res.ok) {
+        note.textContent = body?.error || "that lookup did not work";
+        return;
+      }
+      if (!body.rows.length) {
+        note.textContent = `nothing public for ${body.login}`;
+        return;
+      }
+      state = { login: body.login, rows: body.rows, filter: "ALL" };
+      title.textContent = `ghdeck user ${body.login}`;
+      note.textContent =
+        body.source === "activity"
+          ? `github hides ${body.login} from search, so this is their public activity`
+          : body.total > body.rows.length
+            ? `the newest ${body.rows.length} of ${body.total} they are involved in`
+            : `${body.rows.length} item${body.rows.length === 1 ? "" : "s"}`;
+      frame.hidden = false;
+      draw();
+    };
+
+    form.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const name = input.value.trim().replace(/^@/, "");
+      if (name) search(name);
+    });
+
+    const start = new URLSearchParams(location.search).get("name");
+    if (start) {
+      input.value = start;
+      search(start);
+    }
+  })();
+</script>
