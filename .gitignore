@@ -1,3 +1,6 @@
 /target
 *.db
 .DS_Store
+.dev.vars
+/node_modules
+/.wrangler
