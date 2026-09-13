@@ -150,6 +150,8 @@ Attention means open items that are conflicting, have changes requested, have CI
 
 Press `u` in the dashboard and type a username, or run `ghdeck user [username]`. You get their PRs and issues newest first, with the same status on every row. Esc takes you back to your own list.
 
+Same lookup runs on the website too, [Try it here &rarr;](/try/)
+
 Filters there are `all`, `authored`, `mentioned` and `open`. You only see what your own token can see, so their work in private repos you have no access to won't show up.
 
 GitHub keeps some accounts out of search. For those, ghdeck shows their public activity instead. That feed only holds their last 300 events, so for a busy person it covers a couple of weeks, and mentions are not in it.

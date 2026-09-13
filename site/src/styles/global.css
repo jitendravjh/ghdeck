@@ -292,8 +292,7 @@ kbd {
 .strip > div:last-child { border-bottom: 0; }
 .strip h3 { font-family: var(--font-serif); font-size: 1.1rem; font-weight: 400; color: var(--text-strong); margin-bottom: 4px; }
 .strip p { font-size: 0.9rem; }
-.strip a.more { font-size: 0.85rem; color: var(--link); text-decoration: none; }
-.strip a.more:hover { text-decoration: underline; }
+.strip a.more { font-size: 0.85rem; color: var(--link); text-decoration: underline; text-underline-offset: 2px; }
 
 /* ── section header ───────────────────────────────────────────── */
 .sec-head {
