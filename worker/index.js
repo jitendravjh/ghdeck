@@ -221,6 +221,15 @@ function json(body, status, cacheable) {
   });
 }
 
+// anything the cache hands back carries a browser ttl from the zone, so the
+// copy the visitor gets is rebuilt and told to keep nothing
+function forClient(res) {
+  return new Response(res.body, {
+    status: res.status,
+    headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
+  });
+}
+
 async function lookUp(url, env, ctx) {
   const login = cleanLogin(url.searchParams.get("name"));
   if (!login) return json({ error: "that is not a github username" }, 400);
@@ -229,7 +238,7 @@ async function lookUp(url, env, ctx) {
   const cache = caches.default;
   const key = new Request(`${url.origin}/api/user?name=${login.toLowerCase()}`);
   const hit = await cache.match(key);
-  if (hit) return hit;
+  if (hit) return forClient(hit);
 
   try {
     const data = await graphql(env.GHDECK_TOKEN, SEARCH, {
@@ -263,7 +272,7 @@ async function lookUp(url, env, ctx) {
 
     const res = json(body, 200, true);
     ctx.waitUntil(cache.put(key, res.clone()));
-    return res;
+    return forClient(res);
   } catch (e) {
     const message = e instanceof Error ? e.message : "github did not answer";
     const busy = /rate limit|abuse|secondary/i.test(message);
