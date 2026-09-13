@@ -1,6 +1,8 @@
 {
   "name": "ghdeck",
   "main": "./worker/index.js",
+  // the github token is set in the dashboard, a deploy would drop it otherwise
+  "keep_vars": true,
   "compatibility_date": "2026-09-08",
   "assets": {
     "directory": "./site/dist",
