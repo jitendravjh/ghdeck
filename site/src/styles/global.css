@@ -390,6 +390,23 @@ a.cell .more { font-size: 0.85rem; color: var(--link); }
 .look .frame { margin-top: 26px; width: 100%; text-align: left; }
 /* real titles run long, so keep the text readable and let the row scroll */
 .look .terminal pre { overflow-x: auto; font-size: clamp(11.5px, calc((100vw - 82px) / 56), 14px); }
+/* the wait is four to eight seconds, so the page has to look alive */
+.dots i { display: inline-block; width: 0.32em; }
+.dots i::before { content: "."; opacity: 0.2; animation: dot 1.2s infinite; }
+.dots i:nth-child(2)::before { animation-delay: 0.2s; }
+.dots i:nth-child(3)::before { animation-delay: 0.4s; }
+@keyframes dot { 0%, 60%, 100% { opacity: 0.2; } 30% { opacity: 1; } }
+.skel {
+  display: inline-block; height: 0.85em; border-radius: 2px;
+  background: currentColor; opacity: 0.08; animation: skel 1.4s ease-in-out infinite;
+}
+@keyframes skel { 0%, 100% { opacity: 0.06; } 50% { opacity: 0.15; } }
+@media (prefers-reduced-motion: reduce) {
+  .dots i::before, .skel { animation: none; }
+  .dots i::before { opacity: 1; }
+}
+.look-form button[disabled] { opacity: 0.7; cursor: default; }
+
 .look-share {
   margin-top: 10px; padding: 5px 10px; border: 1px solid var(--border); border-radius: 3px;
   background: var(--panel-soft); color: var(--text); font-family: inherit; font-size: 0.8rem;

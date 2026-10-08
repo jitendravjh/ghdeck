@@ -31,7 +31,7 @@ import Band from "../components/Band.astro";
         <button class="button primary" type="submit">Search</button>
       </form>
 
-      <p class="look-note" id="look-note">Any GitHub username works, your own is a good place to start.</p>
+      <p class="look-note" id="look-note" aria-live="polite">Any GitHub username works, your own is a good place to start.</p>
       <button class="look-share" id="look-share" type="button" hidden>Copy link to this list</button>
 
       <div class="frame" id="look-frame" hidden>
@@ -53,6 +53,8 @@ import Band from "../components/Band.astro";
     const title = document.getElementById("look-title");
     const rows = document.getElementById("look-rows");
     const share = document.getElementById("look-share");
+    const button = document.querySelector(".look-form button");
+    let inFlight = false;
     const FILTERS = ["ALL", "AUTHORED", "MENTIONED", "OPEN"];
     let state = null;
 
@@ -148,23 +150,59 @@ import Band from "../components/Band.astro";
       }
     });
 
-    const search = async (name, keep = true) => {
+    // a cached answer lands in a few hundred ms, so the waiting state waits a moment
+    // before showing itself rather than flashing
+    const waiting = (name) => {
       note.textContent = `looking up ${name}`;
-      frame.hidden = true;
+      const dots = document.createElement("span");
+      dots.className = "dots";
+      dots.setAttribute("aria-hidden", "true");
+      dots.append(document.createElement("i"), document.createElement("i"), document.createElement("i"));
+      note.append(dots);
+      rows.textContent = "";
+      for (const width of ["46%", "72%", "38%", "64%", "30%"]) {
+        const line = span("ln", "");
+        const bar = span("skel", "");
+        bar.style.width = width;
+        line.append(bar);
+        rows.append(line);
+      }
+      frame.hidden = false;
+      frame.setAttribute("aria-busy", "true");
+    };
+
+    const search = async (name, keep = true) => {
+      if (inFlight) return;
+      inFlight = true;
+      button.disabled = true;
+      button.textContent = "Searching";
       share.hidden = true;
+      const soon = window.setTimeout(() => waiting(name), 200);
+      const done = () => {
+        window.clearTimeout(soon);
+        frame.removeAttribute("aria-busy");
+        button.disabled = false;
+        button.textContent = "Search";
+        inFlight = false;
+      };
       let res, body;
       try {
         res = await fetch(`/api/user?name=${encodeURIComponent(name)}`);
         body = await res.json();
       } catch {
+        done();
+        frame.hidden = true;
         note.textContent = "could not reach the search, try again in a minute";
         return;
       }
+      done();
       if (!res.ok) {
+        frame.hidden = true;
         note.textContent = body?.error || "that lookup did not work";
         return;
       }
       if (!body.rows.length) {
+        frame.hidden = true;
         note.textContent = `nothing public for ${body.login}`;
         return;
       }
