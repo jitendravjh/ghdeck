@@ -150,7 +150,7 @@ Attention means open items that are conflicting, have changes requested, have CI
 
 Press `u` in the dashboard and type a username, or run `ghdeck user [username]`. You get their PRs and issues newest first, with the same status on every row. Esc takes you back to your own list.
 
-Same lookup runs on the website too, [Try it here &rarr;](/try/)
+Same lookup runs on the website too, [Look anyone up &rarr;](/user/)
 
 Filters there are `all`, `authored`, `mentioned` and `open`. You only see what your own token can see, so their work in private repos you have no access to won't show up.
 

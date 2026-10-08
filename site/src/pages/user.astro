@@ -4,22 +4,22 @@ import Band from "../components/Band.astro";
 ---
 
 <BaseLayout
-  title="Try it"
+  title="Look up"
   description="Search any GitHub username and see their PRs and issues the way ghdeck shows them."
 >
   <Band nodes="b" seed={5}>
     <div class="pat grid"></div>
     <div class="pat glow"></div>
-    <section class="try">
+    <section class="look">
       <h1 class="h2">Look up anyone</h1>
       <p class="lead">
         The same list ghdeck shows in your terminal, for any GitHub username. Public work only, since
         the site searches as itself.
       </p>
 
-      <form class="try-form" id="try-form">
+      <form class="look-form" id="look-form">
         <input
-          id="try-name"
+          id="look-name"
           name="name"
           type="text"
           placeholder="github username"
@@ -31,13 +31,13 @@ import Band from "../components/Band.astro";
         <button class="button primary" type="submit">Search</button>
       </form>
 
-      <p class="try-note" id="try-note">Any GitHub username works, your own is a good place to start.</p>
-      <button class="try-share" id="try-share" type="button" hidden>Copy link to this list</button>
+      <p class="look-note" id="look-note">Any GitHub username works, your own is a good place to start.</p>
+      <button class="look-share" id="look-share" type="button" hidden>Copy link to this list</button>
 
-      <div class="frame" id="try-frame" hidden>
+      <div class="frame" id="look-frame" hidden>
         <div class="framed terminal">
-          <div class="chrome"><i></i><i></i><i></i><span id="try-title">ghdeck</span></div>
-          <pre><code id="try-rows"></code></pre>
+          <div class="chrome"><i></i><i></i><i></i><span id="look-title">ghdeck</span></div>
+          <pre><code id="look-rows"></code></pre>
         </div>
       </div>
     </section>
@@ -46,13 +46,13 @@ import Band from "../components/Band.astro";
 
 <script is:inline>
   (() => {
-    const form = document.getElementById("try-form");
-    const input = document.getElementById("try-name");
-    const note = document.getElementById("try-note");
-    const frame = document.getElementById("try-frame");
-    const title = document.getElementById("try-title");
-    const rows = document.getElementById("try-rows");
-    const share = document.getElementById("try-share");
+    const form = document.getElementById("look-form");
+    const input = document.getElementById("look-name");
+    const note = document.getElementById("look-note");
+    const frame = document.getElementById("look-frame");
+    const title = document.getElementById("look-title");
+    const rows = document.getElementById("look-rows");
+    const share = document.getElementById("look-share");
     const FILTERS = ["ALL", "AUTHORED", "MENTIONED", "OPEN"];
     let state = null;
 
@@ -94,7 +94,7 @@ import Band from "../components/Band.astro";
         const label = document.createElement(f === state.filter ? "b" : "span");
         label.textContent = ` ${f} [${n}] `;
         label.dataset.filter = f;
-        label.className = "try-tab";
+        label.className = "look-tab";
         tabs.append(label);
       }
       head.append(tabs);
@@ -181,7 +181,7 @@ import Band from "../components/Band.astro";
       share.textContent = "Copy link to this list";
       document.title = `${body.login} | ghdeck`;
       if (keep) {
-        const path = `/try/${body.login}`;
+        const path = `/user/${body.login}`;
         if (location.pathname !== path) history.pushState({ name: body.login }, "", path);
       }
       draw();
@@ -220,7 +220,7 @@ import Band from "../components/Band.astro";
     });
 
     const nameFromUrl = () =>
-      decodeURIComponent(location.pathname.replace(/^\/try\/?/, "").replace(/\/$/, "")) ||
+      decodeURIComponent(location.pathname.replace(/^\/user\/?/, "").replace(/\/$/, "")) ||
       new URLSearchParams(location.search).get("name") ||
       "";
 

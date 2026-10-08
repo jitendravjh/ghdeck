@@ -374,36 +374,36 @@ a.cell .more { font-size: 0.85rem; color: var(--link); }
 
 .caption { padding: 12px 24px 20px; text-align: center; font-size: 0.85rem; color: var(--text-faint); }
 
-/* ── try it ───────────────────────────────────────────────────── */
-.try { display: flex; flex-direction: column; align-items: center; text-align: center; padding: 56px 16px 64px; }
-.try h1 { color: var(--text-strong); }
-.try .lead { max-width: 34rem; margin-top: 10px; text-wrap: balance; }
-.try-form { display: flex; gap: 8px; margin-top: 24px; width: 100%; max-width: 26rem; }
-.try-form input {
+/* ── look up ───────────────────────────────────────────────────── */
+.look { display: flex; flex-direction: column; align-items: center; text-align: center; padding: 56px 16px 64px; }
+.look h1 { color: var(--text-strong); }
+.look .lead { max-width: 34rem; margin-top: 10px; text-wrap: balance; }
+.look-form { display: flex; gap: 8px; margin-top: 24px; width: 100%; max-width: 26rem; }
+.look-form input {
   flex: 1; min-width: 0; height: 36px; padding: 0 12px;
   border: 1px solid var(--border); border-radius: 3px;
   background: var(--panel); color: var(--text-strong);
   font-family: var(--font-mono); font-size: 14px;
 }
-.try-form input:focus-visible { outline: 3px solid rgba(9, 78, 206, 0.5); outline-offset: 2px; }
-.try-note { margin-top: 12px; font-size: 0.85rem; color: var(--text-faint); }
-.try .frame { margin-top: 26px; width: 100%; text-align: left; }
+.look-form input:focus-visible { outline: 3px solid rgba(9, 78, 206, 0.5); outline-offset: 2px; }
+.look-note { margin-top: 12px; font-size: 0.85rem; color: var(--text-faint); }
+.look .frame { margin-top: 26px; width: 100%; text-align: left; }
 /* real titles run long, so keep the text readable and let the row scroll */
-.try .terminal pre { overflow-x: auto; font-size: clamp(11.5px, calc((100vw - 82px) / 56), 14px); }
-.try-share {
+.look .terminal pre { overflow-x: auto; font-size: clamp(11.5px, calc((100vw - 82px) / 56), 14px); }
+.look-share {
   margin-top: 10px; padding: 5px 10px; border: 1px solid var(--border); border-radius: 3px;
   background: var(--panel-soft); color: var(--text); font-family: inherit; font-size: 0.8rem;
   cursor: pointer;
 }
-.try-share:hover { color: var(--text-strong); background: rgba(128, 138, 155, 0.1); }
+.look-share:hover { color: var(--text-strong); background: rgba(128, 138, 155, 0.1); }
 /* each row opens the pull request or issue it describes */
 .terminal a.row { display: block; color: inherit; text-decoration: none; }
 .terminal a.row:hover { background: rgba(19, 72, 220, 0.08); }
 :root[data-theme="dark"] .terminal a.row:hover { background: rgba(84, 162, 255, 0.12); }
-.try-tab { cursor: pointer; }
-.try-tab:hover { color: var(--text-strong); }
-.terminal b.try-tab { background: #0b7a75; color: #fff; border-radius: 2px; }
-:root[data-theme="dark"] .terminal b.try-tab { background: #7bf1a8; color: #06120c; }
+.look-tab { cursor: pointer; }
+.look-tab:hover { color: var(--text-strong); }
+.terminal b.look-tab { background: #0b7a75; color: #fff; border-radius: 2px; }
+:root[data-theme="dark"] .terminal b.look-tab { background: #7bf1a8; color: #06120c; }
 
 /* ── code blocks ──────────────────────────────────────────────── */
 .code-frame { position: relative; }

@@ -1,8 +1,8 @@
 {
   "name": "ghdeck",
   "main": "./worker/index.js",
-  // the try page is bundled so /try/<username> can be served without a redirect
-  "rules": [{ "type": "Text", "globs": ["**/dist/try/index.html"] }],
+  // the lookup page is bundled so /user/<username> can be served without a redirect
+  "rules": [{ "type": "Text", "globs": ["**/dist/user/index.html"] }],
   // the github token is set in the dashboard, a deploy would drop it otherwise
   "keep_vars": true,
   "compatibility_date": "2026-09-08",
@@ -12,6 +12,6 @@
     "not_found_handling": "404-page",
     // these paths are not assets, the worker answers them. anything left out of this
     // list never reaches the worker at all, which is why the api is here too.
-    "run_worker_first": ["/api/*", "/try/*"]
+    "run_worker_first": ["/api/*", "/user/*"]
   }
 }

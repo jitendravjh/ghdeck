@@ -1,7 +1,7 @@
 // Serves the built site, and answers /api/user with someone's PRs and issues.
 // The token lives in the GHDECK_TOKEN secret, browsers never see it.
 
-import tryPage from "../site/dist/try/index.html";
+import lookupPage from "../site/dist/user/index.html";
 
 const API = "https://api.github.com";
 const PER_PAGE = 20;
@@ -285,8 +285,8 @@ async function lookUp(url, env, ctx) {
   }
 }
 
-// /try/<username> is a shareable link, the page itself reads the name off the path
-const TRY_PATH = /^\/try\/[A-Za-z0-9-]{1,39}\/?$/;
+// /user/<username> is a shareable link, the page itself reads the name off the path
+const USER_PATH = /^\/user\/[A-Za-z0-9-]{1,39}\/?$/;
 
 export default {
   async fetch(request, env, ctx) {
@@ -297,8 +297,8 @@ export default {
     }
     // the assets binding will not serve a rewritten path to a browser navigation,
     // so the page is bundled in and returned directly
-    if (TRY_PATH.test(url.pathname)) {
-      return new Response(tryPage, {
+    if (USER_PATH.test(url.pathname)) {
+      return new Response(lookupPage, {
         headers: { "Content-Type": "text/html;charset=utf-8", "Cache-Control": "public, max-age=0, must-revalidate" },
       });
     }
