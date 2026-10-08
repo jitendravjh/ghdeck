@@ -283,12 +283,20 @@ async function lookUp(url, env, ctx) {
   }
 }
 
+// /try/<username> is a shareable link, the page itself reads the name off the path
+const TRY_PATH = /^\/try\/[A-Za-z0-9-]{1,39}\/?$/;
+
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
     if (url.pathname === "/api/user") {
       if (request.method !== "GET") return json({ error: "use GET" }, 405);
       return lookUp(url, env, ctx);
+    }
+    if (TRY_PATH.test(url.pathname)) {
+      const page = new URL(request.url);
+      page.pathname = "/try/";
+      return env.ASSETS.fetch(new Request(page, request));
     }
     return env.ASSETS.fetch(request);
   },

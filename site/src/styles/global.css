@@ -390,6 +390,16 @@ a.cell .more { font-size: 0.85rem; color: var(--link); }
 .try .frame { margin-top: 26px; width: 100%; text-align: left; }
 /* real titles run long, so keep the text readable and let the row scroll */
 .try .terminal pre { overflow-x: auto; font-size: clamp(11.5px, calc((100vw - 82px) / 56), 14px); }
+.try-share {
+  margin-top: 10px; padding: 5px 10px; border: 1px solid var(--border); border-radius: 3px;
+  background: var(--panel-soft); color: var(--text); font-family: inherit; font-size: 0.8rem;
+  cursor: pointer;
+}
+.try-share:hover { color: var(--text-strong); background: rgba(128, 138, 155, 0.1); }
+/* each row opens the pull request or issue it describes */
+.terminal a.row { display: block; color: inherit; text-decoration: none; }
+.terminal a.row:hover { background: rgba(19, 72, 220, 0.08); }
+:root[data-theme="dark"] .terminal a.row:hover { background: rgba(84, 162, 255, 0.12); }
 .try-tab { cursor: pointer; }
 .try-tab:hover { color: var(--text-strong); }
 .terminal b.try-tab { background: #0b7a75; color: #fff; border-radius: 2px; }

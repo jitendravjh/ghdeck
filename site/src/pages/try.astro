@@ -32,6 +32,7 @@ import Band from "../components/Band.astro";
       </form>
 
       <p class="try-note" id="try-note">Any GitHub username works, your own is a good place to start.</p>
+      <button class="try-share" id="try-share" type="button" hidden>Copy link to this list</button>
 
       <div class="frame" id="try-frame" hidden>
         <div class="framed terminal">
@@ -51,6 +52,7 @@ import Band from "../components/Band.astro";
     const frame = document.getElementById("try-frame");
     const title = document.getElementById("try-title");
     const rows = document.getElementById("try-rows");
+    const share = document.getElementById("try-share");
     const FILTERS = ["ALL", "AUTHORED", "MENTIONED", "OPEN"];
     let state = null;
 
@@ -106,6 +108,12 @@ import Band from "../components/Band.astro";
 
       shown.forEach((row, i) => {
         if (i) rows.append(span("sep", ""));
+        const link = document.createElement("a");
+        link.className = "row";
+        link.href = row.url;
+        link.target = "_blank";
+        link.rel = "noopener noreferrer";
+        link.title = `${row.repo}#${row.number} on github`;
         const top = document.createElement("span");
         top.className = "ln";
         top.append(
@@ -127,7 +135,8 @@ import Band from "../components/Band.astro";
         if (row.comments) tail += `   ${row.comments} comment${row.comments === 1 ? "" : "s"}`;
         if (row.activity) tail += `   ${row.activity}`;
         if (tail) bottom.append(span("d", tail));
-        rows.append(top, bottom);
+        link.append(top, bottom);
+        rows.append(link);
       });
     };
 
@@ -139,9 +148,10 @@ import Band from "../components/Band.astro";
       }
     });
 
-    const search = async (name) => {
+    const search = async (name, keep = true) => {
       note.textContent = `looking up ${name}`;
       frame.hidden = true;
+      share.hidden = true;
       let res, body;
       try {
         res = await fetch(`/api/user?name=${encodeURIComponent(name)}`);
@@ -167,6 +177,13 @@ import Band from "../components/Band.astro";
             ? `the newest ${body.rows.length} of ${body.total} they are involved in`
             : `${body.rows.length} item${body.rows.length === 1 ? "" : "s"}`;
       frame.hidden = false;
+      share.hidden = false;
+      share.textContent = "Copy link to this list";
+      document.title = `${body.login} | ghdeck`;
+      if (keep) {
+        const path = `/try/${body.login}`;
+        if (location.pathname !== path) history.pushState({ name: body.login }, "", path);
+      }
       draw();
     };
 
@@ -176,7 +193,49 @@ import Band from "../components/Band.astro";
       if (name) search(name);
     });
 
-    const start = new URLSearchParams(location.search).get("name");
+    // some browsers refuse the clipboard api, the old selection trick still works there
+    const copy = async (text) => {
+      try {
+        await navigator.clipboard.writeText(text);
+        return true;
+      } catch {}
+      try {
+        const box = document.createElement("textarea");
+        box.value = text;
+        box.setAttribute("readonly", "");
+        box.style.cssText = "position:fixed;top:0;left:0;opacity:0";
+        document.body.append(box);
+        box.select();
+        const done = document.execCommand("copy");
+        box.remove();
+        return done;
+      } catch {
+        return false;
+      }
+    };
+
+    share.addEventListener("click", async () => {
+      share.textContent = (await copy(location.href)) ? "Link copied" : "Could not copy, use the address bar";
+      window.setTimeout(() => { share.textContent = "Copy link to this list"; }, 1600);
+    });
+
+    const nameFromUrl = () =>
+      decodeURIComponent(location.pathname.replace(/^\/try\/?/, "").replace(/\/$/, "")) ||
+      new URLSearchParams(location.search).get("name") ||
+      "";
+
+    window.addEventListener("popstate", () => {
+      const name = nameFromUrl();
+      input.value = name;
+      if (name) search(name, false);
+      else {
+        frame.hidden = true;
+        share.hidden = true;
+        note.textContent = "Any GitHub username works, your own is a good place to start.";
+      }
+    });
+
+    const start = nameFromUrl();
     if (start) {
       input.value = start;
       search(start);
