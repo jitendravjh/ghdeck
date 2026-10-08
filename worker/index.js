@@ -1,6 +1,8 @@
 // Serves the built site, and answers /api/user with someone's PRs and issues.
 // The token lives in the GHDECK_TOKEN secret, browsers never see it.
 
+import tryPage from "../site/dist/try/index.html";
+
 const API = "https://api.github.com";
 const PER_PAGE = 20;
 const FEED_ROWS = 40;
@@ -293,10 +295,12 @@ export default {
       if (request.method !== "GET") return json({ error: "use GET" }, 405);
       return lookUp(url, env, ctx);
     }
+    // the assets binding will not serve a rewritten path to a browser navigation,
+    // so the page is bundled in and returned directly
     if (TRY_PATH.test(url.pathname)) {
-      const page = new URL(request.url);
-      page.pathname = "/try/";
-      return env.ASSETS.fetch(new Request(page, request));
+      return new Response(tryPage, {
+        headers: { "Content-Type": "text/html;charset=utf-8", "Cache-Control": "public, max-age=0, must-revalidate" },
+      });
     }
     return env.ASSETS.fetch(request);
   },
