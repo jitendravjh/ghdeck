@@ -419,8 +419,14 @@ a.cell .more { font-size: 0.85rem; color: var(--link); }
 .terminal a.row:hover { background: rgba(19, 72, 220, 0.08); }
 :root[data-theme="dark"] .terminal a.row:hover { background: rgba(84, 162, 255, 0.12); }
 /* the tabs live in the window bar, the pickers sit above the card */
-.look-who { font-family: var(--font-mono); font-size: 11px; color: var(--text-faint); margin-left: 4px; }
-.look-who b { color: var(--blue-500); font-weight: 400; }
+.look-who {
+  display: inline-flex; align-items: center; gap: 7px; margin-left: 6px;
+  font-family: var(--font-mono); font-size: 13px; color: var(--text-faint);
+}
+.look-who b {
+  padding: 1px 7px; border: 1px solid var(--border); border-radius: 2px;
+  color: var(--blue-500); font-weight: 400;
+}
 :root[data-theme="dark"] .look-who b { color: var(--blue-300); }
 .look-tabs {
   display: flex; flex-wrap: wrap; gap: 3px; margin-left: auto;
@@ -428,9 +434,9 @@ a.cell .more { font-size: 0.85rem; color: var(--link); }
 }
 .look-tab {
   display: inline-flex; align-items: center; gap: 5px; padding: 2px 7px;
-  border-radius: 2px; font: inherit; color: var(--text-faint); cursor: pointer;
+  border-radius: 2px; font: inherit; cursor: pointer;
+  background: rgba(128, 138, 155, 0.14); color: var(--text-strong);
 }
-.look-tab:hover { background: rgba(128, 138, 155, 0.14); color: var(--text-strong); }
 .look-tab[aria-pressed="true"] { background: #0b7a75; color: #fff; }
 .look-tab[aria-pressed="true"] .pick-count { color: rgba(255, 255, 255, 0.72); }
 :root[data-theme="dark"] .look-tab[aria-pressed="true"] { background: #7bf1a8; color: #06120c; }
