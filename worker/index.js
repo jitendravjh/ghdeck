@@ -109,6 +109,7 @@ function toRow(n, mentioned) {
     author: n.author?.login ?? "ghost",
     mentioned,
     open: !(n.merged === true || n.state === "CLOSED"),
+    merged: n.merged === true,
     comments: n.comments?.totalCount ?? 0,
     activity: lastActivity(n),
     chips: chipsFor(n),

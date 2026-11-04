@@ -34,9 +34,18 @@ import Band from "../components/Band.astro";
       <p class="look-note" id="look-note" aria-live="polite">Any GitHub username works, your own is a good place to start.</p>
       <button class="look-share" id="look-share" type="button" hidden>Copy link to this list</button>
 
+      <div class="look-bar" id="look-bar" hidden>
+        <span class="look-who">ghdeck <b id="look-who"></b></span>
+        <div class="look-tabs" id="look-tabs" role="group" aria-label="Filter the list"></div>
+        <div class="look-picks">
+          <div class="pick" id="pick-type"></div>
+          <div class="pick" id="pick-repo"></div>
+        </div>
+      </div>
+
       <div class="frame" id="look-frame" hidden>
         <div class="framed terminal">
-          <div class="chrome"><i></i><i></i><i></i><span id="look-title">ghdeck</span></div>
+          <div class="chrome"><i></i><i></i><i></i></div>
           <pre><code id="look-rows"></code></pre>
         </div>
       </div>
@@ -50,12 +59,20 @@ import Band from "../components/Band.astro";
     const input = document.getElementById("look-name");
     const note = document.getElementById("look-note");
     const frame = document.getElementById("look-frame");
-    const title = document.getElementById("look-title");
+    const bar = document.getElementById("look-bar");
+    const who = document.getElementById("look-who");
+    const tabsBox = document.getElementById("look-tabs");
     const rows = document.getElementById("look-rows");
     const share = document.getElementById("look-share");
     const button = document.querySelector(".look-form button");
     let inFlight = false;
     const FILTERS = ["ALL", "AUTHORED", "MENTIONED", "OPEN"];
+    const TYPES = [
+      { value: "any", label: "Any type" },
+      { value: "pr", label: "Pull requests" },
+      { value: "issue", label: "Issues" },
+      { value: "merged", label: "Merged" },
+    ];
     let state = null;
 
     const ago = (iso) => {
@@ -74,7 +91,10 @@ import Band from "../components/Band.astro";
       return el;
     };
 
-    const keeps = (row, filter) =>
+    // rows cached before the api carried a merged flag still have the chip
+    const merged = (row) => row.merged ?? row.chips.some((c) => c.text.includes("merged"));
+
+    const byRole = (row, filter) =>
       filter === "ALL"
         ? true
         : filter === "AUTHORED"
@@ -82,29 +102,147 @@ import Band from "../components/Band.astro";
           : filter === "MENTIONED"
             ? row.mentioned
             : row.open;
+    const byType = (row, type) =>
+      type === "any" ? true : type === "merged" ? merged(row) : row.kind === type;
+    const byRepo = (row, repo) => repo === "any" || row.repo === repo;
+    const keeps = (row) => byRole(row, state.filter) && byType(row, state.type) && byRepo(row, state.repo);
+    const count = (rows, test) => rows.filter(test).length;
 
     const tone = { good: "g", bad: "r", warn: "y", info: "m", muted: "d" };
 
+    let openPick = null;
+    const shut = () => {
+      if (!openPick) return;
+      openPick.list.hidden = true;
+      openPick.btn.setAttribute("aria-expanded", "false");
+      openPick = null;
+    };
+    document.addEventListener("click", (e) => {
+      if (openPick && !openPick.host.contains(e.target)) shut();
+    });
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && openPick) {
+        const back = openPick.btn;
+        shut();
+        back.focus();
+      }
+    });
+
+    const pick = (host, label, options, value, choose) => {
+      host.textContent = "";
+      const chosen = options.find((o) => o.value === value) || options[0];
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "pick-btn";
+      btn.setAttribute("aria-haspopup", "listbox");
+      btn.setAttribute("aria-expanded", "false");
+      btn.append(span("pick-label", chosen.label), span("pick-caret", ""));
+
+      const list = document.createElement("ul");
+      list.className = "pick-list";
+      list.setAttribute("role", "listbox");
+      list.setAttribute("aria-label", label);
+      list.hidden = true;
+
+      const items = options.map((o) => {
+        const li = document.createElement("li");
+        li.setAttribute("role", "option");
+        li.setAttribute("aria-selected", String(o.value === value));
+        li.tabIndex = -1;
+        li.append(span("pick-name", o.label));
+        if (o.count !== undefined) li.append(span("pick-count", String(o.count)));
+        li.addEventListener("click", () => {
+          shut();
+          choose(o.value);
+        });
+        list.append(li);
+        return li;
+      });
+
+      const step = (from, by) => {
+        const next = items[Math.max(0, Math.min(items.length - 1, from + by))];
+        if (next) next.focus();
+      };
+      list.addEventListener("keydown", (e) => {
+        const at = items.indexOf(document.activeElement);
+        if (e.key === "ArrowDown") { e.preventDefault(); step(at, 1); }
+        if (e.key === "ArrowUp") { e.preventDefault(); step(at, -1); }
+        if (e.key === "Enter" || e.key === " ") { e.preventDefault(); items[at]?.click(); }
+      });
+
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const wasOpen = openPick?.host === host;
+        shut();
+        if (wasOpen) return;
+        list.hidden = false;
+        btn.setAttribute("aria-expanded", "true");
+        openPick = { host, btn, list };
+        (items.find((i) => i.getAttribute("aria-selected") === "true") || items[0])?.focus();
+      });
+
+      host.append(btn, list);
+    };
+
+    const drawBar = () => {
+      who.textContent = `@${state.login}`;
+      const forTabs = state.rows.filter((r) => byType(r, state.type) && byRepo(r, state.repo));
+      tabsBox.textContent = "";
+      for (const f of FILTERS) {
+        const tab = document.createElement("button");
+        tab.type = "button";
+        tab.className = "look-tab";
+        tab.setAttribute("aria-pressed", String(f === state.filter));
+        tab.append(span("", f), span("pick-count", String(count(forTabs, (r) => byRole(r, f)))));
+        tab.addEventListener("click", () => {
+          state.filter = f;
+          redraw();
+        });
+        tabsBox.append(tab);
+      }
+
+      const forTypes = state.rows.filter((r) => byRole(r, state.filter) && byRepo(r, state.repo));
+      pick(
+        document.getElementById("pick-type"),
+        "Type",
+        TYPES.map((t) => ({ ...t, count: count(forTypes, (r) => byType(r, t.value)) })),
+        state.type,
+        (value) => {
+          state.type = value;
+          redraw();
+        },
+      );
+
+      const forRepos = state.rows.filter((r) => byRole(r, state.filter) && byType(r, state.type));
+      const names = [...new Set(state.rows.map((r) => r.repo))].sort((a, b) =>
+        count(forRepos, (r) => r.repo === b) - count(forRepos, (r) => r.repo === a) || a.localeCompare(b),
+      );
+      pick(
+        document.getElementById("pick-repo"),
+        "Repository",
+        [
+          { value: "any", label: "Any repository", count: forRepos.length },
+          ...names.map((n) => ({ value: n, label: n, count: count(forRepos, (r) => r.repo === n) })),
+        ],
+        state.repo,
+        (value) => {
+          state.repo = value;
+          redraw();
+        },
+      );
+      bar.hidden = false;
+    };
+
+    const redraw = () => {
+      drawBar();
+      draw();
+    };
+
     const draw = () => {
       rows.textContent = "";
-      const head = document.createElement("span");
-      head.className = "ln";
-      head.append(span("c", "ghdeck"), span("", "  "), span("b", `@${state.login}`), span("", "  "));
-      const tabs = span("tabs", "");
-      for (const f of FILTERS) {
-        const n = state.rows.filter((r) => keeps(r, f)).length;
-        const label = document.createElement(f === state.filter ? "b" : "span");
-        label.textContent = ` ${f} [${n}] `;
-        label.dataset.filter = f;
-        label.className = "look-tab";
-        tabs.append(label);
-      }
-      head.append(tabs);
-      rows.append(head);
-
-      const shown = state.rows.filter((r) => keeps(r, state.filter));
+      const shown = state.rows.filter(keeps);
       if (!shown.length) {
-        rows.append(span("ln d", `nothing for ${state.login} under this filter`));
+        rows.append(span("ln d", `nothing for ${state.login} under these filters`));
         return;
       }
 
@@ -142,14 +280,6 @@ import Band from "../components/Band.astro";
       });
     };
 
-    rows.addEventListener("click", (e) => {
-      const f = e.target?.dataset?.filter;
-      if (f && state) {
-        state.filter = f;
-        draw();
-      }
-    });
-
     // a cached answer lands in a few hundred ms, so the waiting state waits a moment
     // before showing itself rather than flashing
     const waiting = (name) => {
@@ -167,6 +297,7 @@ import Band from "../components/Band.astro";
         line.append(bar);
         rows.append(line);
       }
+      bar.hidden = true;
       frame.hidden = false;
       frame.setAttribute("aria-busy", "true");
     };
@@ -192,22 +323,24 @@ import Band from "../components/Band.astro";
       } catch {
         done();
         frame.hidden = true;
+        bar.hidden = true;
         note.textContent = "could not reach the search, try again in a minute";
         return;
       }
       done();
       if (!res.ok) {
         frame.hidden = true;
+        bar.hidden = true;
         note.textContent = body?.error || "that lookup did not work";
         return;
       }
       if (!body.rows.length) {
         frame.hidden = true;
+        bar.hidden = true;
         note.textContent = `nothing public for ${body.login}`;
         return;
       }
-      state = { login: body.login, rows: body.rows, filter: "ALL" };
-      title.textContent = `ghdeck user ${body.login}`;
+      state = { login: body.login, rows: body.rows, filter: "ALL", type: "any", repo: "any" };
       note.textContent =
         body.source === "activity"
           ? `github hides ${body.login} from search, so this is their public activity`
@@ -222,7 +355,7 @@ import Band from "../components/Band.astro";
         const path = `/user/${body.login}`;
         if (location.pathname !== path) history.pushState({ name: body.login }, "", path);
       }
-      draw();
+      redraw();
     };
 
     form.addEventListener("submit", (e) => {
@@ -268,6 +401,7 @@ import Band from "../components/Band.astro";
       if (name) search(name, false);
       else {
         frame.hidden = true;
+        bar.hidden = true;
         share.hidden = true;
         note.textContent = "Any GitHub username works, your own is a good place to start.";
       }
