@@ -11,10 +11,10 @@ const CACHE_SECONDS = 300;
 const ROW = `
 fragment Row on SearchResultItem{
   ... on Issue{ __typename number title url state stateReason updatedAt
-    repository{nameWithOwner} author{login}
+    repository{nameWithOwner} author{login} assignees(first:10){nodes{login}}
     comments(last:1){totalCount nodes{author{login} createdAt}} }
   ... on PullRequest{ __typename number title url state isDraft updatedAt
-    repository{nameWithOwner} author{login}
+    repository{nameWithOwner} author{login} assignees(first:10){nodes{login}}
     merged mergeable reviewDecision
     comments(last:1){totalCount nodes{author{login} createdAt}}
     reviews(last:10){totalCount nodes{state author{login} submittedAt}}
@@ -100,7 +100,7 @@ function lastActivity(n) {
   return best ? best.text : null;
 }
 
-function toRow(n, mentioned) {
+function toRow(n, mentioned, login) {
   const kind = n?.__typename === "PullRequest" ? "pr" : n?.__typename === "Issue" ? "issue" : null;
   if (!kind || !n.repository?.nameWithOwner || typeof n.number !== "number") return null;
   return {
@@ -112,6 +112,7 @@ function toRow(n, mentioned) {
     updatedAt: n.updatedAt,
     author: n.author?.login ?? "ghost",
     mentioned,
+    assigned: (n.assignees?.nodes ?? []).some((a) => a?.login?.toLowerCase() === login.toLowerCase()),
     open: !(n.merged === true || n.state === "CLOSED"),
     merged: n.merged === true,
     comments: n.comments?.totalCount ?? 0,
@@ -120,9 +121,9 @@ function toRow(n, mentioned) {
   };
 }
 
-function collect(nodes, mentioned, into) {
+function collect(nodes, mentioned, into, login) {
   for (const n of nodes ?? []) {
-    const row = toRow(n, mentioned);
+    const row = toRow(n, mentioned, login);
     if (!row) continue;
     const seen = into.get(row.url);
     if (seen) {
@@ -211,7 +212,7 @@ async function fromActivity(token, login, skip = 0) {
     if (!data) break;
     batch.forEach((_, k) => {
       const node = data[`r${k}`]?.issueOrPullRequest;
-      if (node) collect([node], false, rows);
+      if (node) collect([node], false, rows, login);
     });
   }
   return { rows: [...rows.values()], since, more: refs.length > skip + FEED_ROWS };
@@ -264,8 +265,8 @@ async function lookUp(url, env, ctx) {
     });
 
     const rows = new Map();
-    collect(data.main?.nodes, false, rows);
-    collect(data.extra?.nodes, true, rows);
+    collect(data.main?.nodes, false, rows, login);
+    collect(data.extra?.nodes, true, rows, login);
 
     let body = {
       login,

@@ -69,7 +69,7 @@ import Band from "../components/Band.astro";
     const more = document.getElementById("look-more");
     const button = document.querySelector(".look-form button");
     let inFlight = false;
-    const FILTERS = ["ALL", "AUTHORED", "MENTIONED", "OPEN"];
+    const FILTERS = ["ALL", "AUTHORED", "ASSIGNED", "MENTIONED", "OPEN"];
     const TYPES = [
       { value: "any", label: "Any type" },
       { value: "pr", label: "Pull requests" },
@@ -102,9 +102,11 @@ import Band from "../components/Band.astro";
         ? true
         : filter === "AUTHORED"
           ? row.author.toLowerCase() === state.login.toLowerCase()
-          : filter === "MENTIONED"
-            ? row.mentioned
-            : row.open;
+          : filter === "ASSIGNED"
+            ? row.assigned === true
+            : filter === "MENTIONED"
+              ? row.mentioned
+              : row.open;
     const byType = (row, type) =>
       type === "any" ? true : type === "merged" ? merged(row) : row.kind === type;
     const byRepo = (row, repo) => repo === "any" || row.repo === repo;
