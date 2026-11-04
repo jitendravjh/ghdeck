@@ -50,7 +50,7 @@ import Band from "../components/Band.astro";
         </div>
       </div>
 
-      <button class="button secondary look-more" id="look-more" type="button" hidden>Load more</button>
+      <button class="button primary look-more" id="look-more" type="button" hidden>Load More</button>
     </section>
   </Band>
 </BaseLayout>
@@ -254,8 +254,7 @@ import Band from "../components/Band.astro";
 
     const loadMore = async () => {
       if (!state.next?.more || more.disabled) return;
-      more.disabled = true;
-      more.textContent = "Loading";
+      busy(more, "Loading");
       const q = new URLSearchParams({ name: state.login });
       if (state.next.am) q.set("am", state.next.am);
       if (state.next.ae) q.set("ae", state.next.ae);
@@ -266,8 +265,7 @@ import Band from "../components/Band.astro";
         body = await res.json();
         if (!res.ok) throw new Error(body?.error || "that did not work");
       } catch (err) {
-        more.disabled = false;
-        more.textContent = "Load more";
+        ready(more, "Load More");
         note.textContent = err instanceof Error ? err.message : "could not load more, try again";
         return;
       }
@@ -275,8 +273,7 @@ import Band from "../components/Band.astro";
       for (const row of body.rows) if (!seen.has(row.url)) state.rows.push(row);
       state.rows = state.rows.sort((a, b) => Date.parse(b.updatedAt) - Date.parse(a.updatedAt));
       state.next = body.next ?? null;
-      more.disabled = false;
-      more.textContent = "Load more";
+      ready(more, "Load More");
       tell();
       redraw();
     };
@@ -325,15 +322,28 @@ import Band from "../components/Band.astro";
       });
     };
 
+    const dots = () => {
+      const el = document.createElement("span");
+      el.className = "dots";
+      el.setAttribute("aria-hidden", "true");
+      el.append(document.createElement("i"), document.createElement("i"), document.createElement("i"));
+      return el;
+    };
+    const busy = (btn, label) => {
+      btn.disabled = true;
+      btn.textContent = label;
+      btn.append(dots());
+    };
+    const ready = (btn, label) => {
+      btn.disabled = false;
+      btn.textContent = label;
+    };
+
     // a cached answer lands in a few hundred ms, so the waiting state waits a moment
     // before showing itself rather than flashing
     const waiting = (name) => {
       note.textContent = `looking up ${name}`;
-      const dots = document.createElement("span");
-      dots.className = "dots";
-      dots.setAttribute("aria-hidden", "true");
-      dots.append(document.createElement("i"), document.createElement("i"), document.createElement("i"));
-      note.append(dots);
+      note.append(dots());
       rows.textContent = "";
       for (const width of ["46%", "72%", "38%", "64%", "30%"]) {
         const line = span("ln", "");
@@ -351,15 +361,13 @@ import Band from "../components/Band.astro";
     const search = async (name, keep = true) => {
       if (inFlight) return;
       inFlight = true;
-      button.disabled = true;
-      button.textContent = "Searching";
+      busy(button, "Searching");
       share.hidden = true;
       const soon = window.setTimeout(() => waiting(name), 200);
       const done = () => {
         window.clearTimeout(soon);
         frame.removeAttribute("aria-busy");
-        button.disabled = false;
-        button.textContent = "Search";
+        ready(button, "Search");
         inFlight = false;
       };
       let res, body;
