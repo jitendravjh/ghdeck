@@ -49,6 +49,8 @@ import Band from "../components/Band.astro";
           <pre><code id="look-rows"></code></pre>
         </div>
       </div>
+
+      <button class="button secondary look-more" id="look-more" type="button" hidden>Load more</button>
     </section>
   </Band>
 </BaseLayout>
@@ -64,6 +66,7 @@ import Band from "../components/Band.astro";
     const tabsBox = document.getElementById("look-tabs");
     const rows = document.getElementById("look-rows");
     const share = document.getElementById("look-share");
+    const more = document.getElementById("look-more");
     const button = document.querySelector(".look-form button");
     let inFlight = false;
     const FILTERS = ["ALL", "AUTHORED", "MENTIONED", "OPEN"];
@@ -233,10 +236,52 @@ import Band from "../components/Band.astro";
       picks.hidden = false;
     };
 
+    const tell = () => {
+      const n = state.rows.length;
+      note.textContent =
+        state.source === "activity"
+          ? `github hides ${state.login} from search, so this is their public activity`
+          : state.total > n
+            ? `the newest ${n} of ${state.total} they are involved in`
+            : `${n} item${n === 1 ? "" : "s"}`;
+    };
+
     const redraw = () => {
       drawBar();
       draw();
+      more.hidden = !state.next?.more;
     };
+
+    const loadMore = async () => {
+      if (!state.next?.more || more.disabled) return;
+      more.disabled = true;
+      more.textContent = "Loading";
+      const q = new URLSearchParams({ name: state.login });
+      if (state.next.am) q.set("am", state.next.am);
+      if (state.next.ae) q.set("ae", state.next.ae);
+      if (state.next.skip) q.set("skip", String(state.next.skip));
+      let body;
+      try {
+        const res = await fetch(`/api/user?${q}`);
+        body = await res.json();
+        if (!res.ok) throw new Error(body?.error || "that did not work");
+      } catch (err) {
+        more.disabled = false;
+        more.textContent = "Load more";
+        note.textContent = err instanceof Error ? err.message : "could not load more, try again";
+        return;
+      }
+      const seen = new Set(state.rows.map((r) => r.url));
+      for (const row of body.rows) if (!seen.has(row.url)) state.rows.push(row);
+      state.rows = state.rows.sort((a, b) => Date.parse(b.updatedAt) - Date.parse(a.updatedAt));
+      state.next = body.next ?? null;
+      more.disabled = false;
+      more.textContent = "Load more";
+      tell();
+      redraw();
+    };
+
+    more.addEventListener("click", loadMore);
 
     const draw = () => {
       rows.textContent = "";
@@ -298,6 +343,7 @@ import Band from "../components/Band.astro";
         rows.append(line);
       }
       picks.hidden = true;
+      more.hidden = true;
       frame.hidden = false;
       frame.setAttribute("aria-busy", "true");
     };
@@ -324,6 +370,7 @@ import Band from "../components/Band.astro";
         done();
         frame.hidden = true;
         picks.hidden = true;
+        more.hidden = true;
         note.textContent = "could not reach the search, try again in a minute";
         return;
       }
@@ -331,22 +378,28 @@ import Band from "../components/Band.astro";
       if (!res.ok) {
         frame.hidden = true;
         picks.hidden = true;
+        more.hidden = true;
         note.textContent = body?.error || "that lookup did not work";
         return;
       }
       if (!body.rows.length) {
         frame.hidden = true;
         picks.hidden = true;
+        more.hidden = true;
         note.textContent = `nothing public for ${body.login}`;
         return;
       }
-      state = { login: body.login, rows: body.rows, filter: "ALL", type: "any", repo: "any" };
-      note.textContent =
-        body.source === "activity"
-          ? `github hides ${body.login} from search, so this is their public activity`
-          : body.total > body.rows.length
-            ? `the newest ${body.rows.length} of ${body.total} they are involved in`
-            : `${body.rows.length} item${body.rows.length === 1 ? "" : "s"}`;
+      state = {
+        login: body.login,
+        rows: body.rows,
+        total: body.total,
+        source: body.source,
+        next: body.next ?? null,
+        filter: "ALL",
+        type: "any",
+        repo: "any",
+      };
+      tell();
       frame.hidden = false;
       share.hidden = false;
       share.textContent = "Copy link to this list";
@@ -402,6 +455,7 @@ import Band from "../components/Band.astro";
       else {
         frame.hidden = true;
         picks.hidden = true;
+        more.hidden = true;
         share.hidden = true;
         note.textContent = "Any GitHub username works, your own is a good place to start.";
       }

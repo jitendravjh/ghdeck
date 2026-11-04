@@ -23,9 +23,13 @@ fragment Row on SearchResultItem{
 }`;
 
 const SEARCH = `
-query($main:String!,$extra:String!,$n:Int!){
-  main: search(query:$main,type:ISSUE,first:$n){ issueCount nodes{...Row} }
-  extra: search(query:$extra,type:ISSUE,first:$n){ nodes{...Row} }
+query($main:String!,$extra:String!,$n:Int!,$am:String,$ae:String){
+  main: search(query:$main,type:ISSUE,first:$n,after:$am){
+    issueCount pageInfo{endCursor hasNextPage} nodes{...Row}
+  }
+  extra: search(query:$extra,type:ISSUE,first:$n,after:$ae){
+    pageInfo{endCursor hasNextPage} nodes{...Row}
+  }
 }${ROW}`;
 
 function cleanLogin(input) {
@@ -157,7 +161,7 @@ async function graphql(token, query, variables) {
 }
 
 // github hides some accounts from search, their public activity is the only way in
-async function fromActivity(token, login) {
+async function fromActivity(token, login, skip = 0) {
   const res = await rest(token, `/users/${login}/events/public?per_page=100`);
   if (!res.ok) return null;
   const events = await res.json();
@@ -185,8 +189,9 @@ async function fromActivity(token, login) {
   }
 
   const rows = new Map();
-  for (let i = 0; i < Math.min(refs.length, FEED_ROWS); i += PER_PAGE) {
-    const batch = refs.slice(i, i + PER_PAGE);
+  const wanted = refs.slice(skip, skip + FEED_ROWS);
+  for (let i = 0; i < wanted.length; i += PER_PAGE) {
+    const batch = wanted.slice(i, i + PER_PAGE);
     const decl = [];
     const fields = [];
     const vars = {};
@@ -209,7 +214,7 @@ async function fromActivity(token, login) {
       if (node) collect([node], false, rows);
     });
   }
-  return { rows: [...rows.values()], since };
+  return { rows: [...rows.values()], since, more: refs.length > skip + FEED_ROWS };
 }
 
 const byNewest = (rows) => rows.sort((a, b) => Date.parse(b.updatedAt) - Date.parse(a.updatedAt));
@@ -238,8 +243,14 @@ async function lookUp(url, env, ctx) {
   if (!login) return json({ error: "that is not a github username" }, 400);
   if (!env.GHDECK_TOKEN) return json({ error: "search is not set up on this site yet" }, 503);
 
+  // a page beyond the first carries the cursors github gave us for each search
+  const am = url.searchParams.get("am") || null;
+  const ae = url.searchParams.get("ae") || null;
+  const skip = Math.max(0, Math.min(300, Number(url.searchParams.get("skip")) || 0));
+
   const cache = caches.default;
-  const key = new Request(`${url.origin}/api/user?name=${login.toLowerCase()}`);
+  const page = am || ae ? `&am=${am ?? ""}&ae=${ae ?? ""}` : skip ? `&skip=${skip}` : "";
+  const key = new Request(`${url.origin}/api/user?name=${login.toLowerCase()}${page}`);
   const hit = await cache.match(key);
   if (hit) return forClient(hit);
 
@@ -248,6 +259,8 @@ async function lookUp(url, env, ctx) {
       main: `involves:${login} sort:updated-desc`,
       extra: `mentions:${login} sort:updated-desc`,
       n: PER_PAGE,
+      am,
+      ae,
     });
 
     const rows = new Map();
@@ -259,16 +272,29 @@ async function lookUp(url, env, ctx) {
       rows: byNewest([...rows.values()]),
       total: data.main?.issueCount ?? 0,
       source: "search",
+      next: {
+        am: data.main?.pageInfo?.endCursor ?? null,
+        ae: data.extra?.pageInfo?.endCursor ?? null,
+        more: Boolean(data.main?.pageInfo?.hasNextPage || data.extra?.pageInfo?.hasNextPage),
+      },
     };
 
-    if (rows.size === 0) {
+    // only the search path uses cursors, so a cursor means this is not a hidden account
+    if (!am && !ae && (rows.size === 0 || skip > 0)) {
       const check = await rest(env.GHDECK_TOKEN, `/search/issues?q=author:${login}&per_page=1`);
       if (check.status === 422) {
         const who = await rest(env.GHDECK_TOKEN, `/users/${login}`);
         if (who.status === 404) return json({ error: `there is no github user called ${login}` }, 404);
-        const feed = await fromActivity(env.GHDECK_TOKEN, login);
+        const feed = await fromActivity(env.GHDECK_TOKEN, login, skip);
         if (feed) {
-          body = { login, rows: byNewest(feed.rows), total: feed.rows.length, source: "activity", since: feed.since };
+          body = {
+            login,
+            rows: byNewest(feed.rows),
+            total: feed.rows.length,
+            source: "activity",
+            since: feed.since,
+            next: { skip: skip + FEED_ROWS, more: feed.more },
+          };
         }
       }
     }
