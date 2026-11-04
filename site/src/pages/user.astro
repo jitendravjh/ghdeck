@@ -34,18 +34,18 @@ import Band from "../components/Band.astro";
       <p class="look-note" id="look-note" aria-live="polite">Any GitHub username works, your own is a good place to start.</p>
       <button class="look-share" id="look-share" type="button" hidden>Copy link to this list</button>
 
-      <div class="look-bar" id="look-bar" hidden>
-        <span class="look-who">ghdeck <b id="look-who"></b></span>
-        <div class="look-tabs" id="look-tabs" role="group" aria-label="Filter the list"></div>
-        <div class="look-picks">
-          <div class="pick" id="pick-type"></div>
-          <div class="pick" id="pick-repo"></div>
-        </div>
+      <div class="look-picks" id="look-picks" hidden>
+        <div class="pick" id="pick-type"></div>
+        <div class="pick" id="pick-repo"></div>
       </div>
 
       <div class="frame" id="look-frame" hidden>
         <div class="framed terminal">
-          <div class="chrome"><i></i><i></i><i></i></div>
+          <div class="chrome">
+            <i></i><i></i><i></i>
+            <div class="look-who">ghdeck <b id="look-who"></b></div>
+            <div class="look-tabs" id="look-tabs" role="group" aria-label="Filter the list"></div>
+          </div>
           <pre><code id="look-rows"></code></pre>
         </div>
       </div>
@@ -59,7 +59,7 @@ import Band from "../components/Band.astro";
     const input = document.getElementById("look-name");
     const note = document.getElementById("look-note");
     const frame = document.getElementById("look-frame");
-    const bar = document.getElementById("look-bar");
+    const picks = document.getElementById("look-picks");
     const who = document.getElementById("look-who");
     const tabsBox = document.getElementById("look-tabs");
     const rows = document.getElementById("look-rows");
@@ -230,7 +230,7 @@ import Band from "../components/Band.astro";
           redraw();
         },
       );
-      bar.hidden = false;
+      picks.hidden = false;
     };
 
     const redraw = () => {
@@ -297,7 +297,7 @@ import Band from "../components/Band.astro";
         line.append(bar);
         rows.append(line);
       }
-      bar.hidden = true;
+      picks.hidden = true;
       frame.hidden = false;
       frame.setAttribute("aria-busy", "true");
     };
@@ -323,20 +323,20 @@ import Band from "../components/Band.astro";
       } catch {
         done();
         frame.hidden = true;
-        bar.hidden = true;
+        picks.hidden = true;
         note.textContent = "could not reach the search, try again in a minute";
         return;
       }
       done();
       if (!res.ok) {
         frame.hidden = true;
-        bar.hidden = true;
+        picks.hidden = true;
         note.textContent = body?.error || "that lookup did not work";
         return;
       }
       if (!body.rows.length) {
         frame.hidden = true;
-        bar.hidden = true;
+        picks.hidden = true;
         note.textContent = `nothing public for ${body.login}`;
         return;
       }
@@ -401,7 +401,7 @@ import Band from "../components/Band.astro";
       if (name) search(name, false);
       else {
         frame.hidden = true;
-        bar.hidden = true;
+        picks.hidden = true;
         share.hidden = true;
         note.textContent = "Any GitHub username works, your own is a good place to start.";
       }
