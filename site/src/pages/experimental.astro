@@ -242,9 +242,11 @@ import Band from "../components/Band.astro";
         timeZone: "UTC",
       });
     };
-    const shortMonth = (key) => {
+    // the year is only spelled out where it changes, so the axis stays readable
+    const shortMonth = (key, first) => {
       const [y, m] = key.split("-").map(Number);
-      return new Date(Date.UTC(y, m - 1, 1)).toLocaleDateString("en-GB", { month: "short", timeZone: "UTC" });
+      const name = new Date(Date.UTC(y, m - 1, 1)).toLocaleDateString("en-GB", { month: "short", timeZone: "UTC" });
+      return first || m === 1 ? `${name} ${String(y).slice(2)}` : name;
     };
 
     const mine = (row) => row.author.toLowerCase() === S.login.toLowerCase();
@@ -850,11 +852,21 @@ import Band from "../components/Band.astro";
         const key = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
         byMonth.set(key, (byMonth.get(key) ?? 0) + 1);
       }
-      const months = [...byMonth.entries()].sort((a, b) => a[0].localeCompare(b[0])).slice(-14);
-      if (!months.length) {
+      const seen = [...byMonth.keys()].sort();
+      if (!seen.length) {
         host.append(el("p", "panel-empty", "Nothing to chart in this range."));
         return;
       }
+      // a quiet month is still a month, otherwise the axis jumps years between two bars
+      const months = [];
+      const [lastY, lastM] = seen[seen.length - 1].split("-").map(Number);
+      let [y, m] = seen[0].split("-").map(Number);
+      while (y < lastY || (y === lastY && m <= lastM)) {
+        const key = `${y}-${String(m).padStart(2, "0")}`;
+        months.push([key, byMonth.get(key) ?? 0]);
+        if (++m > 12) { m = 1; y++; }
+      }
+      months.splice(0, Math.max(0, months.length - 14));
 
       if (S.monthlyView === "table") {
         const table = el("table", "panel-table");
@@ -911,7 +923,7 @@ import Band from "../components/Band.astro";
         plot.append(bar);
 
         const label = mk("text", { x: x + barW / 2, y: h - 9 }, "tick mid");
-        label.textContent = shortMonth(key);
+        label.textContent = shortMonth(key, i === 0);
         plot.append(label);
 
         if (n === top) {
