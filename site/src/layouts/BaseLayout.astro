@@ -8,12 +8,14 @@ interface Props {
   title?: string;
   description?: string;
   structuredData?: Array<Record<string, unknown>>;
+  noindex?: boolean;
 }
 
 const {
   title = "ghdeck",
   description = "All your GitHub work in one list. PRs and issues together, newest first, with conflicts, CI and review state on every row.",
   structuredData = [],
+  noindex = false,
 } = Astro.props;
 
 const repo = "https://github.com/jitendravjh/ghdeck";
@@ -37,6 +39,7 @@ const year = new Date().getFullYear();
     <meta name="description" content={description} />
     <meta name="generator" content={Astro.generator} />
     <link rel="canonical" href={canonical} />
+    {noindex && <meta name="robots" content="noindex" />}
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="sitemap" href="/sitemap-index.xml" />
     <link rel="preload" as="font" type="font/woff2" href="/fonts/writer-regular.woff2" crossorigin />

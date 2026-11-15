@@ -2,6 +2,7 @@
 // The token lives in the GHDECK_TOKEN secret, browsers never see it.
 
 import lookupPage from "../site/dist/user/index.html";
+import labPage from "../site/dist/experimental/index.html";
 
 const API = "https://api.github.com";
 const PER_PAGE = 20;
@@ -115,6 +116,7 @@ function toRow(n, mentioned, login) {
     assigned: (n.assignees?.nodes ?? []).some((a) => a?.login?.toLowerCase() === login.toLowerCase()),
     open: !(n.merged === true || n.state === "CLOSED"),
     merged: n.merged === true,
+    draft: n.isDraft === true,
     comments: n.comments?.totalCount ?? 0,
     activity: lastActivity(n),
     chips: chipsFor(n),
@@ -159,6 +161,21 @@ async function graphql(token, query, variables) {
     throw new Error(body?.errors?.[0]?.message ?? `github answered ${res.status}`);
   }
   return body.data;
+}
+
+async function profileOf(token, login) {
+  const res = await rest(token, `/users/${login}`);
+  if (!res.ok) return null;
+  const who = await res.json();
+  return {
+    login: who.login,
+    name: who.name || null,
+    avatar: who.avatar_url || null,
+    url: who.html_url || null,
+    joined: who.created_at || null,
+    repos: who.public_repos ?? null,
+    location: who.location || null,
+  };
 }
 
 // github hides some accounts from search, their public activity is the only way in
@@ -256,6 +273,8 @@ async function lookUp(url, env, ctx) {
   if (hit) return forClient(hit);
 
   try {
+    // the profile is a separate endpoint, so ask for it while the search runs
+    const profilePromise = am || ae || skip ? Promise.resolve(null) : profileOf(env.GHDECK_TOKEN, login);
     const data = await graphql(env.GHDECK_TOKEN, SEARCH, {
       main: `involves:${login} sort:updated-desc`,
       extra: `mentions:${login} sort:updated-desc`,
@@ -273,6 +292,7 @@ async function lookUp(url, env, ctx) {
       rows: byNewest([...rows.values()]),
       total: data.main?.issueCount ?? 0,
       source: "search",
+      profile: await profilePromise,
       next: {
         am: data.main?.pageInfo?.endCursor ?? null,
         ae: data.extra?.pageInfo?.endCursor ?? null,
@@ -294,6 +314,7 @@ async function lookUp(url, env, ctx) {
             total: feed.rows.length,
             source: "activity",
             since: feed.since,
+            profile: await profilePromise,
             next: { skip: skip + FEED_ROWS, more: feed.more },
           };
         }
@@ -313,8 +334,10 @@ async function lookUp(url, env, ctx) {
   }
 }
 
-// /user/<username> is a shareable link, the page itself reads the name off the path
+// /user/<username> and /experimental/<username> are shareable links, each page
+// reads the name off its own path
 const USER_PATH = /^\/user\/[A-Za-z0-9-]{1,39}\/?$/;
+const LAB_PATH = /^\/experimental\/[A-Za-z0-9-]{1,39}\/?$/;
 
 export default {
   async fetch(request, env, ctx) {
@@ -325,8 +348,8 @@ export default {
     }
     // the assets binding will not serve a rewritten path to a browser navigation,
     // so the page is bundled in and returned directly
-    if (USER_PATH.test(url.pathname)) {
-      return new Response(lookupPage, {
+    if (USER_PATH.test(url.pathname) || LAB_PATH.test(url.pathname)) {
+      return new Response(LAB_PATH.test(url.pathname) ? labPage : lookupPage, {
         headers: { "Content-Type": "text/html;charset=utf-8", "Cache-Control": "public, max-age=0, must-revalidate" },
       });
     }

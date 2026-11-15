@@ -1,0 +1,673 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import Band from "../components/Band.astro";
+---
+
+<BaseLayout
+  title="Look up, experimental"
+  description="A try at the lookup page with a profile line, a filter box, time ranges and saved results."
+  noindex
+>
+  <Band nodes="b" seed={5}>
+    <div class="pat grid"></div>
+    <div class="pat glow"></div>
+    <section class="look">
+      <p class="look-flag">experimental</p>
+      <h1 class="h2">Look up anyone</h1>
+      <p class="lead">
+        The same list ghdeck shows in your terminal, for any GitHub username. This page is where new
+        pieces land first, so it may change under you.
+      </p>
+
+      <form class="look-form" id="look-form">
+        <input
+          id="look-name"
+          name="name"
+          type="text"
+          placeholder="github username"
+          autocomplete="off"
+          autocapitalize="off"
+          spellcheck="false"
+          aria-label="GitHub username"
+        />
+        <button class="button primary" type="submit">Search</button>
+      </form>
+
+      <p class="look-note" id="look-note" aria-live="polite">Any GitHub username works, your own is a good place to start.</p>
+      <button class="look-share" id="look-share" type="button" hidden>Copy link to this list</button>
+
+      <div class="look-profile" id="look-profile" hidden>
+        <img class="look-avatar" id="look-avatar" alt="" width="48" height="48" />
+        <div class="look-id">
+          <a class="look-fullname" id="look-fullname" target="_blank" rel="noopener noreferrer"></a>
+          <span class="look-meta" id="look-meta"></span>
+        </div>
+      </div>
+
+      <div class="look-picks" id="look-picks" hidden>
+        <label class="look-find" for="look-find">
+          <input
+            id="look-find"
+            type="search"
+            placeholder="title, repo or #number"
+            autocomplete="off"
+            spellcheck="false"
+            aria-label="Filter these results"
+          />
+        </label>
+        <div class="pick" id="pick-when"></div>
+        <div class="pick" id="pick-type"></div>
+        <div class="pick" id="pick-status"></div>
+        <div class="pick" id="pick-repo"></div>
+      </div>
+
+      <div class="frame" id="look-frame" hidden>
+        <div class="framed terminal">
+          <div class="chrome">
+            <i></i><i></i><i></i>
+            <div class="look-who">ghdeck <b id="look-who"></b></div>
+            <div class="look-tabs" id="look-tabs" role="group" aria-label="Filter the list"></div>
+          </div>
+          <pre><code id="look-rows"></code></pre>
+        </div>
+      </div>
+
+      <button class="button primary look-more" id="look-more" type="button" hidden>Load More</button>
+    </section>
+  </Band>
+</BaseLayout>
+
+<script is:inline>
+  (() => {
+    const form = document.getElementById("look-form");
+    const input = document.getElementById("look-name");
+    const note = document.getElementById("look-note");
+    const frame = document.getElementById("look-frame");
+    const picks = document.getElementById("look-picks");
+    const who = document.getElementById("look-who");
+    const tabsBox = document.getElementById("look-tabs");
+    const rows = document.getElementById("look-rows");
+    const share = document.getElementById("look-share");
+    const more = document.getElementById("look-more");
+    const find = document.getElementById("look-find");
+    const profileBox = document.getElementById("look-profile");
+    const button = document.querySelector(".look-form button");
+    let inFlight = false;
+
+    const FILTERS = ["ALL", "AUTHORED", "ASSIGNED", "MENTIONED"];
+    const TYPES = [
+      { value: "any", label: "Any type" },
+      { value: "pr", label: "Pull requests" },
+      { value: "issue", label: "Issues" },
+    ];
+    const STATUSES = [
+      { value: "any", label: "Any status" },
+      { value: "open", label: "Open" },
+      { value: "merged", label: "Merged" },
+      { value: "closed", label: "Closed" },
+      { value: "draft", label: "Draft" },
+    ];
+    const WHENS = [
+      { value: "any", label: "Any time", days: null },
+      { value: "1", label: "24 hours", days: 1 },
+      { value: "7", label: "7 days", days: 7 },
+      { value: "30", label: "30 days", days: 30 },
+      { value: "90", label: "90 days", days: 90 },
+      { value: "365", label: "12 months", days: 365 },
+    ];
+    const SAVED_FOR = 24 * 60 * 60 * 1000;
+    let state = null;
+
+    const ago = (iso) => {
+      const s = Math.max(0, (Date.now() - Date.parse(iso)) / 1000);
+      if (s < 3600) return `${Math.floor(s / 60)}m`;
+      if (s < 86400) return `${Math.floor(s / 3600)}h`;
+      if (s < 2592000) return `${Math.floor(s / 86400)}d`;
+      if (s < 31536000) return `${Math.floor(s / 2592000)}mo`;
+      return `${Math.floor(s / 31536000)}y`;
+    };
+
+    const span = (cls, text) => {
+      const el = document.createElement("span");
+      if (cls) el.className = cls;
+      el.textContent = text;
+      return el;
+    };
+
+    const merged = (row) => row.merged ?? row.chips.some((c) => c.text.includes("merged"));
+    const draft = (row) => row.draft ?? row.chips.some((c) => c.text.includes("draft"));
+
+    const byRole = (row, filter) =>
+      filter === "ALL"
+        ? true
+        : filter === "AUTHORED"
+          ? row.author.toLowerCase() === state.login.toLowerCase()
+          : filter === "ASSIGNED"
+            ? row.assigned === true
+            : row.mentioned;
+    const byType = (row, type) => type === "any" || row.kind === type;
+    const byStatus = (row, status) =>
+      status === "any"
+        ? true
+        : status === "open"
+          ? row.open
+          : status === "merged"
+            ? merged(row)
+            : status === "draft"
+              ? draft(row)
+              : !row.open && !merged(row);
+    const byRepo = (row, repo) => repo === "any" || row.repo === repo;
+    const byWhen = (row, when) => {
+      const days = WHENS.find((w) => w.value === when)?.days;
+      return !days || Date.now() - Date.parse(row.updatedAt) <= days * 86400000;
+    };
+    const byText = (row, text) => {
+      if (!text) return true;
+      const q = text.toLowerCase().replace(/^#/, "");
+      return (
+        row.title.toLowerCase().includes(q) ||
+        row.repo.toLowerCase().includes(q) ||
+        String(row.number).includes(q)
+      );
+    };
+    const keeps = (row) =>
+      byRole(row, state.filter) &&
+      byType(row, state.type) &&
+      byStatus(row, state.status) &&
+      byRepo(row, state.repo) &&
+      byWhen(row, state.when) &&
+      byText(row, state.text);
+    const count = (list, test) => list.filter(test).length;
+
+    const tone = { good: "g", bad: "r", warn: "y", info: "m", muted: "d" };
+
+    let openPick = null;
+    const shut = () => {
+      if (!openPick) return;
+      openPick.list.hidden = true;
+      openPick.btn.setAttribute("aria-expanded", "false");
+      openPick = null;
+    };
+    document.addEventListener("click", (e) => {
+      if (openPick && !openPick.host.contains(e.target)) shut();
+    });
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && openPick) {
+        const back = openPick.btn;
+        shut();
+        back.focus();
+      }
+    });
+
+    const pick = (host, label, options, value, choose) => {
+      host.textContent = "";
+      const chosen = options.find((o) => o.value === value) || options[0];
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "pick-btn";
+      btn.setAttribute("aria-haspopup", "listbox");
+      btn.setAttribute("aria-expanded", "false");
+      btn.append(span("pick-label", chosen.label), span("pick-caret", ""));
+
+      const list = document.createElement("ul");
+      list.className = "pick-list";
+      list.setAttribute("role", "listbox");
+      list.setAttribute("aria-label", label);
+      list.hidden = true;
+
+      const items = options.map((o) => {
+        const li = document.createElement("li");
+        li.setAttribute("role", "option");
+        li.setAttribute("aria-selected", String(o.value === value));
+        li.tabIndex = -1;
+        li.append(span("pick-name", o.label));
+        if (o.count !== undefined) li.append(span("pick-count", String(o.count)));
+        li.addEventListener("click", () => {
+          shut();
+          choose(o.value);
+        });
+        list.append(li);
+        return li;
+      });
+
+      const step = (from, by) => {
+        const next = items[Math.max(0, Math.min(items.length - 1, from + by))];
+        if (next) next.focus();
+      };
+      list.addEventListener("keydown", (e) => {
+        const at = items.indexOf(document.activeElement);
+        if (e.key === "ArrowDown") { e.preventDefault(); step(at, 1); }
+        if (e.key === "ArrowUp") { e.preventDefault(); step(at, -1); }
+        if (e.key === "Enter" || e.key === " ") { e.preventDefault(); items[at]?.click(); }
+      });
+
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const wasOpen = openPick?.host === host;
+        shut();
+        if (wasOpen) return;
+        list.hidden = false;
+        btn.setAttribute("aria-expanded", "true");
+        openPick = { host, btn, list };
+        (items.find((i) => i.getAttribute("aria-selected") === "true") || items[0])?.focus();
+      });
+
+      host.append(btn, list);
+    };
+
+    const drawProfile = () => {
+      const p = state.profile;
+      if (!p) {
+        profileBox.hidden = true;
+        return;
+      }
+      const avatar = document.getElementById("look-avatar");
+      if (p.avatar) {
+        avatar.src = p.avatar.includes("?") ? `${p.avatar}&s=96` : `${p.avatar}?s=96`;
+        avatar.alt = `${p.login} on github`;
+        avatar.hidden = false;
+      } else {
+        avatar.hidden = true;
+      }
+      const link = document.getElementById("look-fullname");
+      link.textContent = p.name ? `${p.name} (@${p.login})` : `@${p.login}`;
+      link.href = p.url || `https://github.com/${p.login}`;
+      const bits = [];
+      if (p.joined) {
+        bits.push(
+          `joined ${new Date(p.joined).toLocaleDateString("en-GB", { month: "short", year: "numeric" })}`,
+        );
+      }
+      if (p.location) bits.push(p.location);
+      if (typeof p.repos === "number") bits.push(`${p.repos} public repos`);
+      document.getElementById("look-meta").textContent = bits.join(" · ");
+      profileBox.hidden = false;
+    };
+
+    const drawBar = () => {
+      who.textContent = `@${state.login}`;
+      const except = (skip) =>
+        state.rows.filter(
+          (r) =>
+            (skip === "role" || byRole(r, state.filter)) &&
+            (skip === "type" || byType(r, state.type)) &&
+            (skip === "status" || byStatus(r, state.status)) &&
+            (skip === "repo" || byRepo(r, state.repo)) &&
+            (skip === "when" || byWhen(r, state.when)) &&
+            byText(r, state.text),
+        );
+
+      const forTabs = except("role");
+      tabsBox.textContent = "";
+      for (const f of FILTERS) {
+        const tab = document.createElement("button");
+        tab.type = "button";
+        tab.className = "look-tab";
+        tab.setAttribute("aria-pressed", String(f === state.filter));
+        tab.append(span("", f), span("pick-count", String(count(forTabs, (r) => byRole(r, f)))));
+        tab.addEventListener("click", () => {
+          state.filter = f;
+          redraw();
+        });
+        tabsBox.append(tab);
+      }
+
+      const forWhen = except("when");
+      pick(
+        document.getElementById("pick-when"),
+        "Time",
+        WHENS.map((w) => ({ ...w, count: count(forWhen, (r) => byWhen(r, w.value)) })),
+        state.when,
+        (value) => {
+          state.when = value;
+          redraw();
+        },
+      );
+
+      const forTypes = except("type");
+      pick(
+        document.getElementById("pick-type"),
+        "Type",
+        TYPES.map((t) => ({ ...t, count: count(forTypes, (r) => byType(r, t.value)) })),
+        state.type,
+        (value) => {
+          state.type = value;
+          redraw();
+        },
+      );
+
+      const forStatus = except("status");
+      pick(
+        document.getElementById("pick-status"),
+        "Status",
+        STATUSES.map((t) => ({ ...t, count: count(forStatus, (r) => byStatus(r, t.value)) })),
+        state.status,
+        (value) => {
+          state.status = value;
+          redraw();
+        },
+      );
+
+      const forRepos = except("repo");
+      const names = [...new Set(state.rows.map((r) => r.repo))].sort((a, b) =>
+        count(forRepos, (r) => r.repo === b) - count(forRepos, (r) => r.repo === a) || a.localeCompare(b),
+      );
+      pick(
+        document.getElementById("pick-repo"),
+        "Repository",
+        [
+          { value: "any", label: "Any repository", count: forRepos.length },
+          ...names.map((n) => ({ value: n, label: n, count: count(forRepos, (r) => r.repo === n) })),
+        ],
+        state.repo,
+        (value) => {
+          state.repo = value;
+          redraw();
+        },
+      );
+      picks.hidden = false;
+    };
+
+    const tell = (extra) => {
+      const n = state.rows.length;
+      const base =
+        state.source === "activity"
+          ? `github hides ${state.login} from search, so this is their public activity`
+          : state.total > n
+            ? `the newest ${n} of ${state.total} they are involved in`
+            : `${n} item${n === 1 ? "" : "s"}`;
+      note.textContent = extra ? `${base} · ${extra}` : base;
+    };
+
+    const redraw = () => {
+      drawProfile();
+      drawBar();
+      draw();
+      more.hidden = !state.next?.more;
+    };
+
+    // keeping the last answer means a revisit paints at once and refreshes behind
+    const keyFor = (login) => `ghdeck.user.${login.toLowerCase()}`;
+    const remember = () => {
+      try {
+        localStorage.setItem(
+          keyFor(state.login),
+          JSON.stringify({
+            at: Date.now(),
+            login: state.login,
+            rows: state.rows.slice(0, 100),
+            total: state.total,
+            source: state.source,
+            next: state.next,
+            profile: state.profile ?? null,
+          }),
+        );
+      } catch {}
+    };
+    const recall = (login) => {
+      try {
+        const saved = JSON.parse(localStorage.getItem(keyFor(login)) || "null");
+        if (!saved?.rows?.length || Date.now() - saved.at > SAVED_FOR) return null;
+        return saved;
+      } catch {
+        return null;
+      }
+    };
+
+    const start = (body, extras) => {
+      state = {
+        login: body.login,
+        rows: body.rows,
+        total: body.total,
+        source: body.source,
+        profile: body.profile ?? null,
+        next: body.next ?? null,
+        filter: "ALL",
+        type: "any",
+        status: "any",
+        repo: "any",
+        when: "any",
+        text: "",
+        ...extras,
+      };
+      find.value = state.text;
+    };
+
+    const loadMore = async () => {
+      if (!state.next?.more || more.disabled) return;
+      busy(more, "Loading");
+      const q = new URLSearchParams({ name: state.login });
+      if (state.next.am) q.set("am", state.next.am);
+      if (state.next.ae) q.set("ae", state.next.ae);
+      if (state.next.skip) q.set("skip", String(state.next.skip));
+      let body;
+      try {
+        const res = await fetch(`/api/user?${q}`);
+        body = await res.json();
+        if (!res.ok) throw new Error(body?.error || "that did not work");
+      } catch (err) {
+        ready(more, "Load More");
+        note.textContent = err instanceof Error ? err.message : "could not load more, try again";
+        return;
+      }
+      const seen = new Set(state.rows.map((r) => r.url));
+      for (const row of body.rows) if (!seen.has(row.url)) state.rows.push(row);
+      state.rows = state.rows.sort((a, b) => Date.parse(b.updatedAt) - Date.parse(a.updatedAt));
+      state.next = body.next ?? null;
+      ready(more, "Load More");
+      tell();
+      redraw();
+      remember();
+    };
+
+    more.addEventListener("click", loadMore);
+
+    find.addEventListener("input", () => {
+      if (!state) return;
+      state.text = find.value.trim();
+      redraw();
+    });
+
+    const draw = () => {
+      rows.textContent = "";
+      const shown = state.rows.filter(keeps);
+      if (!shown.length) {
+        rows.append(span("ln d", `nothing for ${state.login} under these filters`));
+        return;
+      }
+
+      shown.forEach((row, i) => {
+        if (i) rows.append(span("sep", ""));
+        const link = document.createElement("a");
+        link.className = "row";
+        link.href = row.url;
+        link.target = "_blank";
+        link.rel = "noopener noreferrer";
+        link.title = `${row.repo}#${row.number} on github`;
+        const top = document.createElement("span");
+        top.className = "ln";
+        top.append(
+          span("d", `${ago(row.updatedAt).padStart(3)}  `),
+          span(row.kind === "pr" ? "b" : "c", (row.kind === "pr" ? "[PR]" : "[ISSUE]").padEnd(7)),
+          span("", " "),
+          span("rp", `${row.repo}#${row.number}`),
+          span("", "  "),
+          span("t", row.title),
+        );
+        const bottom = document.createElement("span");
+        bottom.className = "ln";
+        bottom.append(span("", " ".repeat(13)));
+        row.chips.forEach((chip, k) => {
+          if (k) bottom.append(span("d", " · "));
+          bottom.append(span(tone[chip.tone] || "d", chip.text));
+        });
+        let tail = "";
+        if (row.comments) tail += `   ${row.comments} comment${row.comments === 1 ? "" : "s"}`;
+        if (row.activity) tail += `   ${row.activity}`;
+        if (tail) bottom.append(span("d", tail));
+        link.append(top, bottom);
+        rows.append(link);
+      });
+    };
+
+    const dots = () => {
+      const el = document.createElement("span");
+      el.className = "dots";
+      el.setAttribute("aria-hidden", "true");
+      el.append(document.createElement("i"), document.createElement("i"), document.createElement("i"));
+      return el;
+    };
+    const busy = (btn, label) => {
+      btn.disabled = true;
+      btn.textContent = label;
+      btn.append(dots());
+    };
+    const ready = (btn, label) => {
+      btn.disabled = false;
+      btn.textContent = label;
+    };
+
+    const waiting = (name) => {
+      note.textContent = `looking up ${name}`;
+      note.append(dots());
+      rows.textContent = "";
+      for (const width of ["46%", "72%", "38%", "64%", "30%"]) {
+        const line = span("ln", "");
+        const bar = span("skel", "");
+        bar.style.width = width;
+        line.append(bar);
+        rows.append(line);
+      }
+      picks.hidden = true;
+      profileBox.hidden = true;
+      more.hidden = true;
+      frame.hidden = false;
+      frame.setAttribute("aria-busy", "true");
+    };
+
+    const clear = () => {
+      frame.hidden = true;
+      picks.hidden = true;
+      profileBox.hidden = true;
+      more.hidden = true;
+    };
+
+    const search = async (name, keep = true) => {
+      if (inFlight) return;
+      inFlight = true;
+      busy(button, "Searching");
+      share.hidden = true;
+
+      // an earlier answer for this name goes up straight away, the fetch replaces it
+      const saved = recall(name);
+      let soon = null;
+      if (saved) {
+        start(saved);
+        frame.hidden = false;
+        redraw();
+        note.textContent = `saved copy from ${ago(new Date(saved.at).toISOString())} ago, refreshing`;
+        note.append(dots());
+      } else {
+        soon = window.setTimeout(() => waiting(name), 200);
+      }
+
+      const done = () => {
+        if (soon) window.clearTimeout(soon);
+        frame.removeAttribute("aria-busy");
+        ready(button, "Search");
+        inFlight = false;
+      };
+      let res, body;
+      try {
+        res = await fetch(`/api/user?name=${encodeURIComponent(name)}`);
+        body = await res.json();
+      } catch {
+        done();
+        if (!saved) clear();
+        note.textContent = saved
+          ? "showing a saved copy, github could not be reached"
+          : "could not reach the search, try again in a minute";
+        return;
+      }
+      done();
+      if (!res.ok) {
+        clear();
+        note.textContent = body?.error || "that lookup did not work";
+        return;
+      }
+      if (!body.rows.length) {
+        clear();
+        note.textContent = `nothing public for ${body.login}`;
+        return;
+      }
+      const held = state && state.login.toLowerCase() === body.login.toLowerCase()
+        ? { filter: state.filter, type: state.type, status: state.status, repo: state.repo, when: state.when, text: state.text }
+        : null;
+      start(body, held);
+      tell();
+      frame.hidden = false;
+      share.hidden = false;
+      share.textContent = "Copy link to this list";
+      document.title = `${body.login} | ghdeck`;
+      if (keep) {
+        const path = `/experimental/${body.login}`;
+        if (location.pathname !== path) history.pushState({ name: body.login }, "", path);
+      }
+      redraw();
+      remember();
+    };
+
+    form.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const name = input.value.trim().replace(/^@/, "");
+      if (name) search(name);
+    });
+
+    const copy = async (text) => {
+      try {
+        await navigator.clipboard.writeText(text);
+        return true;
+      } catch {}
+      try {
+        const box = document.createElement("textarea");
+        box.value = text;
+        box.setAttribute("readonly", "");
+        box.style.cssText = "position:fixed;top:0;left:0;opacity:0";
+        document.body.append(box);
+        box.select();
+        const ok = document.execCommand("copy");
+        box.remove();
+        return ok;
+      } catch {
+        return false;
+      }
+    };
+
+    share.addEventListener("click", async () => {
+      share.textContent = (await copy(location.href)) ? "Link copied" : "Could not copy, use the address bar";
+      window.setTimeout(() => { share.textContent = "Copy link to this list"; }, 1600);
+    });
+
+    const nameFromUrl = () =>
+      decodeURIComponent(location.pathname.replace(/^\/experimental\/?/, "").replace(/\/$/, "")) ||
+      new URLSearchParams(location.search).get("name") ||
+      "";
+
+    window.addEventListener("popstate", () => {
+      const name = nameFromUrl();
+      input.value = name;
+      if (name) search(name, false);
+      else {
+        clear();
+        share.hidden = true;
+        note.textContent = "Any GitHub username works, your own is a good place to start.";
+      }
+    });
+
+    const first = nameFromUrl();
+    if (first) {
+      input.value = first;
+      search(first);
+    }
+  })();
+</script>
