@@ -1122,24 +1122,35 @@ import Band from "../components/Band.astro";
     };
     more.addEventListener("click", loadMore);
 
+    // a big page with bodies is heavy enough that github times it out now and then,
+    // so a failed page is tried once more at half the size before giving up
+    const fetchPage = async (size) => {
+      const res = await fetch(nextUrl(size));
+      const body = await res.json();
+      if (!res.ok) throw new Error(body?.error || "GitHub stopped answering");
+      return body;
+    };
+
     // the analytics are only honest over the whole history, so the rest is pulled in behind them
     async function loadAll() {
       if (S.loading) return;
       S.loading = true;
       drawState();
       let guard = 0;
-      while (S.next?.more && guard++ < 12) {
+      while (S.next?.more && guard++ < 20) {
         let body;
         try {
-          const res = await fetch(nextUrl(50));
-          body = await res.json();
-          if (!res.ok) throw new Error(body?.error || "GitHub stopped answering");
-        } catch (err) {
-          S.loading = false;
-          note.hidden = false;
-          note.textContent = err instanceof Error ? err.message : "Could not load the rest.";
-          redraw();
-          return;
+          body = await fetchPage(30);
+        } catch {
+          try {
+            body = await fetchPage(15);
+          } catch (err) {
+            S.loading = false;
+            note.hidden = false;
+            note.textContent = `${err instanceof Error ? err.message : "Could not load the rest"}, showing ${S.rows.length} of ${S.total}.`;
+            redraw();
+            return;
+          }
         }
         absorb(body);
         drawState();
