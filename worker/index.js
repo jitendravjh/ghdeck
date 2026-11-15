@@ -9,13 +9,16 @@ const PER_PAGE = 20;
 const FEED_ROWS = 40;
 const CACHE_SECONDS = 300;
 
-const ROW = `
+// the body is only asked for when a page wants to preview it, it is the one heavy field
+const row = (rich) => `
 fragment Row on SearchResultItem{
-  ... on Issue{ __typename number title url state stateReason updatedAt
+  ... on Issue{ __typename number title url state stateReason createdAt updatedAt
     repository{nameWithOwner} author{login} assignees(first:10){nodes{login}}
+    labels(first:8){nodes{name color}}${rich ? " bodyText" : ""}
     comments(last:1){totalCount nodes{author{login} createdAt}} }
-  ... on PullRequest{ __typename number title url state isDraft updatedAt
+  ... on PullRequest{ __typename number title url state isDraft createdAt updatedAt mergedAt
     repository{nameWithOwner} author{login} assignees(first:10){nodes{login}}
+    labels(first:8){nodes{name color}}${rich ? " bodyText" : ""}
     merged mergeable reviewDecision
     comments(last:1){totalCount nodes{author{login} createdAt}}
     reviews(last:10){totalCount nodes{state author{login} submittedAt}}
@@ -23,7 +26,7 @@ fragment Row on SearchResultItem{
     commits(last:1){nodes{commit{statusCheckRollup{state}}}} }
 }`;
 
-const SEARCH = `
+const search = (rich) => `
 query($main:String!,$extra:String!,$n:Int!,$am:String,$ae:String){
   main: search(query:$main,type:ISSUE,first:$n,after:$am){
     issueCount pageInfo{endCursor hasNextPage} nodes{...Row}
@@ -31,7 +34,7 @@ query($main:String!,$extra:String!,$n:Int!,$am:String,$ae:String){
   extra: search(query:$extra,type:ISSUE,first:$n,after:$ae){
     pageInfo{endCursor hasNextPage} nodes{...Row}
   }
-}${ROW}`;
+}${row(rich)}`;
 
 function cleanLogin(input) {
   const s = (input ?? "").trim().replace(/^@/, "");
@@ -117,6 +120,10 @@ function toRow(n, mentioned, login) {
     open: !(n.merged === true || n.state === "CLOSED"),
     merged: n.merged === true,
     draft: n.isDraft === true,
+    createdAt: n.createdAt ?? null,
+    mergedAt: n.mergedAt ?? null,
+    labels: (n.labels?.nodes ?? []).map((l) => ({ name: l.name, color: l.color })),
+    body: n.bodyText ? n.bodyText.trim().slice(0, 400) : null,
     comments: n.comments?.totalCount ?? 0,
     activity: lastActivity(n),
     chips: chipsFor(n),
@@ -179,7 +186,7 @@ async function profileOf(token, login) {
 }
 
 // github hides some accounts from search, their public activity is the only way in
-async function fromActivity(token, login, skip = 0) {
+async function fromActivity(token, login, skip = 0, rich = false) {
   const res = await rest(token, `/users/${login}/events/public?per_page=100`);
   if (!res.ok) return null;
   const events = await res.json();
@@ -223,7 +230,7 @@ async function fromActivity(token, login, skip = 0) {
       vars[`k${k}`] = ref.number;
     });
     if (!decl.length) continue;
-    const data = await graphql(token, `query(${decl.join(",")}){${fields.join("\n")}}${ROW}`, vars).catch(
+    const data = await graphql(token, `query(${decl.join(",")}){${fields.join("\n")}}${row(rich)}`, vars).catch(
       () => null,
     );
     if (!data) break;
@@ -265,20 +272,24 @@ async function lookUp(url, env, ctx) {
   const am = url.searchParams.get("am") || null;
   const ae = url.searchParams.get("ae") || null;
   const skip = Math.max(0, Math.min(300, Number(url.searchParams.get("skip")) || 0));
+  const rich = url.searchParams.get("rich") === "1";
+  const size = Math.max(1, Math.min(50, Number(url.searchParams.get("size")) || PER_PAGE));
 
   const cache = caches.default;
   const page = am || ae ? `&am=${am ?? ""}&ae=${ae ?? ""}` : skip ? `&skip=${skip}` : "";
-  const key = new Request(`${url.origin}/api/user?name=${login.toLowerCase()}${page}`);
+  const key = new Request(
+    `${url.origin}/api/user?name=${login.toLowerCase()}${page}&size=${size}${rich ? "&rich=1" : ""}`,
+  );
   const hit = await cache.match(key);
   if (hit) return forClient(hit);
 
   try {
     // the profile is a separate endpoint, so ask for it while the search runs
     const profilePromise = am || ae || skip ? Promise.resolve(null) : profileOf(env.GHDECK_TOKEN, login);
-    const data = await graphql(env.GHDECK_TOKEN, SEARCH, {
+    const data = await graphql(env.GHDECK_TOKEN, search(rich), {
       main: `involves:${login} sort:updated-desc`,
       extra: `mentions:${login} sort:updated-desc`,
-      n: PER_PAGE,
+      n: size,
       am,
       ae,
     });
@@ -306,7 +317,7 @@ async function lookUp(url, env, ctx) {
       if (check.status === 422) {
         const who = await rest(env.GHDECK_TOKEN, `/users/${login}`);
         if (who.status === 404) return json({ error: `there is no github user called ${login}` }, 404);
-        const feed = await fromActivity(env.GHDECK_TOKEN, login, skip);
+        const feed = await fromActivity(env.GHDECK_TOKEN, login, skip, rich);
         if (feed) {
           body = {
             login,

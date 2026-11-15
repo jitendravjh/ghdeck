@@ -5,26 +5,23 @@ import Band from "../components/Band.astro";
 
 <BaseLayout
   title="Look up, experimental"
-  description="A try at the lookup page with a profile line, a filter box, time ranges and saved results."
+  description="A fuller lookup page: profile, counts, filters and analytics for any GitHub username."
   noindex
 >
   <Band nodes="b" seed={5}>
     <div class="pat grid"></div>
     <div class="pat glow"></div>
-    <section class="look">
-      <p class="look-flag">experimental</p>
-      <h1 class="h2">Look up anyone</h1>
-      <p class="lead">
-        The same list ghdeck shows in your terminal, for any GitHub username. This page is where new
-        pieces land first, so it may change under you.
-      </p>
 
-      <form class="look-form" id="look-form">
+    <section class="lab">
+      <form class="lab-search" id="lab-form">
+        <svg class="lab-search-icon" viewBox="0 0 16 16" aria-hidden="true">
+          <circle cx="7" cy="7" r="5"></circle><path d="M11 11l4 4"></path>
+        </svg>
         <input
-          id="look-name"
+          id="lab-name"
           name="name"
           type="text"
-          placeholder="github username"
+          placeholder="Look up another user"
           autocomplete="off"
           autocapitalize="off"
           spellcheck="false"
@@ -32,154 +29,290 @@ import Band from "../components/Band.astro";
         />
         <button class="button primary" type="submit">Search</button>
       </form>
+      <p class="lab-note" id="lab-note" aria-live="polite">
+        Any GitHub username works, your own is a good place to start.
+      </p>
 
-      <p class="look-note" id="look-note" aria-live="polite">Any GitHub username works, your own is a good place to start.</p>
-      <button class="look-share" id="look-share" type="button" hidden>Copy link to this list</button>
-
-      <div class="look-profile" id="look-profile" hidden>
-        <img class="look-avatar" id="look-avatar" alt="" width="48" height="48" />
-        <div class="look-id">
-          <a class="look-fullname" id="look-fullname" target="_blank" rel="noopener noreferrer"></a>
-          <span class="look-meta" id="look-meta"></span>
-        </div>
-      </div>
-
-      <div class="look-picks" id="look-picks" hidden>
-        <label class="look-find" for="look-find">
-          <input
-            id="look-find"
-            type="search"
-            placeholder="title, repo or #number"
-            autocomplete="off"
-            spellcheck="false"
-            aria-label="Filter these results"
-          />
-        </label>
-        <div class="pick" id="pick-when"></div>
-        <div class="pick" id="pick-type"></div>
-        <div class="pick" id="pick-status"></div>
-        <div class="pick" id="pick-repo"></div>
-      </div>
-
-      <div class="frame" id="look-frame" hidden>
-        <div class="framed terminal">
-          <div class="chrome">
-            <i></i><i></i><i></i>
-            <div class="look-who">ghdeck <b id="look-who"></b></div>
-            <div class="look-tabs" id="look-tabs" role="group" aria-label="Filter the list"></div>
+      <div id="lab-body" hidden>
+        <header class="lab-who">
+          <img class="lab-avatar" id="lab-avatar" alt="" width="56" height="56" />
+          <div class="lab-id">
+            <h1 class="lab-name">
+              <a id="lab-fullname" target="_blank" rel="noopener noreferrer"></a>
+              <span class="lab-handle" id="lab-handle"></span>
+            </h1>
+            <p class="lab-meta" id="lab-meta"></p>
           </div>
-          <pre><code id="look-rows"></code></pre>
+          <button class="lab-share" id="lab-share" type="button">Copy link</button>
+        </header>
+        <p class="lab-state" id="lab-state"></p>
+
+        <div class="lab-cards" id="lab-cards"></div>
+
+        <div class="lab-views" role="tablist" aria-label="View">
+          <button class="lab-view" id="view-activity" role="tab" type="button" aria-selected="true">
+            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 4h12M2 8h12M2 12h8"></path></svg>
+            Activity
+          </button>
+          <button class="lab-view" id="view-analytics" role="tab" type="button" aria-selected="false">
+            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 13V8M8 13V3M13 13v-3"></path></svg>
+            Analytics
+          </button>
+        </div>
+
+        <div class="lab-range">
+          <div class="chips" id="lab-chips" role="group" aria-label="Time range"></div>
+          <div class="pick" id="pick-year"></div>
+          <p class="lab-showing" id="lab-showing"></p>
+        </div>
+
+        <div id="pane-activity">
+          <div class="lab-filters">
+            <div class="pick" id="pick-type"></div>
+            <div class="pick" id="pick-status"></div>
+            <div class="pick" id="pick-role"></div>
+            <div class="pick" id="pick-repo"></div>
+            <label class="lab-find" for="lab-find">
+              <svg class="lab-search-icon" viewBox="0 0 16 16" aria-hidden="true">
+                <circle cx="7" cy="7" r="5"></circle><path d="M11 11l4 4"></path>
+              </svg>
+              <input
+                id="lab-find"
+                type="search"
+                placeholder="Search titles, repos or #number"
+                autocomplete="off"
+                spellcheck="false"
+                aria-label="Search these results"
+              />
+            </label>
+          </div>
+
+          <div class="lab-count">
+            <span id="lab-shown"></span>
+            <div class="lab-pager">
+              <div class="pick" id="pick-size"></div>
+              <button class="lab-step" id="lab-prev" type="button" aria-label="Previous page">
+                <span class="pick-caret left"></span>
+              </button>
+              <button class="lab-step" id="lab-next" type="button" aria-label="Next page">
+                <span class="pick-caret right"></span>
+              </button>
+            </div>
+          </div>
+
+          <div class="framed lab-list"><ol id="lab-rows"></ol></div>
+          <button class="button primary lab-more" id="lab-more" type="button" hidden>Load More</button>
+        </div>
+
+        <div id="pane-analytics" hidden>
+          <p class="lab-lede" id="lab-lede"></p>
+          <div class="lab-cards" id="lab-stats"></div>
+
+          <section class="framed panel">
+            <div class="panel-top">
+              <div>
+                <h2 class="panel-name">Contribution calendar</h2>
+                <p class="panel-sub">PRs and issues opened per day</p>
+              </div>
+              <div class="pick" id="pick-cal"></div>
+            </div>
+            <div class="cal-scroll"><div id="lab-cal"></div></div>
+            <div class="cal-foot">
+              <span id="lab-cal-total"></span>
+              <span class="cal-key">Less <i class="lv1"></i><i class="lv2"></i><i class="lv3"></i><i class="lv4"></i> More</span>
+            </div>
+          </section>
+
+          <div class="lab-charts">
+            <section class="framed panel">
+              <div class="panel-top">
+                <div>
+                  <h2 class="panel-name">Monthly</h2>
+                  <p class="panel-sub">Their activity each month</p>
+                </div>
+                <div class="panel-switch" id="lab-monthly-switch"></div>
+              </div>
+              <div id="lab-monthly"></div>
+            </section>
+
+            <section class="framed panel">
+              <div class="panel-top">
+                <div>
+                  <h2 class="panel-name">Pull requests</h2>
+                  <p class="panel-sub">Status of PRs they opened</p>
+                </div>
+              </div>
+              <div id="lab-prs"></div>
+            </section>
+          </div>
         </div>
       </div>
-
-      <button class="button primary look-more" id="look-more" type="button" hidden>Load More</button>
     </section>
   </Band>
 </BaseLayout>
 
 <script is:inline>
   (() => {
-    const form = document.getElementById("look-form");
-    const input = document.getElementById("look-name");
-    const note = document.getElementById("look-note");
-    const frame = document.getElementById("look-frame");
-    const picks = document.getElementById("look-picks");
-    const who = document.getElementById("look-who");
-    const tabsBox = document.getElementById("look-tabs");
-    const rows = document.getElementById("look-rows");
-    const share = document.getElementById("look-share");
-    const more = document.getElementById("look-more");
-    const find = document.getElementById("look-find");
-    const profileBox = document.getElementById("look-profile");
-    const button = document.querySelector(".look-form button");
-    let inFlight = false;
+    const $ = (id) => document.getElementById(id);
+    const form = $("lab-form");
+    const input = $("lab-name");
+    const note = $("lab-note");
+    const bodyBox = $("lab-body");
+    const rowsBox = $("lab-rows");
+    const find = $("lab-find");
+    const more = $("lab-more");
+    const share = $("lab-share");
+    const searchButton = form.querySelector("button");
+    const NS = "http://www.w3.org/2000/svg";
 
-    const FILTERS = ["ALL", "AUTHORED", "ASSIGNED", "MENTIONED"];
-    const TYPES = [
-      { value: "any", label: "Any type" },
-      { value: "pr", label: "Pull requests" },
-      { value: "issue", label: "Issues" },
-    ];
-    const STATUSES = [
-      { value: "any", label: "Any status" },
-      { value: "open", label: "Open" },
-      { value: "merged", label: "Merged" },
-      { value: "closed", label: "Closed" },
-      { value: "draft", label: "Draft" },
-    ];
-    const WHENS = [
-      { value: "any", label: "Any time", days: null },
+    const DAY = 86400000;
+    const SAVED_FOR = 24 * 60 * 60 * 1000;
+    const RANGES = [
+      { value: "all", label: "All time", days: null },
       { value: "1", label: "24 hours", days: 1 },
       { value: "7", label: "7 days", days: 7 },
       { value: "30", label: "30 days", days: 30 },
       { value: "90", label: "90 days", days: 90 },
       { value: "365", label: "12 months", days: 365 },
     ];
-    const SAVED_FOR = 24 * 60 * 60 * 1000;
-    let state = null;
+    const TYPES = [
+      { value: "any", label: "All" },
+      { value: "pr", label: "Pull requests" },
+      { value: "issue", label: "Issues" },
+    ];
+    const STATUSES = [
+      { value: "any", label: "Any" },
+      { value: "open", label: "Open" },
+      { value: "merged", label: "Merged" },
+      { value: "closed", label: "Closed" },
+      { value: "draft", label: "Draft" },
+    ];
+    const ROLES = [
+      { value: "any", label: "Any" },
+      { value: "authored", label: "Authored" },
+      { value: "assigned", label: "Assigned" },
+      { value: "mentioned", label: "Mentioned" },
+    ];
+    const SIZES = [25, 50, 100];
+
+    let S = null;
+    let inFlight = false;
+
+    /* ── small helpers ─────────────────────────────────────────── */
+
+    const el = (tag, cls, text) => {
+      const n = document.createElement(tag);
+      if (cls) n.className = cls;
+      if (text !== undefined) n.textContent = text;
+      return n;
+    };
+    const mk = (tag, attrs, cls) => {
+      const n = document.createElementNS(NS, tag);
+      for (const k in attrs) n.setAttribute(k, String(attrs[k]));
+      if (cls) n.setAttribute("class", cls);
+      return n;
+    };
+    const glyph = (markup, cls) => {
+      const box = mk("svg", { viewBox: "0 0 16 16", "aria-hidden": "true" }, cls);
+      box.innerHTML = markup;
+      return box;
+    };
+    const plural = (n, one, many) => `${n} ${n === 1 ? one : many ?? one + "s"}`;
+    const pct = (part, whole) => (whole ? Math.round((part / whole) * 100) : 0);
 
     const ago = (iso) => {
       const s = Math.max(0, (Date.now() - Date.parse(iso)) / 1000);
-      if (s < 3600) return `${Math.floor(s / 60)}m`;
-      if (s < 86400) return `${Math.floor(s / 3600)}h`;
-      if (s < 2592000) return `${Math.floor(s / 86400)}d`;
-      if (s < 31536000) return `${Math.floor(s / 2592000)}mo`;
-      return `${Math.floor(s / 31536000)}y`;
+      if (s < 3600) return `${Math.floor(s / 60)}m ago`;
+      if (s < 86400) return `${Math.floor(s / 3600)}h ago`;
+      if (s < 2592000) return `${Math.floor(s / 86400)}d ago`;
+      if (s < 31536000) return `${Math.floor(s / 2592000)}mo ago`;
+      return `${Math.floor(s / 31536000)}y ago`;
+    };
+    const onDay = (t) => {
+      const d = new Date(t);
+      return Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate());
+    };
+    const dayName = (t) =>
+      new Date(t).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
+    const monthName = (key) => {
+      const [y, m] = key.split("-").map(Number);
+      return new Date(Date.UTC(y, m - 1, 1)).toLocaleDateString("en-GB", {
+        month: "long",
+        year: "numeric",
+        timeZone: "UTC",
+      });
+    };
+    const shortMonth = (key) => {
+      const [y, m] = key.split("-").map(Number);
+      return new Date(Date.UTC(y, m - 1, 1)).toLocaleDateString("en-GB", { month: "short", timeZone: "UTC" });
     };
 
-    const span = (cls, text) => {
-      const el = document.createElement("span");
-      if (cls) el.className = cls;
-      el.textContent = text;
-      return el;
+    const mine = (row) => row.author.toLowerCase() === S.login.toLowerCase();
+    // their own items count from when they opened them, threads they joined from the latest activity
+    const whenOf = (row) => Date.parse((mine(row) && row.createdAt) || row.updatedAt);
+    const isMerged = (row) => row.merged === true;
+    const isDraft = (row) => row.draft === true;
+    const labelsOf = (row) => row.labels ?? [];
+
+    /* ── filters ───────────────────────────────────────────────── */
+
+    const inWindow = (row) => {
+      const t = whenOf(row);
+      if (S.year !== "any") return new Date(t).getUTCFullYear() === Number(S.year);
+      const days = RANGES.find((r) => r.value === S.range).days;
+      return !days || Date.now() - t <= days * DAY;
     };
-
-    const merged = (row) => row.merged ?? row.chips.some((c) => c.text.includes("merged"));
-    const draft = (row) => row.draft ?? row.chips.some((c) => c.text.includes("draft"));
-
-    const byRole = (row, filter) =>
-      filter === "ALL"
+    const byType = (row, v) => v === "any" || row.kind === v;
+    const byStatus = (row, v) =>
+      v === "any"
         ? true
-        : filter === "AUTHORED"
-          ? row.author.toLowerCase() === state.login.toLowerCase()
-          : filter === "ASSIGNED"
-            ? row.assigned === true
-            : row.mentioned;
-    const byType = (row, type) => type === "any" || row.kind === type;
-    const byStatus = (row, status) =>
-      status === "any"
-        ? true
-        : status === "open"
+        : v === "open"
           ? row.open
-          : status === "merged"
-            ? merged(row)
-            : status === "draft"
-              ? draft(row)
-              : !row.open && !merged(row);
-    const byRepo = (row, repo) => repo === "any" || row.repo === repo;
-    const byWhen = (row, when) => {
-      const days = WHENS.find((w) => w.value === when)?.days;
-      return !days || Date.now() - Date.parse(row.updatedAt) <= days * 86400000;
-    };
-    const byText = (row, text) => {
-      if (!text) return true;
-      const q = text.toLowerCase().replace(/^#/, "");
+          : v === "merged"
+            ? isMerged(row)
+            : v === "draft"
+              ? isDraft(row)
+              : !row.open && !isMerged(row);
+    const byRole = (row, v) =>
+      v === "any"
+        ? true
+        : v === "authored"
+          ? mine(row)
+          : v === "assigned"
+            ? row.assigned === true
+            : row.mentioned === true;
+    const byRepo = (row, v) => v === "any" || row.repo === v;
+    const byText = (row, q) => {
+      if (!q) return true;
+      const t = q.toLowerCase().replace(/^#/, "");
       return (
-        row.title.toLowerCase().includes(q) ||
-        row.repo.toLowerCase().includes(q) ||
-        String(row.number).includes(q)
+        row.title.toLowerCase().includes(t) ||
+        row.repo.toLowerCase().includes(t) ||
+        String(row.number).includes(t) ||
+        row.author.toLowerCase().includes(t) ||
+        labelsOf(row).some((l) => l.name.toLowerCase().includes(t))
       );
     };
-    const keeps = (row) =>
-      byRole(row, state.filter) &&
-      byType(row, state.type) &&
-      byStatus(row, state.status) &&
-      byRepo(row, state.repo) &&
-      byWhen(row, state.when) &&
-      byText(row, state.text);
+
+    const windowed = () => S.rows.filter(inWindow);
+    const kept = () =>
+      windowed().filter(
+        (r) =>
+          byType(r, S.type) && byStatus(r, S.status) && byRole(r, S.role) && byRepo(r, S.repo) && byText(r, S.text),
+      );
+    // the same list with one filter lifted, so each picker can show an honest count
+    const exceptOne = (skip) =>
+      windowed().filter(
+        (r) =>
+          (skip === "type" || byType(r, S.type)) &&
+          (skip === "status" || byStatus(r, S.status)) &&
+          (skip === "role" || byRole(r, S.role)) &&
+          (skip === "repo" || byRepo(r, S.repo)) &&
+          byText(r, S.text),
+      );
     const count = (list, test) => list.filter(test).length;
 
-    const tone = { good: "g", bad: "r", warn: "y", info: "m", muted: "d" };
+    /* ── dropdowns ─────────────────────────────────────────────── */
 
     let openPick = null;
     const shut = () => {
@@ -201,27 +334,26 @@ import Band from "../components/Band.astro";
 
     const pick = (host, label, options, value, choose) => {
       host.textContent = "";
-      const chosen = options.find((o) => o.value === value) || options[0];
-      const btn = document.createElement("button");
+      const chosen = options.find((o) => String(o.value) === String(value)) || options[0];
+      const btn = el("button", "pick-btn");
       btn.type = "button";
-      btn.className = "pick-btn";
       btn.setAttribute("aria-haspopup", "listbox");
       btn.setAttribute("aria-expanded", "false");
-      btn.append(span("pick-label", chosen.label), span("pick-caret", ""));
+      if (label) btn.append(el("span", "pick-tag", label));
+      btn.append(el("span", "pick-label", chosen.label), el("span", "pick-caret"));
 
-      const list = document.createElement("ul");
-      list.className = "pick-list";
+      const list = el("ul", "pick-list");
       list.setAttribute("role", "listbox");
-      list.setAttribute("aria-label", label);
+      list.setAttribute("aria-label", label || "Options");
       list.hidden = true;
 
       const items = options.map((o) => {
-        const li = document.createElement("li");
+        const li = el("li");
         li.setAttribute("role", "option");
-        li.setAttribute("aria-selected", String(o.value === value));
+        li.setAttribute("aria-selected", String(String(o.value) === String(value)));
         li.tabIndex = -1;
-        li.append(span("pick-name", o.label));
-        if (o.count !== undefined) li.append(span("pick-count", String(o.count)));
+        li.append(el("span", "pick-name", o.label));
+        if (o.count !== undefined) li.append(el("span", "pick-count", String(o.count)));
         li.addEventListener("click", () => {
           shut();
           choose(o.value);
@@ -230,22 +362,18 @@ import Band from "../components/Band.astro";
         return li;
       });
 
-      const step = (from, by) => {
-        const next = items[Math.max(0, Math.min(items.length - 1, from + by))];
-        if (next) next.focus();
-      };
       list.addEventListener("keydown", (e) => {
         const at = items.indexOf(document.activeElement);
-        if (e.key === "ArrowDown") { e.preventDefault(); step(at, 1); }
-        if (e.key === "ArrowUp") { e.preventDefault(); step(at, -1); }
+        if (e.key === "ArrowDown") { e.preventDefault(); items[Math.min(items.length - 1, at + 1)].focus(); }
+        if (e.key === "ArrowUp") { e.preventDefault(); items[Math.max(0, at - 1)].focus(); }
         if (e.key === "Enter" || e.key === " ") { e.preventDefault(); items[at]?.click(); }
       });
 
       btn.addEventListener("click", (e) => {
         e.stopPropagation();
-        const wasOpen = openPick?.host === host;
+        const was = openPick?.host === host;
         shut();
-        if (wasOpen) return;
+        if (was) return;
         list.hidden = false;
         btn.setAttribute("aria-expanded", "true");
         openPick = { host, btn, list };
@@ -255,151 +383,787 @@ import Band from "../components/Band.astro";
       host.append(btn, list);
     };
 
-    const drawProfile = () => {
-      const p = state.profile;
-      if (!p) {
-        profileBox.hidden = true;
-        return;
-      }
-      const avatar = document.getElementById("look-avatar");
-      if (p.avatar) {
-        avatar.src = p.avatar.includes("?") ? `${p.avatar}&s=96` : `${p.avatar}?s=96`;
-        avatar.alt = `${p.login} on github`;
+    /* ── profile and counts ────────────────────────────────────── */
+
+    const drawWho = () => {
+      const p = S.profile;
+      const avatar = $("lab-avatar");
+      if (p?.avatar) {
+        avatar.src = p.avatar.includes("?") ? `${p.avatar}&s=112` : `${p.avatar}?s=112`;
+        avatar.alt = `${S.login} on github`;
         avatar.hidden = false;
       } else {
         avatar.hidden = true;
       }
-      const link = document.getElementById("look-fullname");
-      link.textContent = p.name ? `${p.name} (@${p.login})` : `@${p.login}`;
-      link.href = p.url || `https://github.com/${p.login}`;
+      const name = $("lab-fullname");
+      name.textContent = p?.name || S.login;
+      name.href = p?.url || `https://github.com/${S.login}`;
+      $("lab-handle").textContent = `@${S.login}`;
       const bits = [];
-      if (p.joined) {
-        bits.push(
-          `joined ${new Date(p.joined).toLocaleDateString("en-GB", { month: "short", year: "numeric" })}`,
-        );
+      if (p?.joined) {
+        bits.push(`Joined ${new Date(p.joined).toLocaleDateString("en-GB", { month: "long", year: "numeric" })}`);
       }
-      if (p.location) bits.push(p.location);
-      if (typeof p.repos === "number") bits.push(`${p.repos} public repos`);
-      document.getElementById("look-meta").textContent = bits.join(" · ");
-      profileBox.hidden = false;
+      if (p?.location) bits.push(p.location);
+      if (typeof p?.repos === "number") bits.push(plural(p.repos, "public repo"));
+      $("lab-meta").textContent = bits.join(" · ");
     };
 
-    const drawBar = () => {
-      who.textContent = `@${state.login}`;
-      const except = (skip) =>
-        state.rows.filter(
-          (r) =>
-            (skip === "role" || byRole(r, state.filter)) &&
-            (skip === "type" || byType(r, state.type)) &&
-            (skip === "status" || byStatus(r, state.status)) &&
-            (skip === "repo" || byRepo(r, state.repo)) &&
-            (skip === "when" || byWhen(r, state.when)) &&
-            byText(r, state.text),
-        );
+    const drawState = () => {
+      const state = $("lab-state");
+      state.textContent = "";
+      const loaded = S.rows.length;
+      const all = Math.max(S.total, loaded);
+      const done = !S.next?.more;
+      state.append(el("i", `lab-dot ${S.loading ? "busy" : done ? "done" : "part"}`));
+      state.append(
+        el(
+          "span",
+          "",
+          S.loading
+            ? `Loading ${loaded} of ${all} items`
+            : done
+              ? `Up to date · ${plural(all, "item")}`
+              : `${loaded} of ${all} items loaded`,
+        ),
+      );
+      if (!done && !S.loading) {
+        const b = el("button", "lab-link", "load the rest");
+        b.type = "button";
+        b.addEventListener("click", loadAll);
+        state.append(el("span", "", " · "), b);
+      }
+    };
 
-      const forTabs = except("role");
-      tabsBox.textContent = "";
-      for (const f of FILTERS) {
-        const tab = document.createElement("button");
-        tab.type = "button";
-        tab.className = "look-tab";
-        tab.setAttribute("aria-pressed", String(f === state.filter));
-        tab.append(span("", f), span("pick-count", String(count(forTabs, (r) => byRole(r, f)))));
-        tab.addEventListener("click", () => {
-          state.filter = f;
+    const card = (title, value, sub, tone) => {
+      const box = el("div", "card");
+      const head = el("p", "card-top");
+      if (tone) head.append(el("i", `card-dot ${tone}`));
+      head.append(el("span", "", title));
+      box.append(head, el("p", "card-value", value), el("p", "card-sub", sub));
+      return box;
+    };
+
+    const scopeWords = () => {
+      const range = RANGES.find((r) => r.value === S.range);
+      if (S.year !== "any") return `in ${S.year}`;
+      return range.days ? `last ${range.label}` : "all time";
+    };
+
+    const drawCards = () => {
+      const list = windowed();
+      const prs = list.filter((r) => r.kind === "pr");
+      const issues = list.filter((r) => r.kind === "issue");
+      const merged = prs.filter(isMerged);
+      const openIssues = issues.filter((r) => r.open);
+
+      const box = $("lab-cards");
+      box.textContent = "";
+      box.append(
+        card("Total involvement", String(list.length), `PRs & issues touched · ${scopeWords()}`),
+        card(
+          "Pull requests",
+          String(prs.length),
+          prs.length ? `${pct(merged.length, prs.length)}% merged · ${merged.length} merged` : "none here",
+          "merged",
+        ),
+        card(
+          "Issues",
+          String(issues.length),
+          issues.length ? `${openIssues.length} open · ${issues.length - openIssues.length} closed` : "none here",
+          "open",
+        ),
+        card("Reviews", String(count(prs, (r) => !mine(r))), "others' pull requests", "review"),
+        card("Discussions", String(count(issues, (r) => !mine(r))), "others' threads joined", "thread"),
+      );
+    };
+
+    const drawRanges = () => {
+      const chips = $("lab-chips");
+      chips.textContent = "";
+      for (const r of RANGES) {
+        const b = el("button", "chip", r.label);
+        b.type = "button";
+        b.setAttribute("aria-pressed", String(S.year === "any" && S.range === r.value));
+        b.addEventListener("click", () => {
+          S.range = r.value;
+          S.year = "any";
+          S.page = 0;
           redraw();
         });
-        tabsBox.append(tab);
+        chips.append(b);
       }
 
-      const forWhen = except("when");
+      const years = [...new Set(S.rows.map((r) => new Date(whenOf(r)).getUTCFullYear()))].sort((a, b) => b - a);
       pick(
-        document.getElementById("pick-when"),
-        "Time",
-        WHENS.map((w) => ({ ...w, count: count(forWhen, (r) => byWhen(r, w.value)) })),
-        state.when,
-        (value) => {
-          state.when = value;
-          redraw();
-        },
-      );
-
-      const forTypes = except("type");
-      pick(
-        document.getElementById("pick-type"),
-        "Type",
-        TYPES.map((t) => ({ ...t, count: count(forTypes, (r) => byType(r, t.value)) })),
-        state.type,
-        (value) => {
-          state.type = value;
-          redraw();
-        },
-      );
-
-      const forStatus = except("status");
-      pick(
-        document.getElementById("pick-status"),
-        "Status",
-        STATUSES.map((t) => ({ ...t, count: count(forStatus, (r) => byStatus(r, t.value)) })),
-        state.status,
-        (value) => {
-          state.status = value;
-          redraw();
-        },
-      );
-
-      const forRepos = except("repo");
-      const names = [...new Set(state.rows.map((r) => r.repo))].sort((a, b) =>
-        count(forRepos, (r) => r.repo === b) - count(forRepos, (r) => r.repo === a) || a.localeCompare(b),
-      );
-      pick(
-        document.getElementById("pick-repo"),
-        "Repository",
+        $("pick-year"),
+        "",
         [
-          { value: "any", label: "Any repository", count: forRepos.length },
-          ...names.map((n) => ({ value: n, label: n, count: count(forRepos, (r) => r.repo === n) })),
+          { value: "any", label: "Year" },
+          ...years.map((y) => ({
+            value: String(y),
+            label: String(y),
+            count: count(S.rows, (r) => new Date(whenOf(r)).getUTCFullYear() === y),
+          })),
         ],
-        state.repo,
-        (value) => {
-          state.repo = value;
+        S.year,
+        (v) => {
+          S.year = v;
+          S.page = 0;
           redraw();
         },
       );
-      picks.hidden = false;
+
+      const range = RANGES.find((r) => r.value === S.range);
+      $("lab-showing").textContent =
+        S.year !== "any"
+          ? `Showing their activity in ${S.year}`
+          : range.days
+            ? `Showing their activity in the last ${range.label}`
+            : "Showing all of their activity";
     };
 
-    const tell = (extra) => {
-      const n = state.rows.length;
-      const base =
-        state.source === "activity"
-          ? `github hides ${state.login} from search, so this is their public activity`
-          : state.total > n
-            ? `the newest ${n} of ${state.total} they are involved in`
-            : `${n} item${n === 1 ? "" : "s"}`;
-      note.textContent = extra ? `${base} · ${extra}` : base;
+    const drawFilters = () => {
+      const forType = exceptOne("type");
+      pick($("pick-type"), "Type", TYPES.map((t) => ({ ...t, count: count(forType, (r) => byType(r, t.value)) })),
+        S.type, (v) => { S.type = v; S.page = 0; redraw(); });
+
+      const forStatus = exceptOne("status");
+      pick($("pick-status"), "Status",
+        STATUSES.map((t) => ({ ...t, count: count(forStatus, (r) => byStatus(r, t.value)) })),
+        S.status, (v) => { S.status = v; S.page = 0; redraw(); });
+
+      const forRole = exceptOne("role");
+      pick($("pick-role"), "Role", ROLES.map((t) => ({ ...t, count: count(forRole, (r) => byRole(r, t.value)) })),
+        S.role, (v) => { S.role = v; S.page = 0; redraw(); });
+
+      const forRepo = exceptOne("repo");
+      const names = [...new Set(windowed().map((r) => r.repo))].sort(
+        (a, b) => count(forRepo, (r) => r.repo === b) - count(forRepo, (r) => r.repo === a) || a.localeCompare(b),
+      );
+      pick($("pick-repo"), "Repo",
+        [
+          { value: "any", label: "All", count: forRepo.length },
+          ...names.map((n) => ({ value: n, label: n, count: count(forRepo, (r) => r.repo === n) })),
+        ],
+        S.repo, (v) => { S.repo = v; S.page = 0; redraw(); });
+
+      pick($("pick-size"), "Show", SIZES.map((n) => ({ value: n, label: String(n) })), S.size, (v) => {
+        S.size = Number(v);
+        S.page = 0;
+        drawFilters();
+        drawRows();
+      });
     };
+
+    /* ── the list ──────────────────────────────────────────────── */
+
+    const ICONS = {
+      issueOpen: '<circle cx="8" cy="8" r="6.2"></circle><circle cx="8" cy="8" r="1.8" class="fill"></circle>',
+      issueClosed: '<circle cx="8" cy="8" r="6.2"></circle><path d="M5.3 8.2l1.9 1.9 3.6-3.9"></path>',
+      issueSkip: '<circle cx="8" cy="8" r="6.2"></circle><path d="M5.4 8h5.2"></path>',
+      prOpen:
+        '<circle cx="4.5" cy="3.8" r="1.9"></circle><circle cx="4.5" cy="12.2" r="1.9"></circle><path d="M4.5 5.7v4.6"></path><circle cx="11.5" cy="12.2" r="1.9"></circle><path d="M11.5 10.3V7.4a2 2 0 0 0-2-2H6.8"></path>',
+      prMerged:
+        '<circle cx="4.5" cy="3.8" r="1.9"></circle><circle cx="4.5" cy="12.2" r="1.9"></circle><path d="M4.5 5.7v4.6"></path><circle cx="11.5" cy="3.8" r="1.9"></circle><path d="M11.5 5.7v1a4 4 0 0 1-4 4H6.4"></path>',
+      prClosed:
+        '<circle cx="4.5" cy="3.8" r="1.9"></circle><circle cx="4.5" cy="12.2" r="1.9"></circle><path d="M4.5 5.7v4.6"></path><path d="M9 3.4l4 4M13 3.4l-4 4"></path>',
+      prDraft:
+        '<circle cx="4.5" cy="3.8" r="1.9"></circle><circle cx="4.5" cy="12.2" r="1.9"></circle><path d="M4.5 5.7v4.6"></path><circle cx="11.5" cy="12.2" r="1.9"></circle>',
+    };
+
+    const stateOf = (row) => {
+      if (row.kind === "pr") {
+        if (isMerged(row)) return { key: "merged", word: "Merged", icon: ICONS.prMerged };
+        if (!row.open) return { key: "closed", word: "Closed", icon: ICONS.prClosed };
+        if (isDraft(row)) return { key: "draft", word: "Draft", icon: ICONS.prDraft };
+        return { key: "open", word: "Open", icon: ICONS.prOpen };
+      }
+      if (row.open) return { key: "open", word: "Open", icon: ICONS.issueOpen };
+      return row.chips.some((c) => c.text.includes("not planned"))
+        ? { key: "skipped", word: "Not planned", icon: ICONS.issueSkip }
+        : { key: "closed", word: "Closed", icon: ICONS.issueClosed };
+    };
+
+    // github picks a label's colour, so the text on it has to be chosen to stay readable
+    const labelChip = (label) => {
+      const chip = el("span", "lbl", label.name);
+      const hex = /^[0-9a-f]{6}$/i.test(label.color || "") ? label.color : "8a8f98";
+      const lum = [0, 2, 4]
+        .map((i) => parseInt(hex.slice(i, i + 2), 16) / 255)
+        .map((c) => (c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4))
+        .reduce((a, c, i) => a + c * [0.2126, 0.7152, 0.0722][i], 0);
+      chip.style.setProperty("--lbl", `#${hex}`);
+      chip.style.setProperty("--lbl-ink", lum > 0.35 ? "#14181f" : "#ffffff");
+      return chip;
+    };
+
+    const roleOf = (row) => {
+      if (mine(row)) return null;
+      if (row.assigned) return `@${S.login} assigned`;
+      if (row.mentioned) return `@${S.login} mentioned`;
+      return `@${S.login} took part`;
+    };
+
+    const drawRows = () => {
+      const all = kept();
+      const pages = Math.max(1, Math.ceil(all.length / S.size));
+      S.page = Math.min(S.page, pages - 1);
+      const from = S.page * S.size;
+      const slice = all.slice(from, from + S.size);
+
+      $("lab-shown").textContent = all.length
+        ? `${from + 1}–${from + slice.length} of ${all.length}`
+        : "nothing under these filters";
+      $("lab-prev").disabled = S.page === 0;
+      $("lab-next").disabled = S.page >= pages - 1;
+
+      rowsBox.textContent = "";
+      rowsBox.start = from + 1;
+      if (!slice.length) {
+        rowsBox.append(el("li", "lab-empty", `No items for ${S.login} under these filters.`));
+        return;
+      }
+
+      for (const row of slice) {
+        const state = stateOf(row);
+        const li = el("li", "r");
+        li.append(glyph(state.icon, `r-icon ${state.key}`));
+
+        const main = el("div", "r-main");
+        const title = el("a", "r-title", row.title);
+        title.href = row.url;
+        title.target = "_blank";
+        title.rel = "noopener noreferrer";
+        main.append(title);
+
+        const line = el("div", "r-line");
+        line.append(el("span", `badge ${state.key}`, state.word));
+        line.append(el("span", "r-repo", `${row.repo}#${row.number}`));
+        const by = el("span", "r-by");
+        by.append(el("span", "", "by "), el("b", "", row.author));
+        line.append(by);
+        const role = roleOf(row);
+        if (role) {
+          const tag = el("span", "r-role");
+          tag.append(el("i", "r-role-dot"), el("span", "", role));
+          line.append(tag);
+        }
+        for (const label of labelsOf(row).slice(0, 4)) line.append(labelChip(label));
+        main.append(line);
+
+        const foot = el("div", "r-foot");
+        foot.append(el("span", "", row.activity || (row.comments ? plural(row.comments, "comment") : "No comments yet")));
+        if (row.activity && row.comments) {
+          foot.append(el("span", "r-dim", ` · ${plural(row.comments, "comment")}`));
+        }
+        main.append(foot);
+
+        if (row.body) {
+          const body = el("p", "r-body", row.body + (row.body.length >= 400 ? "…" : ""));
+          body.hidden = !S.open.has(row.url);
+          main.append(body);
+        }
+        li.append(main);
+
+        const side = el("div", "r-side");
+        side.append(el("span", "r-ago", ago(row.updatedAt)));
+        if (row.body) {
+          const peek = el("button", "r-peek");
+          peek.type = "button";
+          peek.setAttribute("aria-expanded", String(S.open.has(row.url)));
+          peek.append(el("span", "", "Preview"), el("span", "pick-caret"));
+          peek.addEventListener("click", () => {
+            const nowOpen = !S.open.has(row.url);
+            if (nowOpen) S.open.add(row.url);
+            else S.open.delete(row.url);
+            main.querySelector(".r-body").hidden = !nowOpen;
+            peek.setAttribute("aria-expanded", String(nowOpen));
+          });
+          side.append(peek);
+        }
+        li.append(side);
+        rowsBox.append(li);
+      }
+    };
+
+    /* ── analytics ─────────────────────────────────────────────── */
+
+    const median = (nums) => {
+      if (!nums.length) return null;
+      const s = [...nums].sort((a, b) => a - b);
+      const h = Math.floor(s.length / 2);
+      return s.length % 2 ? s[h] : (s[h - 1] + s[h]) / 2;
+    };
+    const spell = (ms) => {
+      const h = ms / 3600000;
+      if (h < 1) return `${Math.round(ms / 60000)} m`;
+      if (h < 48) return `${Math.round(h)} h`;
+      return `${Math.round(h / 24)} d`;
+    };
+    const perDay = (list) => {
+      const map = new Map();
+      for (const r of list) {
+        const key = onDay(whenOf(r));
+        map.set(key, (map.get(key) ?? 0) + 1);
+      }
+      return map;
+    };
+
+    const drawStats = () => {
+      const list = windowed();
+      const opened = list.filter(mine);
+      const prs = opened.filter((r) => r.kind === "pr");
+      const issues = opened.filter((r) => r.kind === "issue");
+      const merged = prs.filter(isMerged);
+      const closedIssues = issues.filter((r) => !r.open);
+      const days = perDay(opened);
+      const keys = [...days.keys()].sort((a, b) => a - b);
+
+      let best = 0;
+      let run = 0;
+      for (let i = 0; i < keys.length; i++) {
+        run = i && keys[i] - keys[i - 1] === DAY ? run + 1 : 1;
+        best = Math.max(best, run);
+      }
+      const today = onDay(Date.now());
+      let current = 0;
+      for (let d = days.has(today) ? today : today - DAY; days.has(d); d -= DAY) current++;
+
+      const mergeTimes = merged
+        .filter((r) => r.createdAt && r.mergedAt)
+        .map((r) => Date.parse(r.mergedAt) - Date.parse(r.createdAt))
+        .filter((n) => n >= 0);
+      const mid = median(mergeTimes);
+
+      let busiest = null;
+      for (const [day, n] of days) if (!busiest || n > busiest[1]) busiest = [day, n];
+
+      const range = RANGES.find((r) => r.value === S.range);
+      $("lab-lede").textContent =
+        `${plural(list.length, "item")} ${S.year !== "any" ? `in ${S.year}` : range.days ? `in the last ${range.label}` : "in total"}. ` +
+        "Dates show when they opened an item, or the latest activity on threads they joined.";
+
+      const box = $("lab-stats");
+      box.textContent = "";
+      box.append(
+        card("PRs opened", String(prs.length), `${merged.length} merged`),
+        card("Merge rate", `${pct(merged.length, prs.length)}%`, "of PRs they opened"),
+        card("Issues opened", String(issues.length), `${closedIssues.length} closed`),
+        card("Issues closed", `${pct(closedIssues.length, issues.length)}%`, "of issues they opened"),
+        card("Repositories", String(new Set(list.map((r) => r.repo)).size), "with activity"),
+        card("Active days", String(days.size), "days they opened something"),
+        card("Longest streak", `${best} d`, "days in a row"),
+        card("Current streak", `${current} d`, current ? "still going" : "not active today"),
+        card("Median time to merge", mid === null ? "—" : spell(mid), plural(mergeTimes.length, "merged PR")),
+        card("Busiest day", busiest ? String(busiest[1]) : "—", busiest ? dayName(busiest[0]) : "nothing opened"),
+      );
+    };
+
+    const drawCalendar = () => {
+      const host = $("lab-cal");
+      host.textContent = "";
+      const opened = S.rows.filter(mine);
+      const days = perDay(opened);
+
+      const end = onDay(Date.now());
+      const start = S.cal === "12" ? end - 364 * DAY : Date.UTC(Number(S.cal), 0, 1);
+      const stop = S.cal === "12" ? end : Math.min(end, Date.UTC(Number(S.cal), 11, 31));
+      const first = start - new Date(start).getUTCDay() * DAY;
+      const weeks = Math.ceil((stop - first) / (7 * DAY)) + 1;
+
+      const cell = 11;
+      const gap = 3;
+      const padLeft = 28;
+      const padTop = 16;
+      const width = padLeft + weeks * (cell + gap);
+      const height = padTop + 7 * (cell + gap);
+
+      const plot = mk("svg", { viewBox: `0 0 ${width} ${height}`, width, height, role: "img" }, "cal");
+      const text = (x, y, value, cls) => {
+        const t = mk("text", { x, y }, cls);
+        t.textContent = value;
+        return t;
+      };
+
+      ["Mon", "Wed", "Fri"].forEach((name, i) => {
+        plot.append(text(0, padTop + (i * 2 + 1) * (cell + gap) + cell - 2, name, "cal-axis"));
+      });
+
+      let total = 0;
+      let lastMonth = -1;
+      for (let w = 0; w < weeks; w++) {
+        for (let d = 0; d < 7; d++) {
+          const day = first + (w * 7 + d) * DAY;
+          if (day < start || day > stop) continue;
+          const n = days.get(day) ?? 0;
+          total += n;
+          const level = n === 0 ? 0 : n === 1 ? 1 : n <= 3 ? 2 : n <= 6 ? 3 : 4;
+          const box = mk(
+            "rect",
+            { x: padLeft + w * (cell + gap), y: padTop + d * (cell + gap), width: cell, height: cell, rx: 2 },
+            `cal-cell lv${level}`,
+          );
+          const tip = mk("title", {});
+          tip.textContent = `${n ? plural(n, "item") : "Nothing"} on ${dayName(day)}`;
+          box.append(tip);
+          plot.append(box);
+
+          const month = new Date(day).getUTCMonth();
+          if (d === 0 && month !== lastMonth) {
+            lastMonth = month;
+            plot.append(
+              text(
+                padLeft + w * (cell + gap),
+                11,
+                new Date(day).toLocaleDateString("en-GB", { month: "short", timeZone: "UTC" }),
+                "cal-axis",
+              ),
+            );
+          }
+        }
+      }
+
+      const where = S.cal === "12" ? "in the last 12 months" : `in ${S.cal}`;
+      plot.setAttribute("aria-label", `${plural(total, "item")} opened ${where}`);
+      host.append(plot);
+      $("lab-cal-total").textContent = `${plural(total, "contribution")} ${where}`;
+
+      const years = [...new Set(opened.map((r) => new Date(whenOf(r)).getUTCFullYear()))].sort((a, b) => b - a);
+      pick(
+        $("pick-cal"),
+        "",
+        [{ value: "12", label: "Last 12 months" }, ...years.map((y) => ({ value: String(y), label: String(y) }))],
+        S.cal,
+        (v) => {
+          S.cal = v;
+          drawCalendar();
+        },
+      );
+    };
+
+    const drawMonthly = () => {
+      const host = $("lab-monthly");
+      host.textContent = "";
+      const byMonth = new Map();
+      for (const r of windowed()) {
+        const d = new Date(whenOf(r));
+        const key = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
+        byMonth.set(key, (byMonth.get(key) ?? 0) + 1);
+      }
+      const months = [...byMonth.entries()].sort((a, b) => a[0].localeCompare(b[0])).slice(-14);
+      if (!months.length) {
+        host.append(el("p", "panel-empty", "Nothing to chart in this range."));
+        return;
+      }
+
+      if (S.monthlyView === "table") {
+        const table = el("table", "panel-table");
+        const head = el("thead");
+        const headRow = el("tr");
+        headRow.append(el("th", "", "Month"), el("th", "num", "Items"));
+        head.append(headRow);
+        const tbody = el("tbody");
+        for (const [key, n] of [...months].reverse()) {
+          const tr = el("tr");
+          tr.append(el("td", "", monthName(key)), el("td", "num", String(n)));
+          tbody.append(tr);
+        }
+        table.append(head, tbody);
+        host.append(table);
+        return;
+      }
+
+      const top = Math.max(...months.map((m) => m[1]));
+      const w = 640;
+      const h = 196;
+      const padL = 30;
+      const padB = 28;
+      const padT = 16;
+      const band = (w - padL) / months.length;
+      const barW = Math.min(28, band * 0.5);
+
+      const plot = mk(
+        "svg",
+        { viewBox: `0 0 ${w} ${h}`, role: "img", "aria-label": `Items per month, highest ${top}` },
+        "chart",
+      );
+
+      const steps = top <= 4 ? top : 2;
+      for (let i = 0; i <= steps; i++) {
+        const value = Math.round((top / steps) * i);
+        const y = h - padB - ((h - padB - padT) * value) / top;
+        plot.append(mk("line", { x1: padL, y1: y, x2: w, y2: y }, "grid"));
+        if (i) {
+          const t = mk("text", { x: padL - 7, y: y + 4 }, "tick");
+          t.textContent = String(value);
+          plot.append(t);
+        }
+      }
+
+      months.forEach(([key, n], i) => {
+        const barH = Math.max(2, ((h - padB - padT) * n) / top);
+        const x = padL + i * band + (band - barW) / 2;
+        const y = h - padB - barH;
+        const bar = mk("rect", { x, y, width: barW, height: barH, rx: 4 }, "bar");
+        const tip = mk("title", {});
+        tip.textContent = `${monthName(key)}: ${plural(n, "item")}`;
+        bar.append(tip);
+        plot.append(bar);
+
+        const label = mk("text", { x: x + barW / 2, y: h - 9 }, "tick mid");
+        label.textContent = shortMonth(key);
+        plot.append(label);
+
+        if (n === top) {
+          const value = mk("text", { x: x + barW / 2, y: y - 6 }, "tick mid strong");
+          value.textContent = String(n);
+          plot.append(value);
+        }
+      });
+
+      host.append(plot);
+    };
+
+    const drawPrs = () => {
+      const host = $("lab-prs");
+      host.textContent = "";
+      const prs = windowed().filter((r) => r.kind === "pr" && mine(r));
+      if (!prs.length) {
+        host.append(el("p", "panel-empty", "They opened no pull requests in this range."));
+        return;
+      }
+      // open, merged, closed: the purple between keeps the green and the red apart
+      const parts = [
+        { key: "open", word: "Open", n: count(prs, (r) => r.open) },
+        { key: "merged", word: "Merged", n: count(prs, isMerged) },
+        { key: "closed", word: "Closed", n: count(prs, (r) => !r.open && !isMerged(r)) },
+      ].filter((p) => p.n);
+
+      const bar = el("div", "stack");
+      bar.setAttribute("role", "img");
+      bar.setAttribute("aria-label", parts.map((p) => `${p.word} ${p.n}`).join(", "));
+      for (const part of parts) {
+        const seg = el("div", `stack-seg ${part.key}`);
+        seg.style.height = `${(part.n / prs.length) * 100}%`;
+        seg.title = `${part.word}: ${part.n} of ${prs.length}`;
+        if (part.n / prs.length > 0.16) seg.append(el("span", "stack-label", String(part.n)));
+        bar.append(seg);
+      }
+
+      const key = el("ul", "stack-key");
+      const total = el("li", "stack-total");
+      total.append(el("b", "", String(prs.length)), el("span", "", "opened"));
+      key.append(total);
+      for (const part of parts) {
+        const li = el("li");
+        li.append(
+          el("i", `card-dot ${part.key}`),
+          el("span", "stack-name", part.word),
+          el("span", "stack-n", String(part.n)),
+          el("span", "stack-pct", `${pct(part.n, prs.length)}%`),
+        );
+        key.append(li);
+      }
+
+      const wrap = el("div", "stack-wrap");
+      wrap.append(bar, key);
+      host.append(wrap);
+    };
+
+    const drawSwitch = () => {
+      const box = $("lab-monthly-switch");
+      box.textContent = "";
+      const options = [
+        { value: "bar", label: "Bars", icon: '<path d="M3 13V8M8 13V3M13 13v-3"></path>' },
+        { value: "table", label: "Table", icon: '<path d="M2 4h12M2 8h12M2 12h12M6 4v8"></path>' },
+      ];
+      for (const o of options) {
+        const b = el("button", "switch-btn");
+        b.type = "button";
+        b.title = o.label;
+        b.setAttribute("aria-label", o.label);
+        b.setAttribute("aria-pressed", String(S.monthlyView === o.value));
+        b.append(glyph(o.icon));
+        b.addEventListener("click", () => {
+          S.monthlyView = o.value;
+          drawSwitch();
+          drawMonthly();
+        });
+        box.append(b);
+      }
+    };
+
+    /* ── wiring ────────────────────────────────────────────────── */
 
     const redraw = () => {
-      drawProfile();
-      drawBar();
-      draw();
-      more.hidden = !state.next?.more;
+      drawWho();
+      drawState();
+      drawCards();
+      drawRanges();
+      if (S.view === "activity") {
+        drawFilters();
+        drawRows();
+        more.hidden = !S.next?.more;
+      } else {
+        drawStats();
+        drawCalendar();
+        drawSwitch();
+        drawMonthly();
+        drawPrs();
+      }
+      $("pane-activity").hidden = S.view !== "activity";
+      $("pane-analytics").hidden = S.view === "activity";
+      $("view-activity").setAttribute("aria-selected", String(S.view === "activity"));
+      $("view-analytics").setAttribute("aria-selected", String(S.view !== "activity"));
+      bodyBox.hidden = false;
     };
 
-    // keeping the last answer means a revisit paints at once and refreshes behind
-    const keyFor = (login) => `ghdeck.user.${login.toLowerCase()}`;
+    const setView = (view) => {
+      S.view = view;
+      redraw();
+      if (view === "analytics" && S.next?.more && !S.loading) loadAll();
+    };
+    $("view-activity").addEventListener("click", () => setView("activity"));
+    $("view-analytics").addEventListener("click", () => setView("analytics"));
+
+    $("lab-prev").addEventListener("click", () => {
+      S.page = Math.max(0, S.page - 1);
+      drawRows();
+      rowsBox.scrollIntoView({ block: "start", behavior: "smooth" });
+    });
+    $("lab-next").addEventListener("click", () => {
+      S.page += 1;
+      drawRows();
+      rowsBox.scrollIntoView({ block: "start", behavior: "smooth" });
+    });
+    find.addEventListener("input", () => {
+      if (!S) return;
+      S.text = find.value.trim();
+      S.page = 0;
+      redraw();
+    });
+
+    const dots = () => {
+      const d = el("span", "dots");
+      d.setAttribute("aria-hidden", "true");
+      d.append(el("i"), el("i"), el("i"));
+      return d;
+    };
+    const busy = (btn, label) => {
+      btn.disabled = true;
+      btn.textContent = label;
+      btn.append(dots());
+    };
+    const ready = (btn, label) => {
+      btn.disabled = false;
+      btn.textContent = label;
+    };
+
+    const start = (body, keep) => {
+      S = {
+        login: body.login,
+        rows: body.rows,
+        total: body.total,
+        source: body.source,
+        profile: body.profile ?? null,
+        next: body.next ?? null,
+        loading: false,
+        view: "activity",
+        range: "all",
+        year: "any",
+        type: "any",
+        status: "any",
+        role: "any",
+        repo: "any",
+        text: "",
+        page: 0,
+        size: 50,
+        cal: "12",
+        monthlyView: "bar",
+        open: new Set(),
+        ...keep,
+      };
+      find.value = S.text;
+    };
+
+    const absorb = (body) => {
+      const seen = new Set(S.rows.map((r) => r.url));
+      for (const row of body.rows) if (!seen.has(row.url)) S.rows.push(row);
+      S.rows.sort((a, b) => Date.parse(b.updatedAt) - Date.parse(a.updatedAt));
+      S.next = body.next ?? null;
+      if (body.total) S.total = Math.max(S.total, body.total);
+    };
+
+    const nextUrl = (size) => {
+      const q = new URLSearchParams({ name: S.login, rich: "1", size: String(size) });
+      if (S.next?.am) q.set("am", S.next.am);
+      if (S.next?.ae) q.set("ae", S.next.ae);
+      if (S.next?.skip) q.set("skip", String(S.next.skip));
+      return `/api/user?${q}`;
+    };
+
+    const loadMore = async () => {
+      if (!S.next?.more || more.disabled) return;
+      busy(more, "Loading");
+      try {
+        const res = await fetch(nextUrl(20));
+        const body = await res.json();
+        if (!res.ok) throw new Error(body?.error || "that did not work");
+        absorb(body);
+      } catch (err) {
+        ready(more, "Load More");
+        note.hidden = false;
+        note.textContent = err instanceof Error ? err.message : "Could not load more, try again.";
+        return;
+      }
+      ready(more, "Load More");
+      redraw();
+      remember();
+    };
+    more.addEventListener("click", loadMore);
+
+    // the analytics are only honest over the whole history, so the rest is pulled in behind them
+    async function loadAll() {
+      if (S.loading) return;
+      S.loading = true;
+      drawState();
+      let guard = 0;
+      while (S.next?.more && guard++ < 12) {
+        let body;
+        try {
+          const res = await fetch(nextUrl(50));
+          body = await res.json();
+          if (!res.ok) throw new Error(body?.error || "GitHub stopped answering");
+        } catch (err) {
+          S.loading = false;
+          note.hidden = false;
+          note.textContent = err instanceof Error ? err.message : "Could not load the rest.";
+          redraw();
+          return;
+        }
+        absorb(body);
+        drawState();
+      }
+      S.loading = false;
+      redraw();
+      remember();
+    }
+
+    /* ── saved copies ──────────────────────────────────────────── */
+
+    const keyFor = (login) => `ghdeck.lab.${login.toLowerCase()}`;
     const remember = () => {
       try {
         localStorage.setItem(
-          keyFor(state.login),
+          keyFor(S.login),
           JSON.stringify({
             at: Date.now(),
-            login: state.login,
-            rows: state.rows.slice(0, 100),
-            total: state.total,
-            source: state.source,
-            next: state.next,
-            profile: state.profile ?? null,
+            login: S.login,
+            rows: S.rows.slice(0, 400),
+            total: S.total,
+            source: S.source,
+            next: S.next,
+            profile: S.profile,
           }),
         );
       } catch {}
@@ -414,158 +1178,40 @@ import Band from "../components/Band.astro";
       }
     };
 
-    const start = (body, extras) => {
-      state = {
-        login: body.login,
-        rows: body.rows,
-        total: body.total,
-        source: body.source,
-        profile: body.profile ?? null,
-        next: body.next ?? null,
-        filter: "ALL",
-        type: "any",
-        status: "any",
-        repo: "any",
-        when: "any",
-        text: "",
-        ...extras,
-      };
-      find.value = state.text;
-    };
-
-    const loadMore = async () => {
-      if (!state.next?.more || more.disabled) return;
-      busy(more, "Loading");
-      const q = new URLSearchParams({ name: state.login });
-      if (state.next.am) q.set("am", state.next.am);
-      if (state.next.ae) q.set("ae", state.next.ae);
-      if (state.next.skip) q.set("skip", String(state.next.skip));
-      let body;
-      try {
-        const res = await fetch(`/api/user?${q}`);
-        body = await res.json();
-        if (!res.ok) throw new Error(body?.error || "that did not work");
-      } catch (err) {
-        ready(more, "Load More");
-        note.textContent = err instanceof Error ? err.message : "could not load more, try again";
-        return;
-      }
-      const seen = new Set(state.rows.map((r) => r.url));
-      for (const row of body.rows) if (!seen.has(row.url)) state.rows.push(row);
-      state.rows = state.rows.sort((a, b) => Date.parse(b.updatedAt) - Date.parse(a.updatedAt));
-      state.next = body.next ?? null;
-      ready(more, "Load More");
-      tell();
-      redraw();
-      remember();
-    };
-
-    more.addEventListener("click", loadMore);
-
-    find.addEventListener("input", () => {
-      if (!state) return;
-      state.text = find.value.trim();
-      redraw();
-    });
-
-    const draw = () => {
-      rows.textContent = "";
-      const shown = state.rows.filter(keeps);
-      if (!shown.length) {
-        rows.append(span("ln d", `nothing for ${state.login} under these filters`));
-        return;
-      }
-
-      shown.forEach((row, i) => {
-        if (i) rows.append(span("sep", ""));
-        const link = document.createElement("a");
-        link.className = "row";
-        link.href = row.url;
-        link.target = "_blank";
-        link.rel = "noopener noreferrer";
-        link.title = `${row.repo}#${row.number} on github`;
-        const top = document.createElement("span");
-        top.className = "ln";
-        top.append(
-          span("d", `${ago(row.updatedAt).padStart(3)}  `),
-          span(row.kind === "pr" ? "b" : "c", (row.kind === "pr" ? "[PR]" : "[ISSUE]").padEnd(7)),
-          span("", " "),
-          span("rp", `${row.repo}#${row.number}`),
-          span("", "  "),
-          span("t", row.title),
-        );
-        const bottom = document.createElement("span");
-        bottom.className = "ln";
-        bottom.append(span("", " ".repeat(13)));
-        row.chips.forEach((chip, k) => {
-          if (k) bottom.append(span("d", " · "));
-          bottom.append(span(tone[chip.tone] || "d", chip.text));
-        });
-        let tail = "";
-        if (row.comments) tail += `   ${row.comments} comment${row.comments === 1 ? "" : "s"}`;
-        if (row.activity) tail += `   ${row.activity}`;
-        if (tail) bottom.append(span("d", tail));
-        link.append(top, bottom);
-        rows.append(link);
-      });
-    };
-
-    const dots = () => {
-      const el = document.createElement("span");
-      el.className = "dots";
-      el.setAttribute("aria-hidden", "true");
-      el.append(document.createElement("i"), document.createElement("i"), document.createElement("i"));
-      return el;
-    };
-    const busy = (btn, label) => {
-      btn.disabled = true;
-      btn.textContent = label;
-      btn.append(dots());
-    };
-    const ready = (btn, label) => {
-      btn.disabled = false;
-      btn.textContent = label;
+    const clear = () => {
+      bodyBox.hidden = true;
+      share.hidden = true;
     };
 
     const waiting = (name) => {
-      note.textContent = `looking up ${name}`;
+      note.hidden = false;
+      note.textContent = `Looking up ${name}`;
       note.append(dots());
-      rows.textContent = "";
+      rowsBox.textContent = "";
       for (const width of ["46%", "72%", "38%", "64%", "30%"]) {
-        const line = span("ln", "");
-        const bar = span("skel", "");
+        const line = el("li", "lab-skel");
+        const bar = el("span", "skel");
         bar.style.width = width;
         line.append(bar);
-        rows.append(line);
+        rowsBox.append(line);
       }
-      picks.hidden = true;
-      profileBox.hidden = true;
-      more.hidden = true;
-      frame.hidden = false;
-      frame.setAttribute("aria-busy", "true");
+      $("lab-cards").textContent = "";
+      bodyBox.hidden = false;
+      bodyBox.setAttribute("aria-busy", "true");
     };
 
-    const clear = () => {
-      frame.hidden = true;
-      picks.hidden = true;
-      profileBox.hidden = true;
-      more.hidden = true;
-    };
-
-    const search = async (name, keep = true) => {
+    const search = async (name, push = true) => {
       if (inFlight) return;
       inFlight = true;
-      busy(button, "Searching");
-      share.hidden = true;
+      busy(searchButton, "Searching");
 
-      // an earlier answer for this name goes up straight away, the fetch replaces it
       const saved = recall(name);
       let soon = null;
       if (saved) {
         start(saved);
-        frame.hidden = false;
         redraw();
-        note.textContent = `saved copy from ${ago(new Date(saved.at).toISOString())} ago, refreshing`;
+        note.hidden = false;
+        note.textContent = `Saved copy from ${ago(new Date(saved.at).toISOString())}, refreshing`;
         note.append(dots());
       } else {
         soon = window.setTimeout(() => waiting(name), 200);
@@ -573,43 +1219,55 @@ import Band from "../components/Band.astro";
 
       const done = () => {
         if (soon) window.clearTimeout(soon);
-        frame.removeAttribute("aria-busy");
-        ready(button, "Search");
+        bodyBox.removeAttribute("aria-busy");
+        ready(searchButton, "Search");
         inFlight = false;
       };
+
       let res, body;
       try {
-        res = await fetch(`/api/user?name=${encodeURIComponent(name)}`);
+        res = await fetch(`/api/user?name=${encodeURIComponent(name)}&rich=1`);
         body = await res.json();
       } catch {
         done();
         if (!saved) clear();
+        note.hidden = false;
         note.textContent = saved
-          ? "showing a saved copy, github could not be reached"
-          : "could not reach the search, try again in a minute";
+          ? "Showing a saved copy, GitHub could not be reached."
+          : "Could not reach the search, try again in a minute.";
         return;
       }
       done();
       if (!res.ok) {
         clear();
-        note.textContent = body?.error || "that lookup did not work";
+        note.hidden = false;
+        note.textContent = body?.error || "That lookup did not work.";
         return;
       }
       if (!body.rows.length) {
         clear();
-        note.textContent = `nothing public for ${body.login}`;
+        note.hidden = false;
+        note.textContent = `Nothing public for ${body.login}.`;
         return;
       }
-      const held = state && state.login.toLowerCase() === body.login.toLowerCase()
-        ? { filter: state.filter, type: state.type, status: state.status, repo: state.repo, when: state.when, text: state.text }
-        : null;
+
+      const held =
+        S && S.login.toLowerCase() === body.login.toLowerCase()
+          ? {
+              view: S.view, range: S.range, year: S.year, type: S.type, status: S.status,
+              role: S.role, repo: S.repo, text: S.text, size: S.size, cal: S.cal,
+            }
+          : null;
       start(body, held);
-      tell();
-      frame.hidden = false;
+      note.textContent =
+        body.source === "activity"
+          ? `GitHub hides ${body.login} from search, so this is their public activity.`
+          : "";
+      note.hidden = !note.textContent;
       share.hidden = false;
-      share.textContent = "Copy link to this list";
+      share.textContent = "Copy link";
       document.title = `${body.login} | ghdeck`;
-      if (keep) {
+      if (push) {
         const path = `/experimental/${body.login}`;
         if (location.pathname !== path) history.pushState({ name: body.login }, "", path);
       }
@@ -629,7 +1287,7 @@ import Band from "../components/Band.astro";
         return true;
       } catch {}
       try {
-        const box = document.createElement("textarea");
+        const box = el("textarea");
         box.value = text;
         box.setAttribute("readonly", "");
         box.style.cssText = "position:fixed;top:0;left:0;opacity:0";
@@ -642,10 +1300,9 @@ import Band from "../components/Band.astro";
         return false;
       }
     };
-
     share.addEventListener("click", async () => {
-      share.textContent = (await copy(location.href)) ? "Link copied" : "Could not copy, use the address bar";
-      window.setTimeout(() => { share.textContent = "Copy link to this list"; }, 1600);
+      share.textContent = (await copy(location.href)) ? "Copied" : "Use the address bar";
+      window.setTimeout(() => { share.textContent = "Copy link"; }, 1600);
     });
 
     const nameFromUrl = () =>
@@ -659,7 +1316,7 @@ import Band from "../components/Band.astro";
       if (name) search(name, false);
       else {
         clear();
-        share.hidden = true;
+        note.hidden = false;
         note.textContent = "Any GitHub username works, your own is a good place to start.";
       }
     });
