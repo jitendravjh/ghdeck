@@ -4,7 +4,7 @@ import Band from "../components/Band.astro";
 ---
 
 <BaseLayout
-  title="Look up"
+  title="Search"
   description="Search any GitHub username and see their PRs and issues the way ghdeck shows them."
 >
   <Band nodes="b" seed={5}>
@@ -415,7 +415,7 @@ import Band from "../components/Band.astro";
       share.textContent = "Copy link to this list";
       document.title = `${body.login} | ghdeck`;
       if (keep) {
-        const path = `/user/${body.login}`;
+        const path = `/u/${body.login}`;
         if (location.pathname !== path) history.pushState({ name: body.login }, "", path);
       }
       redraw();
@@ -454,7 +454,7 @@ import Band from "../components/Band.astro";
     });
 
     const nameFromUrl = () =>
-      decodeURIComponent(location.pathname.replace(/^\/user\/?/, "").replace(/\/$/, "")) ||
+      decodeURIComponent(location.pathname.replace(/^\/u(?:ser)?\/?/, "").replace(/\/$/, "")) ||
       new URLSearchParams(location.search).get("name") ||
       "";
 

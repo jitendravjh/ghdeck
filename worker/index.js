@@ -1,7 +1,7 @@
 // Serves the built site, and answers /api/user with someone's PRs and issues.
 // The token lives in the GHDECK_TOKEN secret, browsers never see it.
 
-import lookupPage from "../site/dist/user/index.html";
+import lookupPage from "../site/dist/u/index.html";
 import labPage from "../site/dist/experimental/index.html";
 
 const API = "https://api.github.com";
@@ -345,9 +345,9 @@ async function lookUp(url, env, ctx) {
   }
 }
 
-// /user/<username> and /experimental/<username> are shareable links, each page
-// reads the name off its own path
-const USER_PATH = /^\/user\/[A-Za-z0-9-]{1,39}\/?$/;
+// /u/<username> and /experimental/<username> are shareable links, each page
+// reads the name off its own path. /user/ was the old spelling and still serves.
+const USER_PATH = /^\/(?:u|user)(?:\/[A-Za-z0-9-]{1,39})?\/?$/;
 const LAB_PATH = /^\/experimental\/[A-Za-z0-9-]{1,39}\/?$/;
 
 export default {
