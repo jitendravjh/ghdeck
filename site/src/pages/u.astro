@@ -11,7 +11,7 @@ import Band from "../components/Band.astro";
     <div class="pat grid"></div>
     <div class="pat glow"></div>
     <section class="look">
-      <h1 class="h2">Look up anyone</h1>
+      <h1 class="h2">Search anyone</h1>
       <p class="lead">
         The same list ghdeck shows in your terminal, for any GitHub username. Public work only, since
         the site searches as itself.
@@ -344,7 +344,7 @@ import Band from "../components/Band.astro";
     // a cached answer lands in a few hundred ms, so the waiting state waits a moment
     // before showing itself rather than flashing
     const waiting = (name) => {
-      note.textContent = `looking up ${name}`;
+      note.textContent = `searching ${name}`;
       note.append(dots());
       rows.textContent = "";
       for (const width of ["46%", "72%", "38%", "64%", "30%"]) {
@@ -389,7 +389,7 @@ import Band from "../components/Band.astro";
         frame.hidden = true;
         picks.hidden = true;
         more.hidden = true;
-        note.textContent = body?.error || "that lookup did not work";
+        note.textContent = body?.error || "that search did not work";
         return;
       }
       if (!body.rows.length) {

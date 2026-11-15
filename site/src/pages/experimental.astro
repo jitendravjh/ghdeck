@@ -5,7 +5,7 @@ import Band from "../components/Band.astro";
 
 <BaseLayout
   title="Search, experimental"
-  description="A fuller lookup page: profile, counts, filters and analytics for any GitHub username."
+  description="A fuller search: profile, counts, filters and analytics for any GitHub username."
   noindex
 >
   <Band nodes="b" seed={5}>
@@ -21,7 +21,7 @@ import Band from "../components/Band.astro";
           id="lab-name"
           name="name"
           type="text"
-          placeholder="Look up another user"
+          placeholder="Search another user"
           autocomplete="off"
           autocapitalize="off"
           spellcheck="false"
@@ -1208,7 +1208,7 @@ import Band from "../components/Band.astro";
 
     const waiting = (name) => {
       note.hidden = false;
-      note.textContent = `Looking up ${name}`;
+      note.textContent = `Searching ${name}`;
       note.append(dots());
       rowsBox.textContent = "";
       for (const width of ["46%", "72%", "38%", "64%", "30%"]) {
@@ -1264,7 +1264,7 @@ import Band from "../components/Band.astro";
       if (!res.ok) {
         clear();
         note.hidden = false;
-        note.textContent = body?.error || "That lookup did not work.";
+        note.textContent = body?.error || "That search did not work.";
         return;
       }
       if (!body.rows.length) {
