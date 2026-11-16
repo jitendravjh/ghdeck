@@ -2,7 +2,6 @@
 // The token lives in the GHDECK_TOKEN secret, browsers never see it.
 
 import lookupPage from "../site/dist/u/index.html";
-import labPage from "../site/dist/experimental/index.html";
 
 const API = "https://api.github.com";
 const PER_PAGE = 20;
@@ -411,10 +410,9 @@ async function lookUp(url, env, ctx) {
   }
 }
 
-// /u/<username> and /experimental/<username> are shareable links, each page
-// reads the name off its own path. /user/ was the old spelling and still serves.
+// /u/<username> is a shareable link, the page reads the name off its own path.
+// /user/ was the old spelling and still serves.
 const USER_PATH = /^\/(?:u|user)(?:\/([A-Za-z0-9-]{1,39}))?\/?$/;
-const LAB_PATH = /^\/experimental(?:\/([A-Za-z0-9-]{1,39}))?\/?$/;
 const CARD_PATH = /^\/og\/u\/([A-Za-z0-9-]{1,39})\.png$/;
 // bump when the card changes, so the edge stops handing out the old drawing
 const CARD_DRAW = 2;
@@ -490,10 +488,9 @@ export default {
     // the assets binding will not serve a rewritten path to a browser navigation,
     // so the page is bundled in and returned directly
     const asUser = USER_PATH.exec(url.pathname);
-    const asLab = LAB_PATH.exec(url.pathname);
-    if (asUser || asLab) {
-      const login = cleanLogin((asLab ?? asUser)[1] ?? "");
-      let page = asLab ? labPage : lookupPage;
+    if (asUser) {
+      const login = cleanLogin(asUser[1] ?? "");
+      let page = lookupPage;
       if (login) page = personalise(page, login, url.origin);
       return new Response(page, {
         headers: { "Content-Type": "text/html;charset=utf-8", "Cache-Control": "public, max-age=0, must-revalidate" },

@@ -488,7 +488,7 @@ a.cell .more { font-size: 0.85rem; color: var(--link); }
   .pick-list { left: 0; right: auto; }
 }
 
-/* ── look up, experimental ───────────────────── */
+/* ── search ────────────────────────────────── */
 :root {
   --chart-bar: #2a5cda;
   --heat-0: rgba(128, 138, 155, 0.14);
@@ -515,6 +515,8 @@ a.cell .more { font-size: 0.85rem; color: var(--link); }
 }
 
 .lab { padding: 40px 16px 64px; }
+.lab-intro { text-align: center; margin-bottom: 26px; }
+.lab-intro .lead { max-width: 34rem; margin: 10px auto 0; text-wrap: balance; }
 .lab-search {
   position: relative; display: flex; gap: 8px; width: 100%; max-width: 30rem; margin: 0 auto;
 }

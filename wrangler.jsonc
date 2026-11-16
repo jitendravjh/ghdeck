@@ -3,7 +3,7 @@
   "main": "./worker/index.js",
   // the lookup page is bundled so /u/<username> can be served without a redirect
   "rules": [
-    { "type": "Text", "globs": ["**/dist/u/index.html", "**/dist/experimental/index.html"], "fallthrough": true },
+    { "type": "Text", "globs": ["**/dist/u/index.html"], "fallthrough": true },
     { "type": "Data", "globs": ["**/*.ttf"], "fallthrough": false }
   ],
   // the github token is set in the dashboard, a deploy would drop it otherwise
@@ -15,6 +15,6 @@
     "not_found_handling": "404-page",
     // these paths are not assets, the worker answers them. anything left out of this
     // list never reaches the worker at all, which is why the api is here too.
-    "run_worker_first": ["/api/*", "/og/u/*", "/u/*", "/user/*", "/experimental/*"]
+    "run_worker_first": ["/api/*", "/og/u/*", "/u/*", "/user/*"]
   }
 }
