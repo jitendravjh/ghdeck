@@ -1102,10 +1102,14 @@ import Band from "../components/Band.astro";
       find.value = S.text;
     };
 
+    // the two searches page separately, so a later page can hold something newer than
+    // what is already on screen. sorting the whole list again would shuffle rows the
+    // reader is looking at, so each batch is sorted on its own and added underneath.
     const absorb = (body) => {
       const seen = new Set(S.rows.map((r) => r.url));
-      for (const row of body.rows) if (!seen.has(row.url)) S.rows.push(row);
-      S.rows.sort((a, b) => Date.parse(b.updatedAt) - Date.parse(a.updatedAt));
+      const fresh = body.rows.filter((r) => !seen.has(r.url));
+      fresh.sort((a, b) => Date.parse(b.updatedAt) - Date.parse(a.updatedAt));
+      S.rows.push(...fresh);
       S.next = body.next ?? null;
       if (body.total) S.total = Math.max(S.total, body.total);
     };
