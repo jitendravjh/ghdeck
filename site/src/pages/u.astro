@@ -133,6 +133,25 @@ import Band from "../components/Band.astro";
       }
     });
 
+    // a list anchored to one side can hang off a narrow screen, so it is measured on open
+    const fit = (host, list) => {
+      list.style.left = "";
+      list.style.right = "";
+      list.style.minWidth = "";
+      const pad = 8;
+      const edge = () => list.getBoundingClientRect();
+      if (edge().right > window.innerWidth - pad) {
+        list.style.left = "auto";
+        list.style.right = "0";
+      }
+      if (edge().left < pad) {
+        const box = host.getBoundingClientRect();
+        list.style.left = `${pad - box.left}px`;
+        list.style.right = `${pad - (window.innerWidth - box.right)}px`;
+        list.style.minWidth = "0";
+      }
+    };
+
     const pick = (host, label, options, value, choose) => {
       host.textContent = "";
       const chosen = options.find((o) => o.value === value) || options[0];
@@ -182,6 +201,7 @@ import Band from "../components/Band.astro";
         if (wasOpen) return;
         list.hidden = false;
         btn.setAttribute("aria-expanded", "true");
+        fit(host, list);
         openPick = { host, btn, list };
         (items.find((i) => i.getAttribute("aria-selected") === "true") || items[0])?.focus();
       });
