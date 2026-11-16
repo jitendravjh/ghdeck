@@ -2,7 +2,10 @@
   "name": "ghdeck",
   "main": "./worker/index.js",
   // the lookup page is bundled so /u/<username> can be served without a redirect
-  "rules": [{ "type": "Text", "globs": ["**/dist/u/index.html", "**/dist/experimental/index.html"] }],
+  "rules": [
+    { "type": "Text", "globs": ["**/dist/u/index.html", "**/dist/experimental/index.html"], "fallthrough": true },
+    { "type": "Data", "globs": ["**/*.ttf"], "fallthrough": false }
+  ],
   // the github token is set in the dashboard, a deploy would drop it otherwise
   "keep_vars": true,
   "compatibility_date": "2026-09-08",

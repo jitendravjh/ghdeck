@@ -2,6 +2,8 @@
 // their avatar, their name, and the counts, in the colours the site uses.
 
 import { ImageResponse } from "workers-og";
+import regular from "./fonts/iAWriterQuattroS-Regular.ttf";
+import bold from "./fonts/iAWriterQuattroS-Bold.ttf";
 
 const COUNTS = `
 query($all:String!,$prs:String!,$iss:String!){
@@ -27,7 +29,7 @@ const tile = (label, value, dot) => `
   </div>`;
 
 const card = ({ login, name, avatar, all, prs, iss }) => `
-<div style="display:flex;flex-direction:column;width:1200px;height:630px;padding:58px 64px;background:#0e0f13;font-family:sans-serif">
+<div style="display:flex;flex-direction:column;width:1200px;height:630px;padding:58px 64px;background:#0e0f13;font-family:writer">
   <div style="display:flex;align-items:center;font-size:30px;letter-spacing:1px;color:#878e9b">ghdeck</div>
 
   <div style="display:flex;align-items:center;margin-top:44px">
@@ -68,5 +70,12 @@ export async function userCard(login, { profileOf, graphql, token }) {
     iss: String(counts?.iss?.issueCount ?? 0),
   });
 
-  return new ImageResponse(html, { width: 1200, height: 630 });
+  return new ImageResponse(html, {
+    width: 1200,
+    height: 630,
+    fonts: [
+      { name: "writer", data: regular, weight: 400, style: "normal" },
+      { name: "writer", data: bold, weight: 700, style: "normal" },
+    ],
+  });
 }
