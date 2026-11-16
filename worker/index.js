@@ -170,6 +170,48 @@ async function graphql(token, query, variables) {
   return body.data;
 }
 
+const CALENDAR = `
+query($login:String!,$from:DateTime!,$to:DateTime!){
+  user(login:$login){
+    contributionsCollection(from:$from,to:$to){
+      contributionCalendar{
+        totalContributions
+        weeks{contributionDays{date contributionCount}}
+      }
+    }
+  }
+}`;
+
+// the real contribution graph, so the calendar matches their github profile
+// instead of only the pull requests and issues this search can see
+async function calendarOf(token, login, year) {
+  const now = new Date();
+  const asked = year ? new Date(Date.UTC(year, 11, 31, 23, 59, 59)) : now;
+  const to = asked > now ? now : asked;
+  const from = year
+    ? new Date(Date.UTC(year, 0, 1))
+    : new Date(Date.UTC(now.getUTCFullYear() - 1, now.getUTCMonth(), now.getUTCDate() + 1));
+  const data = await graphql(token, CALENDAR, {
+    login,
+    from: from.toISOString(),
+    to: to.toISOString(),
+  }).catch(() => null);
+  const box = data?.user?.contributionsCollection?.contributionCalendar;
+  if (!box) return null;
+  const days = {};
+  for (const week of box.weeks ?? []) {
+    for (const day of week.contributionDays ?? []) {
+      if (day.contributionCount > 0) days[day.date] = day.contributionCount;
+    }
+  }
+  return {
+    total: box.totalContributions ?? 0,
+    from: from.toISOString().slice(0, 10),
+    to: to.toISOString().slice(0, 10),
+    days,
+  };
+}
+
 async function profileOf(token, login) {
   const res = await rest(token, `/users/${login}`);
   if (!res.ok) return null;
@@ -263,6 +305,26 @@ function forClient(res) {
   });
 }
 
+// one year of the calendar on its own, for the picker on the analytics panel
+async function oneYear(url, env, ctx) {
+  const login = cleanLogin(url.searchParams.get("name"));
+  if (!login) return json({ error: "that is not a github username" }, 400);
+  if (!env.GHDECK_TOKEN) return json({ error: "search is not set up on this site yet" }, 503);
+  const asked = Number(url.searchParams.get("year"));
+  const year = Number.isInteger(asked) && asked >= 2008 && asked <= 2100 ? asked : null;
+
+  const cache = caches.default;
+  const key = new Request(`${url.origin}/api/calendar?name=${login.toLowerCase()}&year=${year ?? ""}`);
+  const hit = await cache.match(key);
+  if (hit) return forClient(hit);
+
+  const calendar = await calendarOf(env.GHDECK_TOKEN, login, year);
+  if (!calendar) return json({ error: "github did not answer" }, 502);
+  const res = json({ login, calendar }, 200, true);
+  ctx.waitUntil(cache.put(key, res.clone()));
+  return forClient(res);
+}
+
 async function lookUp(url, env, ctx) {
   const login = cleanLogin(url.searchParams.get("name"));
   if (!login) return json({ error: "that is not a github username" }, 400);
@@ -284,8 +346,10 @@ async function lookUp(url, env, ctx) {
   if (hit) return forClient(hit);
 
   try {
-    // the profile is a separate endpoint, so ask for it while the search runs
-    const profilePromise = am || ae || skip ? Promise.resolve(null) : profileOf(env.GHDECK_TOKEN, login);
+    // the profile and the calendar are their own calls, so they run beside the search
+    const first = !(am || ae || skip);
+    const profilePromise = first ? profileOf(env.GHDECK_TOKEN, login) : Promise.resolve(null);
+    const calendarPromise = first ? calendarOf(env.GHDECK_TOKEN, login, null) : Promise.resolve(null);
     const data = await graphql(env.GHDECK_TOKEN, search(rich), {
       main: `involves:${login} sort:updated-desc`,
       extra: `mentions:${login} sort:updated-desc`,
@@ -304,6 +368,7 @@ async function lookUp(url, env, ctx) {
       total: data.main?.issueCount ?? 0,
       source: "search",
       profile: await profilePromise,
+      calendar: await calendarPromise,
       next: {
         am: data.main?.pageInfo?.endCursor ?? null,
         ae: data.extra?.pageInfo?.endCursor ?? null,
@@ -326,6 +391,7 @@ async function lookUp(url, env, ctx) {
             source: "activity",
             since: feed.since,
             profile: await profilePromise,
+            calendar: await calendarPromise,
             next: { skip: skip + FEED_ROWS, more: feed.more },
           };
         }
@@ -356,6 +422,10 @@ export default {
     if (url.pathname === "/api/user") {
       if (request.method !== "GET") return json({ error: "use GET" }, 405);
       return lookUp(url, env, ctx);
+    }
+    if (url.pathname === "/api/calendar") {
+      if (request.method !== "GET") return json({ error: "use GET" }, 405);
+      return oneYear(url, env, ctx);
     }
     // the assets binding will not serve a rewritten path to a browser navigation,
     // so the page is bundled in and returned directly
