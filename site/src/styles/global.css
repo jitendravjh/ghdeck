@@ -607,10 +607,9 @@ a.cell .more { font-size: 0.85rem; color: var(--link); }
   display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 10px;
   margin-top: 14px; font-family: var(--font-mono); font-size: 0.78rem; color: var(--text-faint);
 }
-/* the columns are named, so hiding Load More cannot shift the other two */
+/* the columns are named, so hiding Load More cannot shift the count */
 #lab-shown { grid-column: 1; justify-self: start; }
 .lab-foot .lab-more { grid-column: 2; }
-.lab-foot .lab-pager { grid-column: 3; justify-self: end; }
 .lab-pager { display: flex; align-items: center; gap: 6px; }
 .lab-step {
   display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px;
@@ -765,7 +764,7 @@ a.cell .more { font-size: 0.85rem; color: var(--link); }
   .lab-showing { margin-left: 0; width: 100%; }
   .lab-find { flex: 1 1 100%; order: -1; }
   .lab-foot { grid-template-columns: 1fr; justify-items: center; gap: 12px; }
-  .lab-pager { justify-content: center; }
+  .lab-foot > * { grid-column: 1; }
   .lab-filters .pick { flex: 1 1 calc(50% - 4px); }
   .r { grid-template-columns: 18px minmax(0, 1fr); }
   .r-side { grid-column: 2; flex-direction: row; align-items: center; justify-content: flex-start; }

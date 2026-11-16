@@ -90,15 +90,7 @@ import Band from "../components/Band.astro";
           <div class="lab-foot">
             <span id="lab-shown"></span>
             <button class="button primary lab-more" id="lab-more" type="button" hidden>Load More</button>
-            <div class="lab-pager">
-              <div class="pick" id="pick-size"></div>
-              <button class="lab-step" id="lab-prev" type="button" aria-label="Previous page">
-                <span class="pick-caret left"></span>
-              </button>
-              <button class="lab-step" id="lab-next" type="button" aria-label="Next page">
-                <span class="pick-caret right"></span>
-              </button>
-            </div>
+            <span></span>
           </div>
         </div>
 
@@ -191,7 +183,7 @@ import Band from "../components/Band.astro";
       { value: "assigned", label: "Assigned" },
       { value: "mentioned", label: "Mentioned" },
     ];
-    const SIZES = [25, 50, 100];
+    const STEP = 50;
 
     let S = null;
     let inFlight = false;
@@ -546,12 +538,6 @@ import Band from "../components/Band.astro";
         ],
         S.repo, (v) => { S.repo = v; resetPage(); redraw(); });
 
-      pick($("pick-size"), "Show", SIZES.map((n) => ({ value: n, label: String(n) })), S.size, (v) => {
-        S.size = Number(v);
-        resetPage();
-        drawFilters();
-        drawRows();
-      });
     };
 
     /* ── the list ──────────────────────────────────────────────── */
@@ -603,28 +589,21 @@ import Band from "../components/Band.astro";
       return `@${S.login} took part`;
     };
 
-    // limit is what is on screen, it grows each time Load More is pressed
+    // limit is how much of the list is on screen, it only ever grows
     const resetPage = () => {
-      S.page = 0;
-      S.limit = S.size;
+      S.limit = STEP;
     };
 
     const drawRows = () => {
       const all = kept();
-      const pages = Math.max(1, Math.ceil(all.length / S.size));
-      S.page = Math.min(S.page, pages - 1);
-      const from = S.page * S.size;
-      const slice = all.slice(from, from + S.limit);
+      const slice = all.slice(0, S.limit);
 
       $("lab-shown").textContent = all.length
-        ? `${from + 1}–${from + slice.length} of ${all.length}`
+        ? `Showing ${slice.length} of ${all.length}`
         : "nothing under these filters";
-      $("lab-prev").disabled = S.page === 0;
-      $("lab-next").disabled = from + S.limit >= all.length;
-      more.hidden = !(S.next?.more || from + S.limit < all.length);
+      more.hidden = !(S.next?.more || S.limit < all.length);
 
       rowsBox.textContent = "";
-      rowsBox.start = from + 1;
       if (!slice.length) {
         rowsBox.append(el("li", "lab-empty", `No items for ${S.login} under these filters.`));
         return;
@@ -1073,18 +1052,6 @@ import Band from "../components/Band.astro";
     $("view-activity").addEventListener("click", () => setView("activity"));
     $("view-analytics").addEventListener("click", () => setView("analytics"));
 
-    $("lab-prev").addEventListener("click", () => {
-      S.page = Math.max(0, S.page - 1);
-      S.limit = S.size;
-      drawRows();
-      rowsBox.scrollIntoView({ block: "start", behavior: "smooth" });
-    });
-    $("lab-next").addEventListener("click", () => {
-      S.page += 1;
-      S.limit = S.size;
-      drawRows();
-      rowsBox.scrollIntoView({ block: "start", behavior: "smooth" });
-    });
     find.addEventListener("input", () => {
       if (!S) return;
       S.text = find.value.trim();
@@ -1125,9 +1092,7 @@ import Band from "../components/Band.astro";
         role: "any",
         repo: "any",
         text: "",
-        page: 0,
-        size: 50,
-        limit: 50,
+        limit: STEP,
         cal: "12",
         cals: body.calendar ? { "12": body.calendar } : {},
         monthlyView: "bar",
@@ -1153,13 +1118,22 @@ import Band from "../components/Band.astro";
       return `/api/user?${q}`;
     };
 
+    // the rows already on screen must not move, so the list top is pinned across the redraw
+    const keepPlace = (change) => {
+      const before = rowsBox.getBoundingClientRect().top;
+      change();
+      const after = rowsBox.getBoundingClientRect().top;
+      if (after !== before) window.scrollBy(0, after - before);
+    };
+
     const loadMore = async () => {
       if (more.disabled) return;
       // rows already in hand just get revealed, only an empty tail needs github
-      const waiting = kept().length - (S.page * S.size + S.limit);
-      if (waiting > 0) {
-        S.limit += S.size;
-        drawRows();
+      if (kept().length > S.limit) {
+        keepPlace(() => {
+          S.limit += STEP;
+          drawRows();
+        });
         return;
       }
       if (!S.next?.more) return;
@@ -1176,8 +1150,10 @@ import Band from "../components/Band.astro";
         return;
       }
       ready(more, "Load More");
-      S.limit += S.size;
-      redraw();
+      keepPlace(() => {
+        S.limit += STEP;
+        redraw();
+      });
       remember();
     };
     more.addEventListener("click", loadMore);
@@ -1330,7 +1306,7 @@ import Band from "../components/Band.astro";
         S && S.login.toLowerCase() === body.login.toLowerCase()
           ? {
               view: S.view, range: S.range, year: S.year, type: S.type, status: S.status,
-              role: S.role, repo: S.repo, text: S.text, size: S.size, cal: S.cal,
+              role: S.role, repo: S.repo, text: S.text, cal: S.cal,
             }
           : null;
       start(body, held);
