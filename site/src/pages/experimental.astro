@@ -39,7 +39,6 @@ import Band from "../components/Band.astro";
           <div class="lab-id">
             <h1 class="lab-name">
               <a id="lab-fullname" target="_blank" rel="noopener noreferrer"></a>
-              <span class="lab-handle" id="lab-handle"></span>
             </h1>
             <p class="lab-meta" id="lab-meta"></p>
           </div>
@@ -338,6 +337,8 @@ import Band from "../components/Band.astro";
       list.style.left = "";
       list.style.right = "";
       list.style.minWidth = "";
+      list.style.top = "";
+      list.style.bottom = "";
       const pad = 8;
       const edge = () => list.getBoundingClientRect();
       if (edge().right > window.innerWidth - pad) {
@@ -349,6 +350,11 @@ import Band from "../components/Band.astro";
         list.style.left = `${pad - box.left}px`;
         list.style.right = `${pad - (window.innerWidth - box.right)}px`;
         list.style.minWidth = "0";
+      }
+      const below = edge();
+      if (below.bottom > window.innerHeight - pad && host.getBoundingClientRect().top > below.height + pad) {
+        list.style.top = "auto";
+        list.style.bottom = "calc(100% + 4px)";
       }
     };
 
@@ -419,13 +425,16 @@ import Band from "../components/Band.astro";
       const name = $("lab-fullname");
       name.textContent = p?.name || S.login;
       name.href = p?.url || `https://github.com/${S.login}`;
-      $("lab-handle").textContent = `@${S.login}`;
-      $("lab-meta").textContent = typeof p?.repos === "number" ? plural(p.repos, "public repo") : "";
+      const meta = $("lab-meta");
+      meta.textContent = "";
+      meta.append(el("span", "lab-handle", `@${S.login}`));
+      if (typeof p?.repos === "number") meta.append(el("span", "", ` · ${plural(p.repos, "public repo")}`));
     };
 
 
     const card = (title, value, sub, tone) => {
       const box = el("div", "card");
+      box.title = `${title}: ${value}, ${sub}`;
       const head = el("p", "card-top");
       if (tone) head.append(el("i", `card-dot ${tone}`));
       head.append(el("span", "", title));
@@ -477,7 +486,7 @@ import Band from "../components/Band.astro";
         b.addEventListener("click", () => {
           S.range = r.value;
           S.year = "any";
-          S.page = 0;
+          resetPage();
           redraw();
         });
         chips.append(b);
@@ -498,7 +507,7 @@ import Band from "../components/Band.astro";
         S.year,
         (v) => {
           S.year = v;
-          S.page = 0;
+          resetPage();
           redraw();
         },
       );
@@ -515,16 +524,16 @@ import Band from "../components/Band.astro";
     const drawFilters = () => {
       const forType = exceptOne("type");
       pick($("pick-type"), "Type", TYPES.map((t) => ({ ...t, count: count(forType, (r) => byType(r, t.value)) })),
-        S.type, (v) => { S.type = v; S.page = 0; redraw(); });
+        S.type, (v) => { S.type = v; resetPage(); redraw(); });
 
       const forStatus = exceptOne("status");
       pick($("pick-status"), "Status",
         STATUSES.map((t) => ({ ...t, count: count(forStatus, (r) => byStatus(r, t.value)) })),
-        S.status, (v) => { S.status = v; S.page = 0; redraw(); });
+        S.status, (v) => { S.status = v; resetPage(); redraw(); });
 
       const forRole = exceptOne("role");
       pick($("pick-role"), "Role", ROLES.map((t) => ({ ...t, count: count(forRole, (r) => byRole(r, t.value)) })),
-        S.role, (v) => { S.role = v; S.page = 0; redraw(); });
+        S.role, (v) => { S.role = v; resetPage(); redraw(); });
 
       const forRepo = exceptOne("repo");
       const names = [...new Set(windowed().map((r) => r.repo))].sort(
@@ -535,11 +544,11 @@ import Band from "../components/Band.astro";
           { value: "any", label: "All", count: forRepo.length },
           ...names.map((n) => ({ value: n, label: n, count: count(forRepo, (r) => r.repo === n) })),
         ],
-        S.repo, (v) => { S.repo = v; S.page = 0; redraw(); });
+        S.repo, (v) => { S.repo = v; resetPage(); redraw(); });
 
       pick($("pick-size"), "Show", SIZES.map((n) => ({ value: n, label: String(n) })), S.size, (v) => {
         S.size = Number(v);
-        S.page = 0;
+        resetPage();
         drawFilters();
         drawRows();
       });
@@ -594,18 +603,25 @@ import Band from "../components/Band.astro";
       return `@${S.login} took part`;
     };
 
+    // limit is what is on screen, it grows each time Load More is pressed
+    const resetPage = () => {
+      S.page = 0;
+      S.limit = S.size;
+    };
+
     const drawRows = () => {
       const all = kept();
       const pages = Math.max(1, Math.ceil(all.length / S.size));
       S.page = Math.min(S.page, pages - 1);
       const from = S.page * S.size;
-      const slice = all.slice(from, from + S.size);
+      const slice = all.slice(from, from + S.limit);
 
       $("lab-shown").textContent = all.length
         ? `${from + 1}–${from + slice.length} of ${all.length}`
         : "nothing under these filters";
       $("lab-prev").disabled = S.page === 0;
-      $("lab-next").disabled = S.page >= pages - 1;
+      $("lab-next").disabled = from + S.limit >= all.length;
+      more.hidden = !(S.next?.more || from + S.limit < all.length);
 
       rowsBox.textContent = "";
       rowsBox.start = from + 1;
@@ -1035,7 +1051,6 @@ import Band from "../components/Band.astro";
         drawCards();
         drawFilters();
         drawRows();
-        more.hidden = !S.next?.more;
       } else {
         drawStats();
         drawCalendar();
@@ -1060,18 +1075,20 @@ import Band from "../components/Band.astro";
 
     $("lab-prev").addEventListener("click", () => {
       S.page = Math.max(0, S.page - 1);
+      S.limit = S.size;
       drawRows();
       rowsBox.scrollIntoView({ block: "start", behavior: "smooth" });
     });
     $("lab-next").addEventListener("click", () => {
       S.page += 1;
+      S.limit = S.size;
       drawRows();
       rowsBox.scrollIntoView({ block: "start", behavior: "smooth" });
     });
     find.addEventListener("input", () => {
       if (!S) return;
       S.text = find.value.trim();
-      S.page = 0;
+      resetPage();
       redraw();
     });
 
@@ -1110,6 +1127,7 @@ import Band from "../components/Band.astro";
         text: "",
         page: 0,
         size: 50,
+        limit: 50,
         cal: "12",
         cals: body.calendar ? { "12": body.calendar } : {},
         monthlyView: "bar",
@@ -1136,7 +1154,15 @@ import Band from "../components/Band.astro";
     };
 
     const loadMore = async () => {
-      if (!S.next?.more || more.disabled) return;
+      if (more.disabled) return;
+      // rows already in hand just get revealed, only an empty tail needs github
+      const waiting = kept().length - (S.page * S.size + S.limit);
+      if (waiting > 0) {
+        S.limit += S.size;
+        drawRows();
+        return;
+      }
+      if (!S.next?.more) return;
       busy(more, "Loading");
       try {
         const res = await fetch(nextUrl(20));
@@ -1150,6 +1176,7 @@ import Band from "../components/Band.astro";
         return;
       }
       ready(more, "Load More");
+      S.limit += S.size;
       redraw();
       remember();
     };
