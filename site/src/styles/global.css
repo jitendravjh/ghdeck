@@ -462,6 +462,7 @@ a.cell .more { font-size: 0.85rem; color: var(--link); }
   transform: rotate(45deg);
 }
 .pick-btn[aria-expanded="true"] .pick-caret { margin-top: 2px; transform: rotate(225deg); }
+.lab-filters .pick-list, #pick-year .pick-list { left: 0; right: auto; }
 .pick-list {
   position: absolute; z-index: 30; top: calc(100% + 4px); right: 0;
   min-width: 13rem; max-width: 20rem; max-height: 16rem; overflow-y: auto;
@@ -519,7 +520,7 @@ a.cell .more { font-size: 0.85rem; color: var(--link); }
 }
 .lab-search input {
   flex: 1; min-width: 0; height: 38px; padding: 0 12px 0 34px;
-  border: 1px solid var(--border); border-radius: 999px; background: var(--panel);
+  border: 1px solid var(--border); border-radius: 3px; background: var(--panel);
   color: var(--text-strong); font-family: var(--font-mono); font-size: 14px;
 }
 .lab-search input:focus-visible { outline: 3px solid rgba(9, 78, 206, 0.5); outline-offset: 2px; }
@@ -543,19 +544,6 @@ a.cell .more { font-size: 0.85rem; color: var(--link); }
   background: var(--panel-soft); color: var(--text); font: inherit; font-size: 0.8rem; cursor: pointer;
 }
 .lab-share:hover { color: var(--text-strong); background: rgba(128, 138, 155, 0.1); }
-
-.lab-state {
-  display: flex; align-items: center; gap: 7px; margin-top: 12px;
-  font-family: var(--font-mono); font-size: 0.78rem; color: var(--text-faint);
-}
-.lab-dot { width: 7px; height: 7px; border-radius: 50%; flex: none; background: var(--text-faint); }
-.lab-dot.done { background: var(--st-open); }
-.lab-dot.part { background: var(--warn); }
-.lab-dot.busy { background: var(--link); animation: skel 1.2s ease-in-out infinite; }
-.lab-link {
-  border: 0; background: none; padding: 0; font: inherit; color: var(--link);
-  text-decoration: underline; cursor: pointer;
-}
 
 .lab-cards { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; margin-top: 20px; }
 .card {
@@ -926,6 +914,21 @@ pre.block, .prose pre {
   .nav-links .label { display: none; }
   .nav { padding: 0 8px; gap: 6px; }
   .nav-right { gap: 4px; }
+  .nav-links { gap: 0; }
+  .nav-links a { padding: 5px 7px; }
+}
+
+/* every nav item stays visible on a phone, so the row has to give up its slack */
+@media (max-width: 420px) {
+  .nav-links a { padding: 5px 5px; font-size: 13px; }
+  .brand { font-size: 15px; gap: 7px; }
+  .brand svg { width: 19px; height: 19px; }
+}
+@media (max-width: 360px) {
+  .nav .button kbd { display: none; }
+  .nav .button { padding: 0 8px; }
+  .nav-links a { padding: 5px 4px; font-size: 12.5px; }
+  .nav { padding: 0 6px; gap: 4px; }
 }
 
 @media (min-width: 640px) {

@@ -45,9 +45,6 @@ import Band from "../components/Band.astro";
           </div>
           <button class="lab-share" id="lab-share" type="button">Copy link</button>
         </header>
-        <p class="lab-state" id="lab-state"></p>
-
-        <div class="lab-cards" id="lab-cards"></div>
 
         <div class="lab-views" role="tablist" aria-label="View">
           <button class="lab-view" id="view-activity" role="tab" type="button" aria-selected="true">
@@ -106,13 +103,14 @@ import Band from "../components/Band.astro";
 
         <div id="pane-analytics" hidden>
           <p class="lab-lede" id="lab-lede"></p>
+          <div class="lab-cards" id="lab-cards"></div>
           <div class="lab-cards" id="lab-stats"></div>
 
           <section class="framed panel">
             <div class="panel-top">
               <div>
                 <h2 class="panel-name">Contribution calendar</h2>
-                <p class="panel-sub">PRs and issues opened per day</p>
+                <p class="panel-sub">Everything GitHub counts, the same as their profile</p>
               </div>
               <div class="pick" id="pick-cal"></div>
             </div>
@@ -334,6 +332,25 @@ import Band from "../components/Band.astro";
       }
     });
 
+    // a list anchored to one side can hang off a narrow screen, so it is measured on open
+    const fit = (host, list) => {
+      list.style.left = "";
+      list.style.right = "";
+      list.style.minWidth = "";
+      const pad = 8;
+      const edge = () => list.getBoundingClientRect();
+      if (edge().right > window.innerWidth - pad) {
+        list.style.left = "auto";
+        list.style.right = "0";
+      }
+      if (edge().left < pad) {
+        const box = host.getBoundingClientRect();
+        list.style.left = `${pad - box.left}px`;
+        list.style.right = `${pad - (window.innerWidth - box.right)}px`;
+        list.style.minWidth = "0";
+      }
+    };
+
     const pick = (host, label, options, value, choose) => {
       host.textContent = "";
       const chosen = options.find((o) => String(o.value) === String(value)) || options[0];
@@ -378,6 +395,7 @@ import Band from "../components/Band.astro";
         if (was) return;
         list.hidden = false;
         btn.setAttribute("aria-expanded", "true");
+        fit(host, list);
         openPick = { host, btn, list };
         (items.find((i) => i.getAttribute("aria-selected") === "true") || items[0])?.focus();
       });
@@ -401,40 +419,9 @@ import Band from "../components/Band.astro";
       name.textContent = p?.name || S.login;
       name.href = p?.url || `https://github.com/${S.login}`;
       $("lab-handle").textContent = `@${S.login}`;
-      const bits = [];
-      if (p?.joined) {
-        bits.push(`Joined ${new Date(p.joined).toLocaleDateString("en-GB", { month: "long", year: "numeric" })}`);
-      }
-      if (p?.location) bits.push(p.location);
-      if (typeof p?.repos === "number") bits.push(plural(p.repos, "public repo"));
-      $("lab-meta").textContent = bits.join(" · ");
+      $("lab-meta").textContent = typeof p?.repos === "number" ? plural(p.repos, "public repo") : "";
     };
 
-    const drawState = () => {
-      const state = $("lab-state");
-      state.textContent = "";
-      const loaded = S.rows.length;
-      const all = Math.max(S.total, loaded);
-      const done = !S.next?.more;
-      state.append(el("i", `lab-dot ${S.loading ? "busy" : done ? "done" : "part"}`));
-      state.append(
-        el(
-          "span",
-          "",
-          S.loading
-            ? `Loading ${loaded} of ${all} items`
-            : done
-              ? `Up to date · ${plural(all, "item")}`
-              : `${loaded} of ${all} items loaded`,
-        ),
-      );
-      if (!done && !S.loading) {
-        const b = el("button", "lab-link", "load the rest");
-        b.type = "button";
-        b.addEventListener("click", loadAll);
-        state.append(el("span", "", " · "), b);
-      }
-    };
 
     const card = (title, value, sub, tone) => {
       const box = el("div", "card");
@@ -761,17 +748,49 @@ import Band from "../components/Band.astro";
       );
     };
 
-    const drawCalendar = () => {
+    // github's own contribution graph, fetched whole, so it matches their profile
+    const calFor = (key) => S.cals[key] ?? null;
+    const calLabel = (key) => (key === "12" ? "in the last 12 months" : `in ${key}`);
+
+    const askCalendar = async (year) => {
+      try {
+        const res = await fetch(`/api/calendar?name=${encodeURIComponent(S.login)}&year=${year === "12" ? "" : year}`);
+        const body = await res.json();
+        if (!res.ok || !body.calendar) throw new Error("no calendar");
+        S.cals[year] = body.calendar;
+      } catch {
+        S.cals[year] = null;
+      }
+      if (S.cal === year) drawCalendar();
+    };
+
+    function drawCalendar() {
       const host = $("lab-cal");
       host.textContent = "";
-      const opened = S.rows.filter(mine);
-      const days = perDay(opened);
+      const foot = $("lab-cal-total");
+      const cal = calFor(S.cal);
+      drawCalPick();
 
-      const end = onDay(Date.now());
-      const start = S.cal === "12" ? end - 364 * DAY : Date.UTC(Number(S.cal), 0, 1);
-      const stop = S.cal === "12" ? end : Math.min(end, Date.UTC(Number(S.cal), 11, 31));
+      if (!cal) {
+        host.append(el("p", "panel-empty", S.cal in S.cals ? "No calendar for this year." : "Loading the calendar…"));
+        foot.textContent = "";
+        if (!(S.cal in S.cals)) askCalendar(S.cal);
+        return;
+      }
+
+      const parse = (iso) => Date.parse(`${iso}T00:00:00Z`);
+      const start = parse(cal.from);
+      const stop = parse(cal.to);
       const first = start - new Date(start).getUTCDay() * DAY;
-      const weeks = Math.ceil((stop - first) / (7 * DAY)) + 1;
+      const weeks = Math.ceil((stop - first + DAY) / (7 * DAY));
+
+      // the steps follow their own spread, the way github scales a quiet year
+      const counts = Object.values(cal.days).sort((a, b) => a - b);
+      const at = (part) => (counts.length ? counts[Math.min(counts.length - 1, Math.floor(counts.length * part))] : 1);
+      const t2 = Math.max(2, at(0.5));
+      const t3 = Math.max(t2 + 1, at(0.75));
+      const t4 = Math.max(t3 + 1, at(0.9));
+      const level = (n) => (n === 0 ? 0 : n < t2 ? 1 : n < t3 ? 2 : n < t4 ? 3 : 4);
 
       const cell = 11;
       const gap = 3;
@@ -779,7 +798,6 @@ import Band from "../components/Band.astro";
       const padTop = 16;
       const width = padLeft + weeks * (cell + gap);
       const height = padTop + 7 * (cell + gap);
-
       const plot = mk("svg", { viewBox: `0 0 ${width} ${height}`, width, height, role: "img" }, "cal");
       const text = (x, y, value, cls) => {
         const t = mk("text", { x, y }, cls);
@@ -791,22 +809,20 @@ import Band from "../components/Band.astro";
         plot.append(text(0, padTop + (i * 2 + 1) * (cell + gap) + cell - 2, name, "cal-axis"));
       });
 
-      let total = 0;
       let lastMonth = -1;
       for (let w = 0; w < weeks; w++) {
         for (let d = 0; d < 7; d++) {
           const day = first + (w * 7 + d) * DAY;
           if (day < start || day > stop) continue;
-          const n = days.get(day) ?? 0;
-          total += n;
-          const level = n === 0 ? 0 : n === 1 ? 1 : n <= 3 ? 2 : n <= 6 ? 3 : 4;
+          const iso = new Date(day).toISOString().slice(0, 10);
+          const n = cal.days[iso] ?? 0;
           const box = mk(
             "rect",
             { x: padLeft + w * (cell + gap), y: padTop + d * (cell + gap), width: cell, height: cell, rx: 2 },
-            `cal-cell lv${level}`,
+            `cal-cell lv${level(n)}`,
           );
           const tip = mk("title", {});
-          tip.textContent = `${n ? plural(n, "item") : "Nothing"} on ${dayName(day)}`;
+          tip.textContent = `${n ? plural(n, "contribution") : "No contributions"} on ${dayName(day)}`;
           box.append(tip);
           plot.append(box);
 
@@ -825,16 +841,20 @@ import Band from "../components/Band.astro";
         }
       }
 
-      const where = S.cal === "12" ? "in the last 12 months" : `in ${S.cal}`;
-      plot.setAttribute("aria-label", `${plural(total, "item")} opened ${where}`);
+      plot.setAttribute("aria-label", `${plural(cal.total, "contribution")} ${calLabel(S.cal)}`);
       host.append(plot);
-      $("lab-cal-total").textContent = `${plural(total, "contribution")} ${where}`;
+      foot.textContent = `${plural(cal.total, "contribution")} ${calLabel(S.cal)}`;
+    }
 
-      const years = [...new Set(opened.map((r) => new Date(whenOf(r)).getUTCFullYear()))].sort((a, b) => b - a);
+    const drawCalPick = () => {
+      const now = new Date().getUTCFullYear();
+      const from = S.profile?.joined ? new Date(S.profile.joined).getUTCFullYear() : now - 4;
+      const years = [];
+      for (let y = now; y >= Math.max(2008, from); y--) years.push(String(y));
       pick(
         $("pick-cal"),
         "",
-        [{ value: "12", label: "Last 12 months" }, ...years.map((y) => ({ value: String(y), label: String(y) }))],
+        [{ value: "12", label: "Last 12 months" }, ...years.map((y) => ({ value: y, label: y }))],
         S.cal,
         (v) => {
           S.cal = v;
@@ -1009,14 +1029,13 @@ import Band from "../components/Band.astro";
 
     const redraw = () => {
       drawWho();
-      drawState();
-      drawCards();
       drawRanges();
       if (S.view === "activity") {
         drawFilters();
         drawRows();
         more.hidden = !S.next?.more;
       } else {
+        drawCards();
         drawStats();
         drawCalendar();
         drawSwitch();
@@ -1091,6 +1110,7 @@ import Band from "../components/Band.astro";
         page: 0,
         size: 50,
         cal: "12",
+        cals: body.calendar ? { "12": body.calendar } : {},
         monthlyView: "bar",
         open: new Set(),
         ...keep,
@@ -1147,9 +1167,11 @@ import Band from "../components/Band.astro";
     async function loadAll() {
       if (S.loading) return;
       S.loading = true;
-      drawState();
       let guard = 0;
       while (S.next?.more && guard++ < 20) {
+        note.hidden = false;
+        note.textContent = `Reading ${S.rows.length} of ${Math.max(S.total, S.rows.length)} items`;
+        note.append(dots());
         let body;
         try {
           body = await fetchPage(30);
@@ -1165,9 +1187,10 @@ import Band from "../components/Band.astro";
           }
         }
         absorb(body);
-        drawState();
       }
       S.loading = false;
+      note.hidden = true;
+      note.textContent = "";
       redraw();
       remember();
     }
@@ -1187,6 +1210,7 @@ import Band from "../components/Band.astro";
             source: S.source,
             next: S.next,
             profile: S.profile,
+            calendar: S.cals["12"] ?? null,
           }),
         );
       } catch {}
