@@ -416,6 +416,8 @@ async function lookUp(url, env, ctx) {
 const USER_PATH = /^\/(?:u|user)(?:\/([A-Za-z0-9-]{1,39}))?\/?$/;
 const LAB_PATH = /^\/experimental(?:\/([A-Za-z0-9-]{1,39}))?\/?$/;
 const CARD_PATH = /^\/og\/u\/([A-Za-z0-9-]{1,39})\.png$/;
+// bump when the card changes, so the edge stops handing out the old drawing
+const CARD_DRAW = 2;
 
 const tagEscape = (s) =>
   String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
@@ -447,7 +449,7 @@ async function cardFor(url, env, ctx, login) {
   if (!env.GHDECK_TOKEN) return env.ASSETS.fetch(new Request(`${url.origin}/og.png`));
 
   const cache = caches.default;
-  const key = new Request(`${url.origin}/og/u/${login.toLowerCase()}.png`);
+  const key = new Request(`${url.origin}/og/u/${login.toLowerCase()}.png?draw=${CARD_DRAW}`);
   const hit = await cache.match(key);
   if (hit) return hit;
 
