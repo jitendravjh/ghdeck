@@ -1,0 +1,8 @@
+{
+  "name": "ghdeck-worker",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "workers-og": "0.0.27"
+  }
+}

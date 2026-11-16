@@ -413,8 +413,60 @@ async function lookUp(url, env, ctx) {
 
 // /u/<username> and /experimental/<username> are shareable links, each page
 // reads the name off its own path. /user/ was the old spelling and still serves.
-const USER_PATH = /^\/(?:u|user)(?:\/[A-Za-z0-9-]{1,39})?\/?$/;
-const LAB_PATH = /^\/experimental\/[A-Za-z0-9-]{1,39}\/?$/;
+const USER_PATH = /^\/(?:u|user)(?:\/([A-Za-z0-9-]{1,39}))?\/?$/;
+const LAB_PATH = /^\/experimental(?:\/([A-Za-z0-9-]{1,39}))?\/?$/;
+const CARD_PATH = /^\/og\/u\/([A-Za-z0-9-]{1,39})\.png$/;
+
+const tagEscape = (s) =>
+  String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+
+// every username is served the same bundled page, so the link preview has to be
+// written in per request. only the name is needed, the picture does the rest.
+function personalise(html, login, origin) {
+  const url = `${origin}/u/${login}`;
+  const image = `${origin}/og/u/${login}.png`;
+  const title = tagEscape(`@${login} on ghdeck`);
+  const about = tagEscape(
+    `Pull requests and issues ${login} is involved in, newest first, the way ghdeck shows them.`,
+  );
+  return html
+    .replace(/<title>[^<]*<\/title>/, `<title>${title}</title>`)
+    .replace(/(<link rel="canonical" href=")[^"]*/, `$1${url}`)
+    .replace(/(<meta name="description" content=")[^"]*/, `$1${about}`)
+    .replace(/(<meta property="og:url" content=")[^"]*/, `$1${url}`)
+    .replace(/(<meta property="og:title" content=")[^"]*/, `$1${title}`)
+    .replace(/(<meta property="og:description" content=")[^"]*/, `$1${about}`)
+    .replace(/(<meta property="og:image" content=")[^"]*/, `$1${image}`)
+    .replace(/(<meta property="og:image:alt" content=")[^"]*/, `$1${tagEscape(`${login} on ghdeck`)}`)
+    .replace(/(<meta name="twitter:title" content=")[^"]*/, `$1${title}`)
+    .replace(/(<meta name="twitter:description" content=")[^"]*/, `$1${about}`)
+    .replace(/(<meta name="twitter:image" content=")[^"]*/, `$1${image}`);
+}
+
+async function cardFor(url, env, ctx, login) {
+  if (!env.GHDECK_TOKEN) return env.ASSETS.fetch(new Request(`${url.origin}/og.png`));
+
+  const cache = caches.default;
+  const key = new Request(`${url.origin}/og/u/${login.toLowerCase()}.png`);
+  const hit = await cache.match(key);
+  if (hit) return hit;
+
+  let made = null;
+  try {
+    const { userCard } = await import("./card.js");
+    made = await userCard(login, { profileOf, graphql, token: env.GHDECK_TOKEN });
+  } catch {
+    made = null;
+  }
+  // a preview is never worth a broken link, the site card stands in
+  if (!made) return env.ASSETS.fetch(new Request(`${url.origin}/og.png`));
+
+  const png = new Response(made.body, {
+    headers: { "Content-Type": "image/png", "Cache-Control": "public, max-age=86400" },
+  });
+  ctx.waitUntil(cache.put(key, png.clone()));
+  return png;
+}
 
 export default {
   async fetch(request, env, ctx) {
@@ -427,10 +479,21 @@ export default {
       if (request.method !== "GET") return json({ error: "use GET" }, 405);
       return oneYear(url, env, ctx);
     }
+    const wantsCard = CARD_PATH.exec(url.pathname);
+    if (wantsCard) {
+      const login = cleanLogin(wantsCard[1]);
+      if (!login) return env.ASSETS.fetch(new Request(`${url.origin}/og.png`));
+      return cardFor(url, env, ctx, login);
+    }
     // the assets binding will not serve a rewritten path to a browser navigation,
     // so the page is bundled in and returned directly
-    if (USER_PATH.test(url.pathname) || LAB_PATH.test(url.pathname)) {
-      return new Response(LAB_PATH.test(url.pathname) ? labPage : lookupPage, {
+    const asUser = USER_PATH.exec(url.pathname);
+    const asLab = LAB_PATH.exec(url.pathname);
+    if (asUser || asLab) {
+      const login = cleanLogin((asLab ?? asUser)[1] ?? "");
+      let page = asLab ? labPage : lookupPage;
+      if (login) page = personalise(page, login, url.origin);
+      return new Response(page, {
         headers: { "Content-Type": "text/html;charset=utf-8", "Cache-Control": "public, max-age=0, must-revalidate" },
       });
     }

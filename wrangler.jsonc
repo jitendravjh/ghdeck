@@ -12,6 +12,6 @@
     "not_found_handling": "404-page",
     // these paths are not assets, the worker answers them. anything left out of this
     // list never reaches the worker at all, which is why the api is here too.
-    "run_worker_first": ["/api/*", "/u/*", "/user/*", "/experimental/*"]
+    "run_worker_first": ["/api/*", "/og/u/*", "/u/*", "/user/*", "/experimental/*"]
   }
 }
