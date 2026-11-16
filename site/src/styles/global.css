@@ -585,6 +585,7 @@ a.cell .more { font-size: 0.85rem; color: var(--link); }
 .lab-showing { margin-left: auto; font-size: 0.82rem; color: var(--text-faint); }
 
 .lab-filters { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+#pane-activity .lab-cards { margin-top: 14px; }
 .lab-find { position: relative; flex: 1 1 15rem; min-width: 0; }
 .lab-find .lab-search-icon { position: absolute; left: 11px; top: 8px; }
 .lab-find input {
@@ -594,11 +595,12 @@ a.cell .more { font-size: 0.85rem; color: var(--link); }
 }
 .lab-find input::-webkit-search-cancel-button { filter: grayscale(1); opacity: 0.5; }
 
-.lab-count {
-  display: flex; align-items: center; gap: 10px; margin-top: 18px;
-  font-family: var(--font-mono); font-size: 0.78rem; color: var(--text-faint);
+/* the count sits left, Load More stays dead centre, the pager sits right */
+.lab-foot {
+  display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 10px;
+  margin-top: 14px; font-family: var(--font-mono); font-size: 0.78rem; color: var(--text-faint);
 }
-.lab-pager { display: flex; align-items: center; gap: 6px; margin-left: auto; }
+.lab-pager { display: flex; align-items: center; gap: 6px; justify-content: flex-end; }
 .lab-step {
   display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px;
   border: 1px solid var(--border); border-radius: 4px; background: var(--panel-soft); cursor: pointer;
@@ -668,7 +670,7 @@ a.cell .more { font-size: 0.85rem; color: var(--link); }
 .r-peek:hover { color: var(--text-strong); background: rgba(128, 138, 155, 0.12); }
 .r-peek[aria-expanded="true"] .pick-caret { margin-top: 2px; transform: rotate(225deg); }
 .lab-empty, .lab-skel { padding: 16px; font-size: 0.85rem; color: var(--text-faint); }
-.lab-more { margin-top: 14px; }
+.lab-more { margin: 0; justify-self: center; }
 
 .lab-lede { margin-top: 16px; font-size: 0.85rem; color: var(--text-faint); }
 .panel { margin-top: 18px; padding: 16px; background: var(--nav-bg); }
@@ -751,6 +753,8 @@ a.cell .more { font-size: 0.85rem; color: var(--link); }
   .lab-share { margin-left: 0; }
   .lab-showing { margin-left: 0; width: 100%; }
   .lab-find { flex: 1 1 100%; order: -1; }
+  .lab-foot { grid-template-columns: 1fr; justify-items: center; gap: 12px; }
+  .lab-pager { justify-content: center; }
   .lab-filters .pick { flex: 1 1 calc(50% - 4px); }
   .r { grid-template-columns: 18px minmax(0, 1fr); }
   .r-side { grid-column: 2; flex-direction: row; align-items: center; justify-content: flex-start; }

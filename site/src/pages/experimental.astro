@@ -84,8 +84,13 @@ import Band from "../components/Band.astro";
             </label>
           </div>
 
-          <div class="lab-count">
+          <div class="lab-cards" id="lab-cards"></div>
+
+          <div class="framed lab-list"><ol id="lab-rows"></ol></div>
+
+          <div class="lab-foot">
             <span id="lab-shown"></span>
+            <button class="button primary lab-more" id="lab-more" type="button" hidden>Load More</button>
             <div class="lab-pager">
               <div class="pick" id="pick-size"></div>
               <button class="lab-step" id="lab-prev" type="button" aria-label="Previous page">
@@ -96,14 +101,10 @@ import Band from "../components/Band.astro";
               </button>
             </div>
           </div>
-
-          <div class="framed lab-list"><ol id="lab-rows"></ol></div>
-          <button class="button primary lab-more" id="lab-more" type="button" hidden>Load More</button>
         </div>
 
         <div id="pane-analytics" hidden>
           <p class="lab-lede" id="lab-lede"></p>
-          <div class="lab-cards" id="lab-cards"></div>
           <div class="lab-cards" id="lab-stats"></div>
 
           <section class="framed panel">
@@ -660,7 +661,7 @@ import Band from "../components/Band.astro";
           const peek = el("button", "r-peek");
           peek.type = "button";
           peek.setAttribute("aria-expanded", String(S.open.has(row.url)));
-          peek.append(el("span", "", "Preview"), el("span", "pick-caret"));
+          peek.append(el("span", "", "Description"), el("span", "pick-caret"));
           peek.addEventListener("click", () => {
             const nowOpen = !S.open.has(row.url);
             if (nowOpen) S.open.add(row.url);
@@ -1031,11 +1032,11 @@ import Band from "../components/Band.astro";
       drawWho();
       drawRanges();
       if (S.view === "activity") {
+        drawCards();
         drawFilters();
         drawRows();
         more.hidden = !S.next?.more;
       } else {
-        drawCards();
         drawStats();
         drawCalendar();
         drawSwitch();
