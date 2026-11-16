@@ -587,7 +587,7 @@ a.cell .more { font-size: 0.85rem; color: var(--link); }
 .lab-showing { margin-left: auto; font-size: 0.82rem; color: var(--text-faint); }
 
 .lab-filters { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
-#pane-activity .lab-cards { margin-top: 12px; gap: 8px; }
+#pane-activity .lab-cards { margin-top: 14px; gap: 8px; }
 #pane-activity .card { padding: 4px 9px 5px; }
 #pane-activity .card-top { font-size: 0.66rem; gap: 5px; line-height: 1.5; }
 #pane-activity .card-value { margin-top: 0; font-size: 0.92rem; line-height: 1.25; }
