@@ -424,6 +424,26 @@ import Band from "../components/Band.astro";
     };
 
 
+    // everything is in once github has no next page to give
+    const whole = () => !S.next?.more;
+
+    const ghost = () => {
+      const box = el("div", "card");
+      const head = el("p", "card-top");
+      const bar = (w, cls) => {
+        const n = el("span", `skel ${cls}`);
+        n.style.width = w;
+        return n;
+      };
+      head.append(bar("55%", "skel-top"));
+      const value = el("p", "card-value");
+      value.append(bar("40%", "skel-value"));
+      const sub = el("p", "card-sub");
+      sub.append(bar("75%", "skel-sub"));
+      box.append(head, value, sub);
+      return box;
+    };
+
     const card = (title, value, sub, tone) => {
       const box = el("div", "card");
       box.title = `${title}: ${value}, ${sub}`;
@@ -441,13 +461,18 @@ import Band from "../components/Band.astro";
     };
 
     const drawCards = () => {
+      const box = $("lab-cards");
+      if (!whole()) {
+        box.textContent = "";
+        for (let i = 0; i < 5; i++) box.append(ghost());
+        return;
+      }
       const list = windowed();
       const prs = list.filter((r) => r.kind === "pr");
       const issues = list.filter((r) => r.kind === "issue");
       const merged = prs.filter(isMerged);
       const openIssues = issues.filter((r) => r.open);
 
-      const box = $("lab-cards");
       box.textContent = "";
       box.append(
         card("Total involvement", String(list.length), `PRs & issues touched · ${scopeWords()}`),
@@ -598,8 +623,9 @@ import Band from "../components/Band.astro";
       const all = kept();
       const slice = all.slice(0, S.limit);
 
-      $("lab-shown").textContent = all.length
-        ? `Showing ${slice.length} of ${all.length}`
+      const of = whole() ? all.length : Math.max(S.total, all.length);
+      $("lab-shown").textContent = of
+        ? `Showing ${slice.length} of ${of}`
         : "nothing under these filters";
       more.hidden = !(S.next?.more || S.limit < all.length);
 
@@ -695,6 +721,13 @@ import Band from "../components/Band.astro";
     };
 
     const drawStats = () => {
+      const box = $("lab-stats");
+      if (!whole()) {
+        $("lab-lede").textContent = "Still reading their history.";
+        box.textContent = "";
+        for (let i = 0; i < 10; i++) box.append(ghost());
+        return;
+      }
       const list = windowed();
       const opened = list.filter(mine);
       const prs = opened.filter((r) => r.kind === "pr");
@@ -728,7 +761,6 @@ import Band from "../components/Band.astro";
         `${plural(list.length, "item")} ${S.year !== "any" ? `in ${S.year}` : range.days ? `in the last ${range.label}` : "in total"}. ` +
         "Dates show when they opened an item, or the latest activity on threads they joined.";
 
-      const box = $("lab-stats");
       box.textContent = "";
       box.append(
         card("PRs opened", String(prs.length), `${merged.length} merged`),
@@ -1026,8 +1058,8 @@ import Band from "../components/Band.astro";
     const redraw = () => {
       drawWho();
       drawRanges();
+      drawCards();
       if (S.view === "activity") {
-        drawCards();
         drawFilters();
         drawRows();
       } else {
@@ -1047,7 +1079,6 @@ import Band from "../components/Band.astro";
     const setView = (view) => {
       S.view = view;
       redraw();
-      if (view === "analytics" && S.next?.more && !S.loading) loadAll();
     };
     $("view-activity").addEventListener("click", () => setView("activity"));
     $("view-analytics").addEventListener("click", () => setView("analytics"));
@@ -1328,6 +1359,8 @@ import Band from "../components/Band.astro";
       }
       redraw();
       remember();
+      // the counts are only honest over the whole history, so the rest follows at once
+      if (S.next?.more) loadAll();
     };
 
     form.addEventListener("submit", (e) => {

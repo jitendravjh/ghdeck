@@ -550,6 +550,8 @@ a.cell .more { font-size: 0.85rem; color: var(--link); }
   padding: 14px; border: 1px solid var(--border); border-radius: 4px; background: var(--panel-soft);
 }
 .card-top { display: flex; align-items: center; gap: 7px; font-size: 0.8rem; color: var(--text-faint); }
+.card .skel { display: block; height: 0.8em; }
+.card .skel-value { height: 1.1em; }
 .card-dot { width: 7px; height: 7px; border-radius: 2px; flex: none; background: var(--text-faint); }
 .card-dot.open { background: var(--st-open); }
 .card-dot.merged { background: var(--st-merged); }
