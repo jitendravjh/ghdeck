@@ -955,6 +955,7 @@ pre.block, .prose pre {
   .brand svg { width: 19px; height: 19px; }
 }
 @media (max-width: 360px) {
+  #pane-activity .card-sub { white-space: normal; }
   .nav .button kbd { display: none; }
   .nav .button { padding: 0 8px; }
   .nav-links a { padding: 5px 4px; font-size: 12.5px; }

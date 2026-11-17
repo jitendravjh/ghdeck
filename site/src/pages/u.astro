@@ -257,11 +257,15 @@ import Band from "../components/Band.astro";
 
     /* ── filters ───────────────────────────────────────────────── */
 
+    // github counts a window from midnight UTC on a date, so the list must cut it the same way
+    const windowStart = (days) =>
+      Date.parse(`${new Date(Date.now() - days * DAY).toISOString().slice(0, 10)}T00:00:00Z`);
+
     const inWindow = (row) => {
       const t = whenOf(row);
       if (S.year !== "any") return new Date(t).getUTCFullYear() === Number(S.year);
       const days = RANGES.find((r) => r.value === S.range).days;
-      return !days || Date.now() - t <= days * DAY;
+      return !days || t >= windowStart(days);
     };
     const byType = (row, v) => v === "any" || row.kind === v;
     const byStatus = (row, v) =>
@@ -466,12 +470,6 @@ import Band from "../components/Band.astro";
       return box;
     };
 
-    const scopeWords = () => {
-      const range = RANGES.find((r) => r.value === S.range);
-      if (S.year !== "any") return `in ${S.year}`;
-      return range.days ? `last ${range.label}` : "all time";
-    };
-
     const scopeKey = () => (S.year !== "any" ? `y${S.year}` : `r${S.range}`);
     const narrowKey = () => `${scopeKey()}|${S.type}|${S.status}|${S.role}|${S.repo}`;
 
@@ -514,7 +512,9 @@ import Band from "../components/Band.astro";
       } catch {
         delete S.counts[want];
       }
-      if (scopeKey() === want) drawCards();
+      if (scopeKey() !== want) return;
+      drawCards();
+      if (S.view === "activity") drawRows();
     };
 
     // search cannot see some accounts at all, so for those the rows are the only truth
@@ -555,15 +555,12 @@ import Band from "../components/Band.astro";
         return;
       }
       box.textContent = "";
-      const where = fromFeed()
-        ? `from their public activity${sinceWords() ? ` since ${sinceWords()}` : ""}`
-        : scopeWords();
       box.append(
-        card("Total involvement", String(n.all), `PRs & issues touched · ${where}`),
+        card("Total involvement", String(n.all), "PRs & issues touched"),
         card(
           "Pull requests",
           String(n.prs),
-          n.prs ? `${pct(n.merged, n.prs)}% merged · ${n.merged} merged` : "none here",
+          n.prs ? `${n.merged} merged · ${pct(n.merged, n.prs)}%` : "none here",
           "merged",
         ),
         card(
