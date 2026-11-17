@@ -519,6 +519,16 @@ import Band from "../components/Band.astro";
 
     // search cannot see some accounts at all, so for those the rows are the only truth
     const fromFeed = () => S.source === "activity";
+    // the feed reaches back only so far, so windows longer than that are the same view twice
+    const feedSpan = () => (fromFeed() && S.since ? Date.now() - Date.parse(S.since) : null);
+    const reaches = (days) => {
+      const span = feedSpan();
+      return !span || !days || days * DAY < span;
+    };
+    const sinceWords = () =>
+      S.since
+        ? new Date(S.since).toLocaleDateString("en-GB", { day: "numeric", month: "short" })
+        : null;
 
     const countRows = () => {
       const list = S.all.length ? everything() : windowed();
@@ -545,7 +555,9 @@ import Band from "../components/Band.astro";
         return;
       }
       box.textContent = "";
-      const where = fromFeed() ? "from their public activity" : scopeWords();
+      const where = fromFeed()
+        ? `from their public activity${sinceWords() ? ` since ${sinceWords()}` : ""}`
+        : scopeWords();
       box.append(
         card("Total involvement", String(n.all), `PRs & issues touched · ${where}`),
         card(
@@ -566,9 +578,10 @@ import Band from "../components/Band.astro";
     };
 
     const drawRanges = () => {
+      if (!reaches(RANGES.find((r) => r.value === S.range)?.days)) S.range = "all";
       const chips = $("lab-chips");
       chips.textContent = "";
-      for (const r of RANGES) {
+      for (const r of RANGES.filter((x) => reaches(x.days))) {
         const b = el("button", "chip", r.label);
         b.type = "button";
         b.setAttribute("aria-pressed", String(S.year === "any" && S.range === r.value));
@@ -607,7 +620,11 @@ import Band from "../components/Band.astro";
           ? `Showing their activity in ${S.year}`
           : range.days
             ? `Showing their activity in the last ${range.label}`
-            : "Showing all of their activity";
+            : fromFeed() && sinceWords()
+              ? `Showing their public activity since ${sinceWords()}`
+              : "Showing all of their activity";
+      // a year makes no sense over a few days of feed
+      $("pick-year").hidden = fromFeed();
     };
 
     const drawFilters = () => {
@@ -1212,6 +1229,7 @@ import Band from "../components/Band.astro";
         rows: body.rows,
         total: body.total,
         source: body.source,
+        since: body.since ?? null,
         profile: body.profile ?? null,
         next: body.next ?? null,
         loading: false,
