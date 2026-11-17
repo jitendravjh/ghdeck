@@ -2,7 +2,7 @@
 //! already holds, so it can be checked without touching the network.
 
 use crate::model::{Item, Kind, State};
-use chrono::{DateTime, Datelike, Duration, NaiveDate, Utc};
+use chrono::{DateTime, Duration, NaiveDate, Utc};
 use std::collections::{BTreeMap, HashSet};
 
 /// The five counts across the top.
@@ -119,44 +119,6 @@ pub fn work(items: &[&Item], me: &str, now: DateTime<Utc>) -> Work {
         median_merge_hours: median,
         busiest,
     }
-}
-
-/// How many things were opened in each of the last `months` months, oldest first.
-pub fn by_month(
-    items: &[&Item],
-    me: &str,
-    now: DateTime<Utc>,
-    months: usize,
-) -> Vec<(String, usize)> {
-    let mut tally: BTreeMap<(i32, u32), usize> = BTreeMap::new();
-    for it in items.iter().filter(|it| it.author.eq_ignore_ascii_case(me)) {
-        let when = it.created_at.unwrap_or(it.updated_at);
-        *tally.entry((when.year(), when.month())).or_default() += 1;
-    }
-    if tally.is_empty() {
-        return Vec::new();
-    }
-
-    // every month in the run gets a column, so a quiet one is a gap not a jump
-    let (first_y, first_m) = *tally.keys().next().unwrap();
-    let (last_y, last_m) = (now.year(), now.month());
-    let mut out = Vec::new();
-    let (mut y, mut m) = (first_y, first_m);
-    while (y, m) <= (last_y, last_m) {
-        out.push((
-            format!("{y}-{m:02}"),
-            tally.get(&(y, m)).copied().unwrap_or(0),
-        ));
-        m += 1;
-        if m > 12 {
-            m = 1;
-            y += 1;
-        }
-    }
-    if out.len() > months {
-        out.drain(..out.len() - months);
-    }
-    out
 }
 
 pub fn percent(part: usize, whole: usize) -> usize {
@@ -279,17 +241,6 @@ mod tests {
     fn a_pull_request_never_merged_is_left_out_of_the_median() {
         let a = item("me", Kind::Pr, State::Open, 1, "o/a");
         assert_eq!(work(&[&a], "me", now()).median_merge_hours, None);
-    }
-
-    #[test]
-    fn months_with_nothing_still_get_a_column() {
-        let old = item("me", Kind::Pr, State::Open, 70, "o/a");
-        let new = item("me", Kind::Pr, State::Open, 1, "o/a");
-        let months = by_month(&[&old, &new], "me", now(), 12);
-        assert_eq!(months.len(), 3, "april, may, june");
-        assert_eq!(months[0].1, 1);
-        assert_eq!(months[1].1, 0, "the quiet month in between");
-        assert_eq!(months[2].1, 1);
     }
 
     #[test]

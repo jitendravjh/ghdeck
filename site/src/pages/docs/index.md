@@ -159,13 +159,9 @@ GitHub keeps some accounts out of search. For those, ghdeck shows their public a
 
 ## Stats
 
-Press `a` for the numbers behind the list. It shows what they opened and merged, how many days they were active, their longest run of days, the median time their pull requests take to merge, and their busiest day. Below that is the contribution graph for the last twelve months, straight from GitHub, and a bar per month of what they opened.
+Press `a` for the numbers behind the list: what they opened, how many merged, the share of their pull requests that land, the median time those take, and the work of other people's they joined. Below that is their contribution graph for the last twelve months, straight from GitHub.
 
-The filters change these numbers. The tabs do not, so switching to `attention` does not shrink them.
-
-## Sorting
-
-`w` cycles the order: last updated, newest, most talked about, by repo, by title. Shift and `w` goes back. The website has no sorting, so this is terminal only.
+Time to merge needs the merge timestamp, so it shows a dash until you press `R` for a deep sync.
 
 ## Keys
 
@@ -174,13 +170,9 @@ The filters change these numbers. The tabs do not, so switching to `attention` d
 | up down | move |
 | left right | switch filter |
 | 1 to 5 | jump to a filter |
-| a | stats and charts |
-| t | time range, shift goes back |
+| a | stats |
 | p | prs, issues or both |
-| s | open, merged, closed, draft |
-| w | sort order |
 | e | only the repo under the cursor |
-| x | clear every filter |
 | enter | read the conversation |
 | o | open in browser |
 | y | copy url |

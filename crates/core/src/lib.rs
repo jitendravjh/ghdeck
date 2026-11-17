@@ -52,51 +52,10 @@ impl Filter {
     }
 }
 
-/// How far back the list reaches.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Span {
-    All,
-    Day,
-    Week,
-    Month,
-    Quarter,
-    Year,
-}
-
-impl Span {
-    pub const ORDER: [Span; 6] =
-        [Span::All, Span::Day, Span::Week, Span::Month, Span::Quarter, Span::Year];
-
-    pub fn label(self) -> &'static str {
-        match self {
-            Span::All => "ALL TIME",
-            Span::Day => "24 HOURS",
-            Span::Week => "7 DAYS",
-            Span::Month => "30 DAYS",
-            Span::Quarter => "90 DAYS",
-            Span::Year => "12 MONTHS",
-        }
-    }
-
-    pub fn days(self) -> Option<i64> {
-        match self {
-            Span::All => None,
-            Span::Day => Some(1),
-            Span::Week => Some(7),
-            Span::Month => Some(30),
-            Span::Quarter => Some(90),
-            Span::Year => Some(365),
-        }
-    }
-
-    pub fn next(self, forward: bool) -> Span {
-        step(&Span::ORDER, self, forward)
-    }
-}
-
 /// Pull requests, issues, or both.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum Shape {
+    #[default]
     Any,
     Prs,
     Issues,
@@ -126,74 +85,6 @@ impl Shape {
     }
 }
 
-/// Where a thing stands.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Stage {
-    Any,
-    Open,
-    Merged,
-    Closed,
-    Draft,
-}
-
-impl Stage {
-    pub const ORDER: [Stage; 5] =
-        [Stage::Any, Stage::Open, Stage::Merged, Stage::Closed, Stage::Draft];
-
-    pub fn label(self) -> &'static str {
-        match self {
-            Stage::Any => "ANY STATE",
-            Stage::Open => "OPEN",
-            Stage::Merged => "MERGED",
-            Stage::Closed => "CLOSED",
-            Stage::Draft => "DRAFT",
-        }
-    }
-
-    pub fn keeps(self, it: &Item) -> bool {
-        match self {
-            Stage::Any => true,
-            Stage::Open => it.state == State::Open,
-            Stage::Merged => it.state == State::Merged,
-            Stage::Closed => it.state == State::Closed,
-            Stage::Draft => it.state == State::Draft,
-        }
-    }
-
-    pub fn next(self, forward: bool) -> Stage {
-        step(&Stage::ORDER, self, forward)
-    }
-}
-
-/// The order rows are listed in. The website offers none of these.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Order {
-    Updated,
-    Opened,
-    Comments,
-    Repo,
-    Title,
-}
-
-impl Order {
-    pub const ORDER: [Order; 5] =
-        [Order::Updated, Order::Opened, Order::Comments, Order::Repo, Order::Title];
-
-    pub fn label(self) -> &'static str {
-        match self {
-            Order::Updated => "LAST UPDATED",
-            Order::Opened => "NEWEST",
-            Order::Comments => "MOST TALKED ABOUT",
-            Order::Repo => "BY REPO",
-            Order::Title => "BY TITLE",
-        }
-    }
-
-    pub fn next(self, forward: bool) -> Order {
-        step(&Order::ORDER, self, forward)
-    }
-}
-
 fn step<T: Copy + PartialEq>(all: &[T], now: T, forward: bool) -> T {
     let at = all.iter().position(|x| *x == now).unwrap_or(0);
     let n = all.len();
@@ -201,26 +92,12 @@ fn step<T: Copy + PartialEq>(all: &[T], now: T, forward: bool) -> T {
     all[to]
 }
 
-/// Everything the list is narrowed by, beyond the named filter.
-#[derive(Debug, Clone, PartialEq, Eq)]
+/// Everything the list is narrowed by, on top of the named filter. Two knobs,
+/// each answering something the tabs cannot: what kind, and which repo.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct Lens {
-    pub span: Span,
     pub shape: Shape,
-    pub stage: Stage,
-    pub order: Order,
     pub repo: Option<String>,
-}
-
-impl Default for Lens {
-    fn default() -> Self {
-        Self {
-            span: Span::All,
-            shape: Shape::Any,
-            stage: Stage::Any,
-            order: Order::Updated,
-            repo: None,
-        }
-    }
 }
 
 impl Lens {
@@ -228,39 +105,15 @@ impl Lens {
         *self == Lens::default()
     }
 
-    pub fn keeps(&self, it: &Item, now: chrono::DateTime<chrono::Utc>) -> bool {
-        if !self.shape.keeps(it) || !self.stage.keeps(it) {
-            return false;
-        }
-        if let Some(repo) = &self.repo {
-            if !it.repo.eq_ignore_ascii_case(repo) {
-                return false;
+    pub fn keeps(&self, it: &Item) -> bool {
+        self.shape.keeps(it)
+            && match &self.repo {
+                Some(repo) => it.repo.eq_ignore_ascii_case(repo),
+                None => true,
             }
-        }
-        match self.span.days() {
-            None => true,
-            Some(d) => (now - it.updated_at).num_days() < d,
-        }
-    }
-
-    pub fn sort(&self, items: &mut [&Item]) {
-        match self.order {
-            Order::Updated => items.sort_by_key(|x| std::cmp::Reverse(x.updated_at)),
-            Order::Opened => {
-                items.sort_by_key(|x| std::cmp::Reverse(x.created_at.unwrap_or(x.updated_at)))
-            }
-            Order::Comments => items.sort_by(|a, b| {
-                b.comments.cmp(&a.comments).then(b.updated_at.cmp(&a.updated_at))
-            }),
-            Order::Repo => items.sort_by(|a, b| {
-                a.repo.to_lowercase().cmp(&b.repo.to_lowercase()).then(b.updated_at.cmp(&a.updated_at))
-            }),
-            Order::Title => items.sort_by(|a, b| {
-                a.title.to_lowercase().cmp(&b.title.to_lowercase())
-            }),
-        }
     }
 }
+
 
 pub fn clean_login(input: &str) -> Option<String> {
     let s = input.trim().trim_start_matches('@');
@@ -298,26 +151,25 @@ mod tests {
 #[cfg(test)]
 mod lens_tests {
     use super::*;
-    use chrono::{Duration, TimeZone, Utc};
+    use chrono::{TimeZone, Utc};
 
-    fn at(days_ago: i64, kind: Kind, state: State, comments: u64, repo: &str) -> Item {
-        let now = Utc.with_ymd_and_hms(2026, 6, 1, 12, 0, 0).unwrap();
+    fn at(kind: Kind, repo: &str) -> Item {
         Item {
-            url: format!("u{days_ago}{repo}"),
+            url: format!("{repo}/{kind:?}"),
             repo: repo.into(),
             number: 1,
-            title: format!("item {days_ago}"),
+            title: "t".into(),
             kind,
-            state,
-            updated_at: now - Duration::days(days_ago),
-            created_at: Some(now - Duration::days(days_ago + 10)),
+            state: State::Open,
+            updated_at: Utc.with_ymd_and_hms(2026, 6, 1, 12, 0, 0).unwrap(),
+            created_at: None,
             merged_at: None,
             author: "me".into(),
             conflicting: false,
             mergeable_unknown: false,
             review: None,
             ci: Ci::None,
-            comments,
+            comments: 0,
             reviews_left: 0,
             waiting_on: vec![],
             assignees: vec![],
@@ -333,81 +185,32 @@ mod lens_tests {
         }
     }
 
-    fn now() -> chrono::DateTime<Utc> {
-        Utc.with_ymd_and_hms(2026, 6, 1, 12, 0, 0).unwrap()
-    }
-
     #[test]
     fn a_fresh_lens_keeps_everything() {
         let lens = Lens::default();
         assert!(lens.plain());
-        for days in [0, 5, 100, 900] {
-            assert!(lens.keeps(&at(days, Kind::Pr, State::Open, 0, "o/r"), now()));
-        }
+        assert!(lens.keeps(&at(Kind::Pr, "o/r")));
+        assert!(lens.keeps(&at(Kind::Issue, "o/r")));
     }
 
     #[test]
-    fn the_span_cuts_at_the_right_day() {
-        let lens = Lens { span: Span::Week, ..Lens::default() };
-        assert!(lens.keeps(&at(6, Kind::Pr, State::Open, 0, "o/r"), now()));
-        assert!(!lens.keeps(&at(7, Kind::Pr, State::Open, 0, "o/r"), now()));
-    }
-
-    #[test]
-    fn shape_and_stage_narrow_on_their_own() {
+    fn the_kind_knob_picks_one_side() {
         let lens = Lens { shape: Shape::Issues, ..Lens::default() };
-        assert!(!lens.keeps(&at(1, Kind::Pr, State::Open, 0, "o/r"), now()));
-        assert!(lens.keeps(&at(1, Kind::Issue, State::Open, 0, "o/r"), now()));
-
-        let lens = Lens { stage: Stage::Merged, ..Lens::default() };
-        assert!(!lens.keeps(&at(1, Kind::Pr, State::Open, 0, "o/r"), now()));
-        assert!(lens.keeps(&at(1, Kind::Pr, State::Merged, 0, "o/r"), now()));
-    }
-
-    #[test]
-    fn draft_is_its_own_state_not_an_open_one() {
-        let mut lens = Lens { stage: Stage::Open, ..Lens::default() };
-        assert!(!lens.keeps(&at(1, Kind::Pr, State::Draft, 0, "o/r"), now()));
-        lens.stage = Stage::Draft;
-        assert!(lens.keeps(&at(1, Kind::Pr, State::Draft, 0, "o/r"), now()));
+        assert!(!lens.keeps(&at(Kind::Pr, "o/r")));
+        assert!(lens.keeps(&at(Kind::Issue, "o/r")));
     }
 
     #[test]
     fn a_repo_filter_ignores_case() {
         let lens = Lens { repo: Some("Owner/Repo".into()), ..Lens::default() };
-        assert!(lens.keeps(&at(1, Kind::Pr, State::Open, 0, "owner/repo"), now()));
-        assert!(!lens.keeps(&at(1, Kind::Pr, State::Open, 0, "other/repo"), now()));
-    }
-
-    #[test]
-    fn every_order_puts_the_right_row_first() {
-        let a = at(1, Kind::Pr, State::Open, 2, "b/one");
-        let b = at(9, Kind::Pr, State::Open, 40, "a/two");
-        let mut lens = Lens::default();
-
-        let pick = |lens: &Lens, a: &Item, b: &Item| {
-            let mut v = vec![a, b];
-            lens.sort(&mut v);
-            v[0].repo.clone()
-        };
-
-        lens.order = Order::Updated;
-        assert_eq!(pick(&lens, &a, &b), "b/one", "the most recently touched");
-        lens.order = Order::Comments;
-        assert_eq!(pick(&lens, &a, &b), "a/two", "the busiest thread");
-        lens.order = Order::Repo;
-        assert_eq!(pick(&lens, &a, &b), "a/two", "alphabetical by repo");
-        lens.order = Order::Opened;
-        assert_eq!(pick(&lens, &a, &b), "b/one", "the newest opened");
+        assert!(lens.keeps(&at(Kind::Pr, "owner/repo")));
+        assert!(!lens.keeps(&at(Kind::Pr, "other/repo")));
     }
 
     #[test]
     fn cycling_wraps_round_both_ways() {
-        assert_eq!(Span::All.next(true), Span::Day);
-        assert_eq!(Span::All.next(false), Span::Year);
-        assert_eq!(Span::Year.next(true), Span::All);
+        assert_eq!(Shape::Any.next(true), Shape::Prs);
         assert_eq!(Shape::Any.next(false), Shape::Issues);
-        assert_eq!(Order::Updated.next(false), Order::Title);
+        assert_eq!(Shape::Issues.next(true), Shape::Any);
     }
 }
-

@@ -116,13 +116,12 @@ impl App {
     fn rebuild(&mut self, keep: Option<String>) {
         let q = self.search.to_lowercase();
         let subject = self.subject().to_string();
-        let now = chrono::Utc::now();
         self.view = self
             .items
             .iter()
             .enumerate()
             .filter(|(_, it)| self.filter.keeps(it, &subject))
-            .filter(|(_, it)| self.lens.keeps(it, now))
+            .filter(|(_, it)| self.lens.keeps(it))
             .filter(|(_, it)| {
                 q.is_empty()
                     || it.title.to_lowercase().contains(&q)
@@ -131,15 +130,6 @@ impl App {
             })
             .map(|(i, _)| i)
             .collect();
-        if self.lens.order != ghdeck_core::Order::Updated {
-            let lens = self.lens.clone();
-            let items = &self.items;
-            let mut picked: Vec<&Item> = self.view.iter().map(|&i| &items[i]).collect();
-            lens.sort(&mut picked);
-            let places: std::collections::HashMap<&str, usize> =
-                items.iter().enumerate().map(|(i, it)| (it.url.as_str(), i)).collect();
-            self.view = picked.iter().filter_map(|it| places.get(it.url.as_str()).copied()).collect();
-        }
         self.cursor = keep
             .and_then(|url| self.view.iter().position(|&i| self.items[i].url == url))
             .unwrap_or(self.cursor)
@@ -344,26 +334,9 @@ impl App {
 }
 
 impl App {
-    pub fn turn_span(&mut self, forward: bool) {
-        self.lens.span = self.lens.span.next(forward);
-        self.note_lens();
-    }
-
     pub fn turn_shape(&mut self, forward: bool) {
         self.lens.shape = self.lens.shape.next(forward);
         self.note_lens();
-    }
-
-    pub fn turn_stage(&mut self, forward: bool) {
-        self.lens.stage = self.lens.stage.next(forward);
-        self.note_lens();
-    }
-
-    pub fn turn_order(&mut self, forward: bool) {
-        self.lens.order = self.lens.order.next(forward);
-        self.status = format!("sorted by {}", self.lens.order.label().to_lowercase());
-        self.cursor = 0;
-        self.reindex();
     }
 
     /// Narrow to the repo under the cursor, or widen again if already narrowed.
@@ -375,21 +348,13 @@ impl App {
         self.note_lens();
     }
 
-    pub fn clear_lens(&mut self) {
-        self.lens = Lens::default();
-        self.search.clear();
-        self.status = "filters cleared".into();
-        self.cursor = 0;
-        self.reindex();
-    }
-
     fn note_lens(&mut self) {
         self.cursor = 0;
         self.reindex();
         self.status = if self.lens.plain() {
             String::new()
         } else {
-            format!("{} rows match", self.view.len())
+            format!("{} of {} shown", self.view.len(), self.items.len())
         };
     }
 }
@@ -398,11 +363,10 @@ impl App {
     /// Everything the filters allow, whichever tab happens to be selected. The
     /// tabs answer "what needs me", the stats answer "what is there".
     pub fn for_stats(&self) -> Vec<&Item> {
-        let now = chrono::Utc::now();
         let q = self.search.to_lowercase();
         self.items
             .iter()
-            .filter(|it| self.lens.keeps(it, now))
+            .filter(|it| self.lens.keeps(it))
             .filter(|it| {
                 q.is_empty()
                     || it.title.to_lowercase().contains(&q)
