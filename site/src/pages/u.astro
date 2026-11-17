@@ -305,7 +305,9 @@ import Band from "../components/Band.astro";
     const historyIn = () => S.allDone === true;
     // a page count climbing is the difference between slow and stuck
     const readingSoFar = () =>
-      S.all.length ? `Still reading their history, ${S.all.length} so far` : "Still reading their history";
+      S.all.length
+        ? `Still reading their GitHub history, ${S.all.length} so far`
+        : "Still reading their GitHub history";
     const kept = () =>
       windowed().filter(
         (r) =>
