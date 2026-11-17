@@ -766,7 +766,7 @@ a.cell .more { font-size: 0.85rem; color: var(--link); }
   .lab-charts { grid-template-columns: 1fr; }
 }
 @media (max-width: 639px) {
-  .lab { padding: 28px 14px 56px; }
+  .lab { padding: 28px 6px 56px; }
   .lab-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .lab-who { flex-wrap: wrap; }
   .lab-share { margin-left: 0; }
@@ -775,7 +775,7 @@ a.cell .more { font-size: 0.85rem; color: var(--link); }
   .lab-foot { grid-template-columns: 1fr; justify-items: center; gap: 12px; }
   .lab-foot > * { grid-column: 1; }
   .lab-filters .pick { flex: 1 1 calc(50% - 4px); }
-  .r { grid-template-columns: 18px minmax(0, 1fr); }
+  .r { grid-template-columns: 16px minmax(0, 1fr); gap: 9px; padding: 12px; }
   .r-title { font-size: 13.5px; }
   .r-line { font-size: 0.72rem; gap: 6px; }
   .badge, .lbl { font-size: 0.66rem; }
