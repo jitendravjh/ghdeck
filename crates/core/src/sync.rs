@@ -113,6 +113,10 @@ impl Sync {
         self.client.activity(login, pages, 20, on_page)
     }
 
+    pub fn calendar(&self, login: &str) -> Result<crate::github::Calendar> {
+        self.client.calendar(login)
+    }
+
     pub fn thread(&self, repo: &str, number: u64) -> Result<Vec<crate::thread::Event>> {
         self.client.thread(repo, number)
     }

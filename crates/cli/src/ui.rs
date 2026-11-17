@@ -20,13 +20,20 @@ fn tone(t: Tone) -> Style {
 }
 
 pub fn draw(f: &mut Frame, app: &mut App) {
-    let [head, body, foot] =
-        Layout::vertical([Constraint::Length(1), Constraint::Min(4), Constraint::Length(6)])
-            .areas(f.area());
+    let [head, knobs, body, foot] = Layout::vertical([
+        Constraint::Length(1),
+        Constraint::Length(1),
+        Constraint::Min(4),
+        Constraint::Length(6),
+    ])
+    .areas(f.area());
 
     header(f, head, app);
+    lens_bar(f, knobs, app);
     if app.help {
         help(f, body);
+    } else if app.stats_open {
+        stats(f, body, app);
     } else if app.detail {
         detail(f, body, app);
     } else {
@@ -64,6 +71,35 @@ fn header(f: &mut Frame, area: Rect, app: &App) {
             format!("  newest {} of {}", app.items.len(), app.who_total),
             Style::default().fg(Color::DarkGray),
         ));
+    }
+    f.render_widget(Line::from(spans), area);
+}
+
+/// The knobs the website does not give you, shown so their state is never a guess.
+fn lens_bar(f: &mut Frame, area: Rect, app: &App) {
+    let l = &app.lens;
+    let on = Style::default().fg(Color::Black).bg(Color::Rgb(122, 162, 247)).bold();
+    let off = Style::default().fg(Color::DarkGray);
+
+    let mut spans = vec![Span::raw(" ")];
+    let knob = |text: String, lit: bool, spans: &mut Vec<Span<'static>>| {
+        spans.push(Span::styled(format!(" {text} "), if lit { on } else { off }));
+        spans.push(Span::raw(" "));
+    };
+
+    knob(format!("t {}", l.span.label()), l.span != ghdeck_core::Span::All, &mut spans);
+    knob(format!("p {}", l.shape.label()), l.shape != ghdeck_core::Shape::Any, &mut spans);
+    knob(format!("s {}", l.stage.label()), l.stage != ghdeck_core::Stage::Any, &mut spans);
+    knob(format!("w {}", l.order.label()), l.order != ghdeck_core::Order::Updated, &mut spans);
+    match &l.repo {
+        Some(r) => knob(format!("e {r}"), true, &mut spans),
+        None => knob("e THIS REPO".into(), false, &mut spans),
+    }
+    if !app.search.is_empty() {
+        knob(format!("/ {}", app.search), true, &mut spans);
+    }
+    if !l.plain() || !app.search.is_empty() {
+        spans.push(Span::styled("  x to clear", Style::default().fg(Color::Yellow)));
     }
     f.render_widget(Line::from(spans), area);
 }
@@ -317,11 +353,251 @@ fn footer(f: &mut Frame, area: Rect, app: &App) {
     f.render_widget(Paragraph::new(lines).wrap(Wrap { trim: true }), inner);
 }
 
+const HEAT: [Color; 5] = [
+    Color::Rgb(38, 42, 50),
+    Color::Rgb(26, 92, 45),
+    Color::Rgb(22, 129, 59),
+    Color::Rgb(0, 165, 70),
+    Color::Rgb(23, 200, 91),
+];
+
+fn tile(label: &str, value: String, note: String, lit: Color) -> Vec<Line<'static>> {
+    vec![
+        Line::from(Span::styled(format!("  {label}"), Style::default().fg(Color::DarkGray))),
+        Line::from(Span::styled(format!("  {value}"), Style::default().fg(lit).bold())),
+        Line::from(Span::styled(format!("  {note}"), Style::default().fg(Color::DarkGray))),
+    ]
+}
+
+fn tiles(f: &mut Frame, area: Rect, cells: Vec<Vec<Line<'static>>>) {
+    if cells.is_empty() || area.width < 20 {
+        return;
+    }
+    let across = cells.len().min(((area.width / 18).max(1)) as usize).min(6);
+    let rows = cells.len().div_ceil(across);
+    let bands = Layout::vertical(vec![Constraint::Length(3); rows]).split(area);
+    for (r, band) in bands.iter().enumerate() {
+        let slice: Vec<_> = cells.iter().skip(r * across).take(across).collect();
+        if slice.is_empty() {
+            break;
+        }
+        let cols = Layout::horizontal(vec![
+            Constraint::Ratio(1, slice.len() as u32);
+            slice.len()
+        ])
+        .split(*band);
+        for (c, cell) in slice.iter().enumerate() {
+            f.render_widget(Paragraph::new((*cell).clone()), cols[c]);
+        }
+    }
+}
+
+/// The contribution graph, drawn the way github draws it: weeks across, days down.
+fn calendar(f: &mut Frame, area: Rect, app: &App) {
+    let block = Block::default()
+        .borders(Borders::ALL)
+        .border_style(Style::default().fg(RULE))
+        .title(" contributions, last 12 months ");
+    let inner = block.inner(area);
+    f.render_widget(block, area);
+    if inner.height < 8 {
+        return;
+    }
+
+    let Some(cal) = &app.calendar else {
+        f.render_widget(
+            Paragraph::new(Line::from(Span::styled(
+                "  reading the graph from github...",
+                Style::default().fg(Color::DarkGray),
+            ))),
+            inner,
+        );
+        return;
+    };
+    if cal.days.is_empty() {
+        f.render_widget(
+            Paragraph::new(Line::from(Span::styled(
+                "  github has no public contributions for them",
+                Style::default().fg(Color::DarkGray),
+            ))),
+            inner,
+        );
+        return;
+    }
+
+    // one cell is two columns wide, so the grid reads as squares not slivers
+    let weeks_that_fit = ((inner.width.saturating_sub(5)) / 2) as usize;
+    let weeks: Vec<&[ghdeck_core::github::Day]> = cal.days.chunks(7).collect();
+    let show = weeks.len().min(weeks_that_fit);
+    let from = weeks.len() - show;
+
+    let top = cal.days.iter().map(|d| d.count).max().unwrap_or(1).max(1);
+    let shade = |n: u32| {
+        if n == 0 {
+            HEAT[0]
+        } else {
+            HEAT[(1 + (n * 3 / top).min(3)) as usize]
+        }
+    };
+
+    let names = ["", "Mon", "", "Wed", "", "Fri", ""];
+    let mut lines = Vec::new();
+    for (row, name) in names.iter().enumerate() {
+        let mut spans =
+            vec![Span::styled(format!("{name:>4} "), Style::default().fg(Color::DarkGray))];
+        for w in &weeks[from..] {
+            match w.get(row) {
+                Some(day) => spans.push(Span::styled("  ", Style::default().bg(shade(day.count)))),
+                None => spans.push(Span::raw("  ")),
+            }
+        }
+        lines.push(Line::from(spans));
+    }
+
+    let mut key = vec![Span::styled(
+        format!("     {} contributions    less ", cal.total),
+        Style::default().fg(Color::DarkGray),
+    )];
+    for c in HEAT {
+        key.push(Span::styled("  ", Style::default().bg(c)));
+    }
+    key.push(Span::styled(" more", Style::default().fg(Color::DarkGray)));
+    lines.push(Line::from(""));
+    lines.push(Line::from(key));
+    f.render_widget(Paragraph::new(lines), inner);
+}
+
+/// Months across the bottom, drawn with block characters.
+fn months(f: &mut Frame, area: Rect, app: &App) {
+    let block = Block::default()
+        .borders(Borders::ALL)
+        .border_style(Style::default().fg(RULE))
+        .title(" opened each month ");
+    let inner = block.inner(area);
+    f.render_widget(block, area);
+    if inner.height < 4 || inner.width < 20 {
+        return;
+    }
+
+    let wide = (inner.width / 5).max(1) as usize;
+    let shown = app.for_stats();
+    let data = ghdeck_core::stats::by_month(&shown, app.subject_name(), chrono::Utc::now(), wide);
+    if data.is_empty() {
+        f.render_widget(
+            Paragraph::new(Line::from(Span::styled(
+                "  nothing opened in this view",
+                Style::default().fg(Color::DarkGray),
+            ))),
+            inner,
+        );
+        return;
+    }
+
+    let top = data.iter().map(|(_, n)| *n).max().unwrap_or(1).max(1);
+    let tall = inner.height.saturating_sub(2) as usize;
+    let blocks = ["   ", " ▁ ", " ▃ ", " ▄ ", " ▆ ", " █ "];
+
+    let mut lines = Vec::new();
+    for level in (0..tall).rev() {
+        let mut spans = vec![Span::raw(" ")];
+        for (_, n) in &data {
+            let filled = (*n * tall).div_ceil(top);
+            let ch = if filled > level { blocks[5] } else { blocks[0] };
+            spans.push(Span::styled(ch, Style::default().fg(Color::Rgb(122, 162, 247))));
+        }
+        if level == tall - 1 {
+            spans.push(Span::styled(format!("  {top} most"), Style::default().fg(Color::DarkGray)));
+        }
+        lines.push(Line::from(spans));
+    }
+    let mut labels = vec![Span::raw(" ")];
+    for (key, _) in &data {
+        let m: u32 = key[5..].parse().unwrap_or(1);
+        let name = ["ja", "fe", "mr", "ap", "my", "jn", "jl", "au", "se", "oc", "no", "de"]
+            [(m as usize).saturating_sub(1).min(11)];
+        labels.push(Span::styled(format!(" {name}"), Style::default().fg(Color::DarkGray)));
+    }
+    lines.push(Line::from(labels));
+    f.render_widget(Paragraph::new(lines), inner);
+}
+
+fn stats(f: &mut Frame, area: Rect, app: &App) {
+    let shown = app.for_stats();
+    let me = app.subject_name().to_string();
+    let now = chrono::Utc::now();
+    let c = ghdeck_core::stats::counts(&shown, &me);
+    let w = ghdeck_core::stats::work(&shown, &me, now);
+    let pc = ghdeck_core::stats::percent;
+
+    let [caption, top, mid, bottom] = Layout::vertical([
+        Constraint::Length(1),
+        Constraint::Length(7),
+        Constraint::Length(10),
+        Constraint::Min(6),
+    ])
+    .areas(area);
+
+    f.render_widget(
+        Line::from(Span::styled(
+            format!("  {} items, {}. the filters change this, the tabs do not.",
+                shown.len(), app.lens.span.label().to_lowercase()),
+            Style::default().fg(Color::DarkGray),
+        )),
+        caption,
+    );
+
+    let good = Color::Rgb(0, 179, 74);
+    let info = Color::Rgb(154, 125, 235);
+    let blue = Color::Rgb(122, 162, 247);
+
+    tiles(
+        f,
+        top,
+        vec![
+            tile("involved in", c.involved.to_string(), "prs and issues".into(), blue),
+            tile("pull requests", c.prs.to_string(), format!("{} merged", c.merged), info),
+            tile("issues", c.issues.to_string(), format!("{} still open", c.open_issues), good),
+            tile("others' prs", c.reviews.to_string(), "you took part".into(), Color::Yellow),
+            tile("others' issues", c.discussions.to_string(), "threads joined".into(), blue),
+            tile("they opened", (w.prs_opened + w.issues_opened).to_string(), format!("{} repos", w.repos), blue),
+            tile("merge rate", format!("{}%", pc(w.prs_merged, w.prs_opened)), format!("{} of their prs", w.prs_opened), info),
+            tile("issues closed", format!("{}%", pc(w.issues_closed, w.issues_opened)), format!("{} they opened", w.issues_opened), good),
+            tile("active days", w.active_days.to_string(), "they opened something".into(), blue),
+            tile("longest run", format!("{} d", w.longest_streak), format!("now {} d", w.current_streak), Color::Yellow),
+            tile(
+                "time to merge",
+                w.median_merge_hours.map(ghdeck_core::stats::spell_hours).unwrap_or_else(|| "-".into()),
+                match w.median_merge_hours {
+                    Some(_) => "middle of their merged prs".into(),
+                    None => "press R for a deep sync".to_string(),
+                },
+                info,
+            ),
+            tile(
+                "busiest day",
+                w.busiest.map(|(_, n)| n.to_string()).unwrap_or_else(|| "-".into()),
+                w.busiest.map(|(d, _)| d.format("%-d %b %Y").to_string()).unwrap_or_default(),
+                Color::Yellow,
+            ),
+        ],
+    );
+
+    calendar(f, mid, app);
+    months(f, bottom, app);
+}
+
 fn help(f: &mut Frame, area: Rect) {
     let keys = [
         ("up / down", "move"),
         ("left / right", "change filter"),
         ("1 to 5", "jump to a filter"),
+        ("t / T", "time range, forward or back"),
+        ("p / P", "prs, issues, or both"),
+        ("s / S", "open, merged, closed, draft"),
+        ("w / W", "sort order"),
+        ("e", "only the repo under the cursor"),
+        ("x", "clear every filter"),
+        ("a", "stats and charts"),
         ("enter", "read the conversation"),
         ("g / G", "top / bottom"),
         ("o", "open in browser"),

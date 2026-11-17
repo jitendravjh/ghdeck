@@ -12,6 +12,7 @@ pub enum Cmd {
     Poll(usize),
     Thread { url: String, repo: String, number: u64 },
     Activity { login: String, pages: usize, ticket: u64 },
+    Calendar { login: String },
 }
 
 pub enum Evt {
@@ -19,6 +20,7 @@ pub enum Evt {
     Thread { url: String, events: Vec<Event> },
     Activity { ticket: u64, items: Vec<Item>, total: u64, cost: Option<u64>, since: Option<DateTime<Utc>> },
     ActivityFailed { ticket: u64, error: String },
+    Calendar { login: String, calendar: ghdeck_core::github::Calendar },
     Quiet,
     Failed(String),
 }
@@ -74,6 +76,10 @@ impl Worker {
                         synced(&sync, res)
                     }
                     Cmd::Thread { url, repo, number } => load_thread(&sync, url, &repo, number),
+                    Cmd::Calendar { login } => match sync.calendar(&login) {
+                        Ok(calendar) => Evt::Calendar { login, calendar },
+                        Err(e) => Evt::Failed(format!("{e:#}")),
+                    },
                     Cmd::Activity { login, pages, ticket } => {
                         let live = || latest.load(Ordering::Relaxed) == ticket;
                         if !live() {
@@ -145,6 +151,10 @@ impl Worker {
         let ticket = self.ticket.fetch_add(1, Ordering::Relaxed) + 1;
         self.send(Cmd::Activity { login, pages, ticket });
         ticket
+    }
+
+    pub fn ask_calendar(&self, login: String) {
+        self.send(Cmd::Calendar { login });
     }
 
     pub fn stop_look_up(&self) {

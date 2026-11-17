@@ -31,11 +31,11 @@ query($main:String!,$extra:String!,$n:Int!,$c1:String,$c2:String){
 
 const ROW: &str = r#"
 fragment Row on SearchResultItem{
-  ... on Issue{ __typename number title url state stateReason updatedAt
+  ... on Issue{ __typename number title url state stateReason updatedAt createdAt
     repository{nameWithOwner} author{login}
     assignees(first:5){nodes{login}} labels(first:8){nodes{name}}
     comments(last:1){totalCount nodes{author{login} createdAt}} }
-  ... on PullRequest{ __typename number title url state isDraft updatedAt
+  ... on PullRequest{ __typename number title url state isDraft updatedAt createdAt mergedAt
     repository{nameWithOwner} author{login}
     merged mergeable additions deletions changedFiles reviewDecision
     assignees(first:5){nodes{login}} labels(first:8){nodes{name}}
@@ -45,6 +45,54 @@ fragment Row on SearchResultItem{
     commits(last:1){nodes{commit{statusCheckRollup{state}}}} }
 }
 "#;
+
+const CALENDAR: &str = r#"
+query($login:String!,$from:DateTime!,$to:DateTime!){
+  user(login:$login){
+    contributionsCollection(from:$from,to:$to){
+      contributionCalendar{
+        totalContributions
+        weeks{contributionDays{date contributionCount}}
+      }
+    }
+  }
+}
+"#;
+
+/// A day of the contribution graph, the same figure github shows on a profile.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Day {
+    pub date: chrono::NaiveDate,
+    pub count: u32,
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct Calendar {
+    pub total: u64,
+    pub days: Vec<Day>,
+}
+
+pub fn read_calendar(data: &Value) -> Calendar {
+    let box_ = &data["user"]["contributionsCollection"]["contributionCalendar"];
+    let mut days = Vec::new();
+    if let Some(weeks) = box_["weeks"].as_array() {
+        for w in weeks {
+            if let Some(list) = w["contributionDays"].as_array() {
+                for d in list {
+                    if let (Some(date), Some(count)) =
+                        (d["date"].as_str(), d["contributionCount"].as_u64())
+                    {
+                        if let Ok(date) = date.parse::<chrono::NaiveDate>() {
+                            days.push(Day { date, count: count as u32 });
+                        }
+                    }
+                }
+            }
+        }
+    }
+    days.sort_by_key(|d| d.date);
+    Calendar { total: box_["totalContributions"].as_u64().unwrap_or(0), days }
+}
 
 pub struct Client {
     token: String,
@@ -291,6 +339,21 @@ impl Client {
         Ok(Fetched { items, login, involved_total: total, cost, remaining, feed_since: None })
     }
 
+    /// The contribution graph for the twelve months ending today.
+    pub fn calendar(&self, login: &str) -> Result<Calendar> {
+        let to = Utc::now();
+        let from = to - chrono::Duration::days(364);
+        let data = self.graphql(
+            CALENDAR,
+            json!({
+                "login": login,
+                "from": from.to_rfc3339(),
+                "to": to.to_rfc3339(),
+            }),
+        )?;
+        Ok(read_calendar(&data))
+    }
+
     pub fn thread(&self, repo: &str, number: u64) -> Result<Vec<crate::thread::Event>> {
         let (owner, name) = repo.split_once('/').context("repo was not owner/name")?;
         let data = self.graphql(
@@ -447,6 +510,8 @@ fn parse(n: &Value) -> Option<Item> {
         kind,
         state,
         updated_at: n["updatedAt"].as_str()?.parse().ok()?,
+        created_at: n["createdAt"].as_str().and_then(|s| s.parse().ok()),
+        merged_at: n["mergedAt"].as_str().and_then(|s| s.parse().ok()),
         author: n["author"]["login"].as_str().unwrap_or("ghost").to_string(),
         conflicting: mergeable == Some("CONFLICTING"),
         mergeable_unknown: mergeable == Some("UNKNOWN"),
@@ -607,5 +672,40 @@ mod tests {
         let (refs, since) = feed_refs(&events);
         assert_eq!(refs, vec![("o/a".to_string(), 7), ("o/b".to_string(), 3), ("o/c".to_string(), 1)]);
         assert_eq!(since.unwrap().to_rfc3339(), "2026-09-01T00:00:00+00:00");
+    }
+}
+
+#[cfg(test)]
+mod calendar_tests {
+    use super::*;
+
+    #[test]
+    fn reads_the_days_and_the_total() {
+        let raw = json!({
+          "user": { "contributionsCollection": { "contributionCalendar": {
+            "totalContributions": 7,
+            "weeks": [
+              { "contributionDays": [
+                  { "date": "2026-01-02", "contributionCount": 3 },
+                  { "date": "2026-01-01", "contributionCount": 0 }
+              ]},
+              { "contributionDays": [ { "date": "2026-01-03", "contributionCount": 4 } ]}
+            ]
+          }}}
+        });
+        let cal = read_calendar(&raw);
+        assert_eq!(cal.total, 7);
+        assert_eq!(cal.days.len(), 3);
+        // sorted oldest first, whatever order github sent them in
+        assert_eq!(cal.days[0].date.to_string(), "2026-01-01");
+        assert_eq!(cal.days[0].count, 0);
+        assert_eq!(cal.days[2].count, 4);
+    }
+
+    #[test]
+    fn a_missing_calendar_is_empty_rather_than_a_panic() {
+        let cal = read_calendar(&json!({ "user": null }));
+        assert_eq!(cal.total, 0);
+        assert!(cal.days.is_empty());
     }
 }

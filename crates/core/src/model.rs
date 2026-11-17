@@ -49,6 +49,10 @@ pub struct Item {
     pub kind: Kind,
     pub state: State,
     pub updated_at: DateTime<Utc>,
+    #[serde(default)]
+    pub created_at: Option<DateTime<Utc>>,
+    #[serde(default)]
+    pub merged_at: Option<DateTime<Utc>>,
     pub author: String,
     pub conflicting: bool,
     pub mergeable_unknown: bool,
