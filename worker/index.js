@@ -362,9 +362,13 @@ async function someCounts(url, env, ctx) {
   const hit = await cache.match(key);
   if (hit) return forClient(hit);
 
-  const counts = await countsOf(env.GHDECK_TOKEN, login, windowQuery(range, year));
+  // the profile rides along, it is a cheap call and the header wants it early
+  const [counts, who] = await Promise.all([
+    countsOf(env.GHDECK_TOKEN, login, windowQuery(range, year)),
+    profileOf(env.GHDECK_TOKEN, login).catch(() => null),
+  ]);
   if (!counts) return json({ error: "github did not answer" }, 502);
-  const res = json({ login, counts }, 200, true);
+  const res = json({ login, counts, profile: who }, 200, true);
   ctx.waitUntil(cache.put(key, res.clone()));
   return forClient(res);
 }

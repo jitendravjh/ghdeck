@@ -646,6 +646,20 @@ import Band from "../components/Band.astro";
     };
 
     const drawRows = () => {
+      rowsBox.textContent = "";
+      if (S.pending) {
+        $("lab-shown").textContent = "";
+        more.hidden = true;
+        for (const width of ["46%", "72%", "38%", "64%", "30%"]) {
+          const line = el("li", "lab-skel");
+          const bar = el("span", "skel");
+          bar.style.width = width;
+          line.append(bar);
+          rowsBox.append(line);
+        }
+        return;
+      }
+
       const all = kept();
       const slice = all.slice(0, S.limit);
 
@@ -660,7 +674,6 @@ import Band from "../components/Band.astro";
           : `Showing ${slice.length} of ${of}`;
       more.hidden = !(S.next?.more || S.limit < all.length);
 
-      rowsBox.textContent = "";
       if (!slice.length) {
         rowsBox.append(el("li", "lab-empty", `No items for ${S.login} under these filters.`));
         return;
@@ -1160,6 +1173,7 @@ import Band from "../components/Band.astro";
         cal: "12",
         cals: body.calendar ? { "12": body.calendar } : {},
         counts: body.counts ? { rall: body.counts } : {},
+        pending: body.pending === true,
         monthlyView: "bar",
         open: new Set(),
         ...keep,
@@ -1306,21 +1320,22 @@ import Band from "../components/Band.astro";
       share.hidden = true;
     };
 
-    const waiting = (name) => {
+    // the list is the slow half, so the page stands up around it and waits only there
+    const waiting = (name, from) => {
       note.hidden = false;
       note.textContent = `Searching ${name}`;
       note.append(dots());
-      rowsBox.textContent = "";
-      for (const width of ["46%", "72%", "38%", "64%", "30%"]) {
-        const line = el("li", "lab-skel");
-        const bar = el("span", "skel");
-        bar.style.width = width;
-        line.append(bar);
-        rowsBox.append(line);
-      }
-      $("lab-cards").textContent = "";
-      intro.hidden = true;
-      bodyBox.hidden = false;
+      start({
+        login: from?.login ?? name,
+        rows: [],
+        total: from?.counts?.all ?? 0,
+        source: "search",
+        profile: from?.profile ?? null,
+        counts: from?.counts ?? null,
+        next: null,
+        pending: true,
+      });
+      redraw();
       bodyBox.setAttribute("aria-busy", "true");
     };
 
@@ -1328,6 +1343,11 @@ import Band from "../components/Band.astro";
       if (inFlight) return;
       inFlight = true;
       busy(searchButton, "Searching");
+
+      // the counts are a quicker call, so they race the search rather than follow it
+      const tally = fetch(`/api/counts?name=${encodeURIComponent(name)}&range=all`)
+        .then((r) => (r.ok ? r.json() : null))
+        .catch(() => null);
 
       const saved = recall(name);
       let soon = null;
@@ -1339,6 +1359,13 @@ import Band from "../components/Band.astro";
         note.append(dots());
       } else {
         soon = window.setTimeout(() => waiting(name), 200);
+        // whichever lands first puts something real on the screen
+        tally.then((got) => {
+          if (!got?.counts || !inFlight || S?.rows.length) return;
+          if (soon) window.clearTimeout(soon);
+          soon = null;
+          waiting(name, got);
+        });
       }
 
       const done = () => {
@@ -1347,11 +1374,6 @@ import Band from "../components/Band.astro";
         ready(searchButton, "Search");
         inFlight = false;
       };
-
-      // the counts are a separate, quicker call, so they race the search rather than follow it
-      const tally = fetch(`/api/counts?name=${encodeURIComponent(name)}&range=all`)
-        .then((r) => (r.ok ? r.json() : null))
-        .catch(() => null);
 
       let res, body;
       try {
@@ -1406,7 +1428,9 @@ import Band from "../components/Band.astro";
       tally.then((got) => {
         if (!got?.counts || S?.login.toLowerCase() !== body.login.toLowerCase()) return;
         S.counts.rall = got.counts;
+        if (!S.profile) S.profile = got.profile ?? null;
         if (scopeKey() === "rall") drawCards();
+        drawWho();
         remember();
       });
     };
