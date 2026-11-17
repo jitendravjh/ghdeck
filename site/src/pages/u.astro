@@ -296,6 +296,9 @@ import Band from "../components/Band.astro";
     };
 
     const windowed = () => S.rows.filter(inWindow);
+    // the analytics add up the whole history, which is fetched stripped and kept apart
+    const everything = () => S.all.filter(inWindow);
+    const historyIn = () => S.allDone === true;
     const kept = () =>
       windowed().filter(
         (r) =>
@@ -470,6 +473,30 @@ import Band from "../components/Band.astro";
     };
 
     const scopeKey = () => (S.year !== "any" ? `y${S.year}` : `r${S.range}`);
+    const narrowKey = () => `${scopeKey()}|${S.type}|${S.status}|${S.role}|${S.repo}`;
+
+    // the dropdowns are things github can count, so ask it rather than guess
+    const askMatched = async () => {
+      const want = narrowKey();
+      if (S.matched[want] !== undefined) return;
+      S.matched[want] = null;
+      const q = new URLSearchParams({ name: S.login });
+      if (S.year !== "any") q.set("year", S.year);
+      else q.set("range", S.range);
+      if (S.type !== "any") q.set("type", S.type);
+      if (S.status !== "any") q.set("status", S.status);
+      if (S.role !== "any") q.set("role", S.role);
+      if (S.repo !== "any") q.set("repo", S.repo);
+      try {
+        const res = await fetch(`/api/count?${q}`);
+        const body = await res.json();
+        if (!res.ok || typeof body.total !== "number") throw new Error("no count");
+        S.matched[want] = body.total;
+      } catch {
+        delete S.matched[want];
+      }
+      if (narrowKey() === want) drawRows();
+    };
 
     // a window github has not counted yet, asked for on its own and kept
     const askCounts = async () => {
@@ -663,14 +690,20 @@ import Band from "../components/Band.astro";
       const all = kept();
       const slice = all.slice(0, S.limit);
 
-      // the scope total is known exactly, a narrowed one is only known for the rows in hand
-      const narrowed =
-        S.type !== "any" || S.status !== "any" || S.role !== "any" || S.repo !== "any" || S.text !== "";
-      const of = whole() ? all.length : Math.max(S.counts[scopeKey()]?.all ?? S.total, all.length);
+      // once every row is in hand the list is the truth, until then github is asked
+      const dropped = S.type !== "any" || S.status !== "any" || S.role !== "any" || S.repo !== "any";
+      let of = null;
+      if (whole()) of = all.length;
+      else if (S.text) of = null;
+      else if (dropped) {
+        of = S.matched[narrowKey()] ?? null;
+        if (of === null) askMatched();
+      } else of = Math.max(S.counts[scopeKey()]?.all ?? S.total, all.length);
+
       $("lab-shown").textContent = !all.length
         ? "nothing under these filters"
-        : narrowed && !whole()
-          ? `Showing ${slice.length} matching`
+        : of === null
+          ? `Showing ${slice.length}`
           : `Showing ${slice.length} of ${of}`;
       more.hidden = !(S.next?.more || S.limit < all.length);
 
@@ -766,13 +799,15 @@ import Band from "../components/Band.astro";
 
     const drawStats = () => {
       const box = $("lab-stats");
-      if (!whole()) {
-        $("lab-lede").textContent = "Still reading their history.";
+      if (!historyIn()) {
+        const lede = $("lab-lede");
+        lede.textContent = "Still reading their history";
+        lede.append(dots());
         box.textContent = "";
         for (let i = 0; i < 10; i++) box.append(ghost());
         return;
       }
-      const list = windowed();
+      const list = everything();
       const opened = list.filter(mine);
       const prs = opened.filter((r) => r.kind === "pr");
       const issues = opened.filter((r) => r.kind === "issue");
@@ -939,7 +974,7 @@ import Band from "../components/Band.astro";
       const host = $("lab-monthly");
       host.textContent = "";
       const byMonth = new Map();
-      for (const r of windowed()) {
+      for (const r of everything()) {
         const d = new Date(openedOn(r));
         const key = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
         byMonth.set(key, (byMonth.get(key) ?? 0) + 1);
@@ -1031,7 +1066,7 @@ import Band from "../components/Band.astro";
     const drawPrs = () => {
       const host = $("lab-prs");
       host.textContent = "";
-      const prs = windowed().filter((r) => r.kind === "pr" && mine(r));
+      const prs = everything().filter((r) => r.kind === "pr" && mine(r));
       if (!prs.length) {
         host.append(el("p", "panel-empty", "They opened no pull requests in this range."));
         return;
@@ -1173,6 +1208,9 @@ import Band from "../components/Band.astro";
         cal: "12",
         cals: body.calendar ? { "12": body.calendar } : {},
         counts: body.counts ? { rall: body.counts } : {},
+        matched: {},
+        all: [],
+        allDone: false,
         pending: body.pending === true,
         monthlyView: "bar",
         open: new Set(),
@@ -1241,45 +1279,44 @@ import Band from "../components/Band.astro";
     };
     more.addEventListener("click", loadMore);
 
-    // a big page with bodies is heavy enough that github times it out now and then,
-    // so a failed page is tried once more at half the size before giving up
-    const fetchPage = async (size) => {
-      const res = await fetch(nextUrl(size));
-      const body = await res.json();
-      if (!res.ok) throw new Error(body?.error || "GitHub stopped answering");
-      return body;
-    };
-
-    // the analytics are only honest over the whole history, so the rest is pulled in behind them
+    // the analytics need every item, so they are fetched stripped and in big pages
     async function loadAll() {
-      if (S.loading) return;
+      if (S.loading || S.allDone) return;
       S.loading = true;
+      const seen = new Set();
+      const rows = [];
+      let cursor = null;
       let guard = 0;
-      while (S.next?.more && guard++ < 20) {
-        note.hidden = false;
-        note.textContent = `Reading ${S.rows.length} of ${Math.max(S.total, S.rows.length)} items`;
-        note.append(dots());
+      while (guard++ < 12) {
+        const q = new URLSearchParams({ name: S.login, lean: "1", size: "100" });
+        if (cursor?.am) q.set("am", cursor.am);
+        if (cursor?.ae) q.set("ae", cursor.ae);
         let body;
         try {
-          body = await fetchPage(30);
-        } catch {
-          try {
-            body = await fetchPage(15);
-          } catch (err) {
-            S.loading = false;
-            note.hidden = false;
-            note.textContent = `${err instanceof Error ? err.message : "Could not load the rest"}, showing ${S.rows.length} of ${S.total}.`;
-            redraw();
-            return;
-          }
+          const res = await fetch(`/api/user?${q}`);
+          body = await res.json();
+          if (!res.ok) throw new Error(body?.error || "GitHub stopped answering");
+        } catch (err) {
+          S.loading = false;
+          note.hidden = false;
+          note.textContent = err instanceof Error ? err.message : "Could not read the rest of their history.";
+          return;
         }
-        absorb(body);
+        for (const row of body.rows) {
+          if (seen.has(row.url)) continue;
+          seen.add(row.url);
+          rows.push(row);
+        }
+        cursor = body.next ?? null;
+        S.all = rows;
+        if (S.view !== "activity") drawStats();
+        if (!cursor?.more) break;
       }
       S.loading = false;
+      S.allDone = true;
       note.hidden = true;
       note.textContent = "";
       redraw();
-      remember();
     }
 
     /* ── saved copies ──────────────────────────────────────────── */

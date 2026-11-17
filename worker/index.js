@@ -25,6 +25,15 @@ fragment Row on SearchResultItem{
     commits(last:1){nodes{commit{statusCheckRollup{state}}}} }
 }`;
 
+// the analytics only add up dates and states, so their pages carry nothing else
+const LEAN = `
+fragment Row on SearchResultItem{
+  ... on Issue{ __typename number title url state createdAt updatedAt
+    repository{nameWithOwner} author{login} }
+  ... on PullRequest{ __typename number title url state isDraft createdAt updatedAt mergedAt merged
+    repository{nameWithOwner} author{login} }
+}`;
+
 const search = (rich) => `
 query($main:String!,$extra:String!,$n:Int!,$am:String,$ae:String){
   main: search(query:$main,type:ISSUE,first:$n,after:$am){
@@ -33,7 +42,7 @@ query($main:String!,$extra:String!,$n:Int!,$am:String,$ae:String){
   extra: search(query:$extra,type:ISSUE,first:$n,after:$ae){
     pageInfo{endCursor hasNextPage} nodes{...Row}
   }
-}${row(rich)}`;
+}${rich === "lean" ? LEAN : row(rich)}`;
 
 function cleanLogin(input) {
   const s = (input ?? "").trim().replace(/^@/, "");
@@ -247,6 +256,35 @@ async function countsOf(token, login, when) {
   };
 }
 
+const ONE = `query($q:String!){ search(query:$q,type:ISSUE,first:1){issueCount} }`;
+
+// the dropdowns map onto search qualifiers, so github can count the narrowed set too
+function filterQuery(login, p) {
+  const bits = [`involves:${login}`];
+  const when = windowQuery(p.get("range"), Number(p.get("year")) || null);
+  if (when) bits.push(when);
+
+  const type = p.get("type");
+  if (type === "pr") bits.push("is:pr");
+  else if (type === "issue") bits.push("is:issue");
+
+  const status = p.get("status");
+  if (status === "open") bits.push("is:open");
+  else if (status === "merged") bits.push("is:merged");
+  else if (status === "closed") bits.push("is:closed is:unmerged");
+  else if (status === "draft") bits.push("is:draft");
+
+  const role = p.get("role");
+  if (role === "authored") bits.push(`author:${login}`);
+  else if (role === "assigned") bits.push(`assignee:${login}`);
+  else if (role === "mentioned") bits.push(`mentions:${login}`);
+
+  const repo = p.get("repo");
+  if (repo && /^[A-Za-z0-9._-]{1,100}\/[A-Za-z0-9._-]{1,100}$/.test(repo)) bits.push(`repo:${repo}`);
+
+  return bits.join(" ");
+}
+
 // the chips ask for a window, which search understands as an updated range
 function windowQuery(range, year) {
   if (year) return `updated:${year}-01-01..${year}-12-31`;
@@ -349,6 +387,25 @@ function forClient(res) {
   });
 }
 
+async function oneCount(url, env, ctx) {
+  const login = cleanLogin(url.searchParams.get("name"));
+  if (!login) return json({ error: "that is not a github username" }, 400);
+  if (!env.GHDECK_TOKEN) return json({ error: "search is not set up on this site yet" }, 503);
+
+  const q = filterQuery(login, url.searchParams);
+  const cache = caches.default;
+  const key = new Request(`${url.origin}/api/count?q=${encodeURIComponent(q.toLowerCase())}`);
+  const hit = await cache.match(key);
+  if (hit) return forClient(hit);
+
+  const data = await graphql(env.GHDECK_TOKEN, ONE, { q }).catch(() => null);
+  const total = data?.search?.issueCount;
+  if (typeof total !== "number") return json({ error: "github did not answer" }, 502);
+  const res = json({ login, total }, 200, true);
+  ctx.waitUntil(cache.put(key, res.clone()));
+  return forClient(res);
+}
+
 async function someCounts(url, env, ctx) {
   const login = cleanLogin(url.searchParams.get("name"));
   if (!login) return json({ error: "that is not a github username" }, 400);
@@ -402,23 +459,24 @@ async function lookUp(url, env, ctx) {
   const am = url.searchParams.get("am") || null;
   const ae = url.searchParams.get("ae") || null;
   const skip = Math.max(0, Math.min(300, Number(url.searchParams.get("skip")) || 0));
-  const rich = url.searchParams.get("rich") === "1";
-  const size = Math.max(1, Math.min(50, Number(url.searchParams.get("size")) || PER_PAGE));
+  const lean = url.searchParams.get("lean") === "1";
+  const rich = !lean && url.searchParams.get("rich") === "1";
+  const size = Math.max(1, Math.min(lean ? 100 : 50, Number(url.searchParams.get("size")) || PER_PAGE));
 
   const cache = caches.default;
   const page = am || ae ? `&am=${am ?? ""}&ae=${ae ?? ""}` : skip ? `&skip=${skip}` : "";
   const key = new Request(
-    `${url.origin}/api/user?name=${login.toLowerCase()}${page}&size=${size}${rich ? "&rich=1" : ""}`,
+    `${url.origin}/api/user?name=${login.toLowerCase()}${page}&size=${size}${rich ? "&rich=1" : ""}${lean ? "&lean=1" : ""}`,
   );
   const hit = await cache.match(key);
   if (hit) return forClient(hit);
 
   try {
     // the profile and the calendar are their own calls, so they run beside the search
-    const first = !(am || ae || skip);
+    const first = !(am || ae || skip) && !lean;
     const profilePromise = first ? profileOf(env.GHDECK_TOKEN, login) : Promise.resolve(null);
     const calendarPromise = first ? calendarOf(env.GHDECK_TOKEN, login, null) : Promise.resolve(null);
-    const data = await graphql(env.GHDECK_TOKEN, search(rich), {
+    const data = await graphql(env.GHDECK_TOKEN, search(lean ? "lean" : rich), {
       main: `involves:${login} sort:updated-desc`,
       extra: `mentions:${login} sort:updated-desc`,
       n: size,
@@ -543,6 +601,10 @@ export default {
     if (url.pathname === "/api/user") {
       if (request.method !== "GET") return json({ error: "use GET" }, 405);
       return lookUp(url, env, ctx);
+    }
+    if (url.pathname === "/api/count") {
+      if (request.method !== "GET") return json({ error: "use GET" }, 405);
+      return oneCount(url, env, ctx);
     }
     if (url.pathname === "/api/counts") {
       if (request.method !== "GET") return json({ error: "use GET" }, 405);
