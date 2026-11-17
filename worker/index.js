@@ -34,13 +34,11 @@ fragment Row on SearchResultItem{
     repository{nameWithOwner} author{login} }
 }`;
 
+// two aliased searches in one query run one after the other, so each is sent on its own
 const search = (rich) => `
-query($main:String!,$extra:String!,$n:Int!,$am:String,$ae:String){
-  main: search(query:$main,type:ISSUE,first:$n,after:$am){
+query($q:String!,$n:Int!,$after:String){
+  s: search(query:$q,type:ISSUE,first:$n,after:$after){
     issueCount pageInfo{endCursor hasNextPage} nodes{...Row}
-  }
-  extra: search(query:$extra,type:ISSUE,first:$n,after:$ae){
-    pageInfo{endCursor hasNextPage} nodes{...Row}
   }
 }${rich === "lean" ? LEAN : row(rich)}`;
 
@@ -476,13 +474,14 @@ async function lookUp(url, env, ctx) {
     const first = !(am || ae || skip) && !lean;
     const profilePromise = first ? profileOf(env.GHDECK_TOKEN, login) : Promise.resolve(null);
     const calendarPromise = first ? calendarOf(env.GHDECK_TOKEN, login, null) : Promise.resolve(null);
-    const data = await graphql(env.GHDECK_TOKEN, search(lean ? "lean" : rich), {
-      main: `involves:${login} sort:updated-desc`,
-      extra: `mentions:${login} sort:updated-desc`,
-      n: size,
-      am,
-      ae,
-    });
+    const query = search(lean ? "lean" : rich);
+    const ask = (q, after) => graphql(env.GHDECK_TOKEN, query, { q, n: size, after });
+    // involves already covers mentions, the second pass only marks which ones they were named in
+    const [main, extra] = await Promise.all([
+      ask(`involves:${login} sort:updated-desc`, am),
+      ask(`mentions:${login} sort:updated-desc`, ae),
+    ]);
+    const data = { main: main?.s, extra: extra?.s };
 
     const rows = new Map();
     collect(data.main?.nodes, false, rows, login);

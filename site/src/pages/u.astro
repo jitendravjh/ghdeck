@@ -517,9 +517,27 @@ import Band from "../components/Band.astro";
       if (scopeKey() === want) drawCards();
     };
 
+    // search cannot see some accounts at all, so for those the rows are the only truth
+    const fromFeed = () => S.source === "activity";
+
+    const countRows = () => {
+      const list = S.all.length ? everything() : windowed();
+      const prs = list.filter((r) => r.kind === "pr");
+      const issues = list.filter((r) => r.kind === "issue");
+      return {
+        all: list.length,
+        prs: prs.length,
+        merged: count(prs, isMerged),
+        issues: issues.length,
+        open: count(issues, (r) => r.open),
+        reviews: count(prs, (r) => !mine(r)),
+        threads: count(issues, (r) => !mine(r)),
+      };
+    };
+
     const drawCards = () => {
       const box = $("lab-cards");
-      const n = S.counts[scopeKey()];
+      const n = fromFeed() ? countRows() : S.counts[scopeKey()];
       if (!n) {
         box.textContent = "";
         for (let i = 0; i < 5; i++) box.append(ghost());
@@ -527,8 +545,9 @@ import Band from "../components/Band.astro";
         return;
       }
       box.textContent = "";
+      const where = fromFeed() ? "from their public activity" : scopeWords();
       box.append(
-        card("Total involvement", String(n.all), `PRs & issues touched · ${scopeWords()}`),
+        card("Total involvement", String(n.all), `PRs & issues touched · ${where}`),
         card(
           "Pull requests",
           String(n.prs),
@@ -1291,6 +1310,7 @@ import Band from "../components/Band.astro";
         const q = new URLSearchParams({ name: S.login, lean: "1", size: "100" });
         if (cursor?.am) q.set("am", cursor.am);
         if (cursor?.ae) q.set("ae", cursor.ae);
+        if (cursor?.skip) q.set("skip", String(cursor.skip));
         let body;
         try {
           const res = await fetch(`/api/user?${q}`);
@@ -1302,15 +1322,18 @@ import Band from "../components/Band.astro";
           note.textContent = err instanceof Error ? err.message : "Could not read the rest of their history.";
           return;
         }
+        let added = 0;
         for (const row of body.rows) {
           if (seen.has(row.url)) continue;
           seen.add(row.url);
           rows.push(row);
+          added++;
         }
         cursor = body.next ?? null;
         S.all = rows;
         if (S.view !== "activity") drawStats();
-        if (!cursor?.more) break;
+        // a feed that hands back nothing new will never end on its own
+        if (!cursor?.more || added === 0) break;
       }
       S.loading = false;
       S.allDone = true;
