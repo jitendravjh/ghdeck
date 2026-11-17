@@ -303,6 +303,9 @@ import Band from "../components/Band.astro";
     // the analytics add up the whole history, which is fetched stripped and kept apart
     const everything = () => S.all.filter(inWindow);
     const historyIn = () => S.allDone === true;
+    // a page count climbing is the difference between slow and stuck
+    const readingSoFar = () =>
+      S.all.length ? `Still reading their history, ${S.all.length} so far` : "Still reading their history";
     const kept = () =>
       windowed().filter(
         (r) =>
@@ -834,7 +837,7 @@ import Band from "../components/Band.astro";
       const box = $("lab-stats");
       if (!historyIn()) {
         const lede = $("lab-lede");
-        lede.textContent = "Still reading their history";
+        lede.textContent = readingSoFar();
         lede.append(dots());
         box.textContent = "";
         for (let i = 0; i < 10; i++) box.append(ghost());
@@ -1005,9 +1008,16 @@ import Band from "../components/Band.astro";
       );
     };
 
+    const stillReading = (host) => {
+      const line = el("p", "panel-empty", readingSoFar());
+      line.append(dots());
+      host.append(line);
+    };
+
     const drawMonthly = () => {
       const host = $("lab-monthly");
       host.textContent = "";
+      if (!historyIn()) return stillReading(host);
       const byMonth = new Map();
       for (const r of everything()) {
         const d = new Date(openedOn(r));
@@ -1101,6 +1111,7 @@ import Band from "../components/Band.astro";
     const drawPrs = () => {
       const host = $("lab-prs");
       host.textContent = "";
+      if (!historyIn()) return stillReading(host);
       const prs = everything().filter((r) => r.kind === "pr" && mine(r));
       if (!prs.length) {
         host.append(el("p", "panel-empty", "They opened no pull requests in this range."));
