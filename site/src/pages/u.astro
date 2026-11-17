@@ -249,7 +249,8 @@ import Band from "../components/Band.astro";
 
     const mine = (row) => row.author.toLowerCase() === S.login.toLowerCase();
     // their own items count from when they opened them, threads they joined from the latest activity
-    const whenOf = (row) => Date.parse((mine(row) && row.createdAt) || row.updatedAt);
+    const whenOf = (row) => Date.parse(row.updatedAt);
+    const openedOn = (row) => Date.parse(row.createdAt || row.updatedAt);
     const isMerged = (row) => row.merged === true;
     const isDraft = (row) => row.draft === true;
     const labelsOf = (row) => row.labels ?? [];
@@ -468,36 +469,53 @@ import Band from "../components/Band.astro";
       return range.days ? `last ${range.label}` : "all time";
     };
 
+    const scopeKey = () => (S.year !== "any" ? `y${S.year}` : `r${S.range}`);
+
+    // a window github has not counted yet, asked for on its own and kept
+    const askCounts = async () => {
+      const want = scopeKey();
+      if (S.counts[want] !== undefined) return;
+      S.counts[want] = null;
+      const q = new URLSearchParams({ name: S.login });
+      if (S.year !== "any") q.set("year", S.year);
+      else q.set("range", S.range);
+      try {
+        const res = await fetch(`/api/counts?${q}`);
+        const body = await res.json();
+        if (!res.ok || !body.counts) throw new Error("no counts");
+        S.counts[want] = body.counts;
+      } catch {
+        delete S.counts[want];
+      }
+      if (scopeKey() === want) drawCards();
+    };
+
     const drawCards = () => {
       const box = $("lab-cards");
-      if (!whole()) {
+      const n = S.counts[scopeKey()];
+      if (!n) {
         box.textContent = "";
         for (let i = 0; i < 5; i++) box.append(ghost());
+        askCounts();
         return;
       }
-      const list = windowed();
-      const prs = list.filter((r) => r.kind === "pr");
-      const issues = list.filter((r) => r.kind === "issue");
-      const merged = prs.filter(isMerged);
-      const openIssues = issues.filter((r) => r.open);
-
       box.textContent = "";
       box.append(
-        card("Total involvement", String(list.length), `PRs & issues touched · ${scopeWords()}`),
+        card("Total involvement", String(n.all), `PRs & issues touched · ${scopeWords()}`),
         card(
           "Pull requests",
-          String(prs.length),
-          prs.length ? `${pct(merged.length, prs.length)}% merged · ${merged.length} merged` : "none here",
+          String(n.prs),
+          n.prs ? `${pct(n.merged, n.prs)}% merged · ${n.merged} merged` : "none here",
           "merged",
         ),
         card(
           "Issues",
-          String(issues.length),
-          issues.length ? `${openIssues.length} open · ${issues.length - openIssues.length} closed` : "none here",
+          String(n.issues),
+          n.issues ? `${n.open} open · ${n.issues - n.open} closed` : "none here",
           "open",
         ),
-        card("Reviews", String(count(prs, (r) => !mine(r))), "others' pull requests", "review"),
-        card("Discussions", String(count(issues, (r) => !mine(r))), "others' threads joined", "thread"),
+        card("Reviews", String(n.reviews), "others' pull requests", "review"),
+        card("Discussions", String(n.threads), "others' threads joined", "thread"),
       );
     };
 
@@ -517,7 +535,7 @@ import Band from "../components/Band.astro";
         chips.append(b);
       }
 
-      const years = [...new Set(S.rows.map((r) => new Date(whenOf(r)).getUTCFullYear()))].sort((a, b) => b - a);
+      const years = [...new Set(S.rows.map((r) => new Date(openedOn(r)).getUTCFullYear()))].sort((a, b) => b - a);
       pick(
         $("pick-year"),
         "",
@@ -526,7 +544,7 @@ import Band from "../components/Band.astro";
           ...years.map((y) => ({
             value: String(y),
             label: String(y),
-            count: count(S.rows, (r) => new Date(whenOf(r)).getUTCFullYear() === y),
+            count: count(S.rows, (r) => new Date(openedOn(r)).getUTCFullYear() === y),
           })),
         ],
         S.year,
@@ -631,10 +649,15 @@ import Band from "../components/Band.astro";
       const all = kept();
       const slice = all.slice(0, S.limit);
 
-      const of = whole() ? all.length : Math.max(S.total, all.length);
-      $("lab-shown").textContent = of
-        ? `Showing ${slice.length} of ${of}`
-        : "nothing under these filters";
+      // the scope total is known exactly, a narrowed one is only known for the rows in hand
+      const narrowed =
+        S.type !== "any" || S.status !== "any" || S.role !== "any" || S.repo !== "any" || S.text !== "";
+      const of = whole() ? all.length : Math.max(S.counts[scopeKey()]?.all ?? S.total, all.length);
+      $("lab-shown").textContent = !all.length
+        ? "nothing under these filters"
+        : narrowed && !whole()
+          ? `Showing ${slice.length} matching`
+          : `Showing ${slice.length} of ${of}`;
       more.hidden = !(S.next?.more || S.limit < all.length);
 
       rowsBox.textContent = "";
@@ -722,7 +745,7 @@ import Band from "../components/Band.astro";
     const perDay = (list) => {
       const map = new Map();
       for (const r of list) {
-        const key = onDay(whenOf(r));
+        const key = onDay(openedOn(r));
         map.set(key, (map.get(key) ?? 0) + 1);
       }
       return map;
@@ -904,7 +927,7 @@ import Band from "../components/Band.astro";
       host.textContent = "";
       const byMonth = new Map();
       for (const r of windowed()) {
-        const d = new Date(whenOf(r));
+        const d = new Date(openedOn(r));
         const key = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
         byMonth.set(key, (byMonth.get(key) ?? 0) + 1);
       }
@@ -1088,6 +1111,7 @@ import Band from "../components/Band.astro";
     const setView = (view) => {
       S.view = view;
       redraw();
+      if (view === "analytics" && S.next?.more && !S.loading) loadAll();
     };
     $("view-activity").addEventListener("click", () => setView("activity"));
     $("view-analytics").addEventListener("click", () => setView("analytics"));
@@ -1135,6 +1159,7 @@ import Band from "../components/Band.astro";
         limit: STEP,
         cal: "12",
         cals: body.calendar ? { "12": body.calendar } : {},
+        counts: body.counts ? { rall: body.counts } : {},
         monthlyView: "bar",
         open: new Set(),
         ...keep,
@@ -1259,6 +1284,7 @@ import Band from "../components/Band.astro";
             next: S.next,
             profile: S.profile,
             calendar: S.cals["12"] ?? null,
+            counts: S.counts.rall ?? null,
           }),
         );
       } catch {}
@@ -1371,8 +1397,6 @@ import Band from "../components/Band.astro";
       }
       redraw();
       remember();
-      // the counts are only honest over the whole history, so the rest follows at once
-      if (S.next?.more) loadAll();
     };
 
     form.addEventListener("submit", (e) => {

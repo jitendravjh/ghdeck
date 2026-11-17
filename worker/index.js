@@ -211,6 +211,51 @@ async function calendarOf(token, login, year) {
   };
 }
 
+const COUNTS = `
+query($all:String!,$prs:String!,$merged:String!,$iss:String!,$open:String!,$reviews:String!,$threads:String!){
+  all:     search(query:$all,type:ISSUE,first:1){issueCount}
+  prs:     search(query:$prs,type:ISSUE,first:1){issueCount}
+  merged:  search(query:$merged,type:ISSUE,first:1){issueCount}
+  iss:     search(query:$iss,type:ISSUE,first:1){issueCount}
+  open:    search(query:$open,type:ISSUE,first:1){issueCount}
+  reviews: search(query:$reviews,type:ISSUE,first:1){issueCount}
+  threads: search(query:$threads,type:ISSUE,first:1){issueCount}
+}`;
+
+// github counts these itself, so the cards do not have to wait for every page
+async function countsOf(token, login, when) {
+  const base = `involves:${login}${when ? ` ${when}` : ""}`;
+  const data = await graphql(token, COUNTS, {
+    all: base,
+    prs: `${base} is:pr`,
+    merged: `${base} is:pr is:merged`,
+    iss: `${base} is:issue`,
+    open: `${base} is:issue is:open`,
+    reviews: `${base} is:pr -author:${login}`,
+    threads: `${base} is:issue -author:${login}`,
+  }).catch(() => null);
+  if (!data) return null;
+  const n = (k) => data[k]?.issueCount ?? 0;
+  return {
+    all: n("all"),
+    prs: n("prs"),
+    merged: n("merged"),
+    issues: n("iss"),
+    open: n("open"),
+    reviews: n("reviews"),
+    threads: n("threads"),
+  };
+}
+
+// the chips ask for a window, which search understands as an updated range
+function windowQuery(range, year) {
+  if (year) return `updated:${year}-01-01..${year}-12-31`;
+  const days = Number(range);
+  if (!Number.isFinite(days) || days <= 0) return "";
+  const from = new Date(Date.now() - days * 86400000).toISOString().slice(0, 10);
+  return `updated:>=${from}`;
+}
+
 async function profileOf(token, login) {
   const res = await rest(token, `/users/${login}`);
   if (!res.ok) return null;
@@ -304,6 +349,26 @@ function forClient(res) {
   });
 }
 
+async function someCounts(url, env, ctx) {
+  const login = cleanLogin(url.searchParams.get("name"));
+  if (!login) return json({ error: "that is not a github username" }, 400);
+  if (!env.GHDECK_TOKEN) return json({ error: "search is not set up on this site yet" }, 503);
+  const range = url.searchParams.get("range") || "all";
+  const asked = Number(url.searchParams.get("year"));
+  const year = Number.isInteger(asked) && asked >= 2008 && asked <= 2100 ? asked : null;
+
+  const cache = caches.default;
+  const key = new Request(`${url.origin}/api/counts?name=${login.toLowerCase()}&range=${range}&year=${year ?? ""}`);
+  const hit = await cache.match(key);
+  if (hit) return forClient(hit);
+
+  const counts = await countsOf(env.GHDECK_TOKEN, login, windowQuery(range, year));
+  if (!counts) return json({ error: "github did not answer" }, 502);
+  const res = json({ login, counts }, 200, true);
+  ctx.waitUntil(cache.put(key, res.clone()));
+  return forClient(res);
+}
+
 // one year of the calendar on its own, for the picker on the analytics panel
 async function oneYear(url, env, ctx) {
   const login = cleanLogin(url.searchParams.get("name"));
@@ -349,6 +414,7 @@ async function lookUp(url, env, ctx) {
     const first = !(am || ae || skip);
     const profilePromise = first ? profileOf(env.GHDECK_TOKEN, login) : Promise.resolve(null);
     const calendarPromise = first ? calendarOf(env.GHDECK_TOKEN, login, null) : Promise.resolve(null);
+    const countsPromise = first ? countsOf(env.GHDECK_TOKEN, login, "") : Promise.resolve(null);
     const data = await graphql(env.GHDECK_TOKEN, search(rich), {
       main: `involves:${login} sort:updated-desc`,
       extra: `mentions:${login} sort:updated-desc`,
@@ -368,6 +434,7 @@ async function lookUp(url, env, ctx) {
       source: "search",
       profile: await profilePromise,
       calendar: await calendarPromise,
+      counts: await countsPromise,
       next: {
         am: data.main?.pageInfo?.endCursor ?? null,
         ae: data.extra?.pageInfo?.endCursor ?? null,
@@ -391,6 +458,7 @@ async function lookUp(url, env, ctx) {
             since: feed.since,
             profile: await profilePromise,
             calendar: await calendarPromise,
+      counts: await countsPromise,
             next: { skip: skip + FEED_ROWS, more: feed.more },
           };
         }
@@ -474,6 +542,10 @@ export default {
     if (url.pathname === "/api/user") {
       if (request.method !== "GET") return json({ error: "use GET" }, 405);
       return lookUp(url, env, ctx);
+    }
+    if (url.pathname === "/api/counts") {
+      if (request.method !== "GET") return json({ error: "use GET" }, 405);
+      return someCounts(url, env, ctx);
     }
     if (url.pathname === "/api/calendar") {
       if (request.method !== "GET") return json({ error: "use GET" }, 405);

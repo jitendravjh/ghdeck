@@ -687,6 +687,10 @@ a.cell .more { font-size: 0.85rem; color: var(--link); }
 .lab-more { margin: 0; justify-self: center; }
 
 .lab-lede { margin-top: 16px; font-size: 0.85rem; color: var(--text-faint); }
+#pane-analytics .card { padding: 13px; }
+#pane-analytics .card-top { font-size: 0.78rem; }
+#pane-analytics .card-value { margin-top: 5px; font-size: 1.55rem; }
+#pane-analytics .card-sub { margin-top: 4px; font-size: 0.73rem; }
 .panel { margin-top: 18px; padding: 16px; background: var(--nav-bg); }
 .panel-top { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 14px; }
 .panel-name { font-size: 0.95rem; font-weight: 700; color: var(--text-strong); }
@@ -772,6 +776,13 @@ a.cell .more { font-size: 0.85rem; color: var(--link); }
   .lab-foot > * { grid-column: 1; }
   .lab-filters .pick { flex: 1 1 calc(50% - 4px); }
   .r { grid-template-columns: 18px minmax(0, 1fr); }
+  .r-title { font-size: 13.5px; }
+  .r-line { font-size: 0.72rem; gap: 6px; }
+  .badge, .lbl { font-size: 0.66rem; }
+  .r-repo { font-size: 0.68rem; }
+  .r-foot { font-size: 0.7rem; }
+  .r-ago, .r-peek { font-size: 0.7rem; }
+  .r-body { font-size: 0.75rem; }
   .r-side { grid-column: 2; flex-direction: row; align-items: center; justify-content: flex-start; }
 }
 
