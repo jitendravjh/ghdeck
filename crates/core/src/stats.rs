@@ -25,6 +25,7 @@ pub struct Work {
     pub issues_opened: usize,
     pub issues_closed: usize,
     pub repos: usize,
+    pub repos_touched: usize,
     pub active_days: usize,
     pub longest_streak: usize,
     pub current_streak: usize,
@@ -105,7 +106,8 @@ pub fn work(items: &[&Item], me: &str, now: DateTime<Utc>) -> Work {
         .iter()
         .max_by_key(|(d, n)| (**n, **d))
         .map(|(d, n)| (*d, *n));
-    let repos: HashSet<String> = items.iter().map(|it| it.repo.to_lowercase()).collect();
+    let repos: HashSet<String> = mine.iter().map(|it| it.repo.to_lowercase()).collect();
+    let touched: HashSet<String> = items.iter().map(|it| it.repo.to_lowercase()).collect();
 
     Work {
         prs_opened: prs.len(),
@@ -113,6 +115,7 @@ pub fn work(items: &[&Item], me: &str, now: DateTime<Utc>) -> Work {
         issues_opened: issues.len(),
         issues_closed: issues.iter().filter(|it| !it.is_open()).count(),
         repos: repos.len(),
+        repos_touched: touched.len(),
         active_days: per_day.len(),
         longest_streak: longest,
         current_streak: current,
@@ -121,8 +124,9 @@ pub fn work(items: &[&Item], me: &str, now: DateTime<Utc>) -> Work {
     }
 }
 
-pub fn percent(part: usize, whole: usize) -> usize {
-    (part * 100 + whole / 2).checked_div(whole).unwrap_or(0)
+/// A share, or nothing at all when there is no denominator to take it of.
+pub fn percent(part: usize, whole: usize) -> Option<usize> {
+    (part * 100 + whole / 2).checked_div(whole)
 }
 
 pub fn spell_hours(h: i64) -> String {
@@ -245,9 +249,22 @@ mod tests {
 
     #[test]
     fn percentages_round_to_the_nearest_whole() {
-        assert_eq!(percent(1, 3), 33);
-        assert_eq!(percent(2, 3), 67);
-        assert_eq!(percent(0, 0), 0, "never divides by zero");
+        assert_eq!(percent(1, 3), Some(33));
+        assert_eq!(percent(2, 3), Some(67));
+    }
+
+    #[test]
+    fn a_share_of_nothing_is_not_zero_percent() {
+        assert_eq!(percent(0, 0), None, "they opened none, so there is no rate");
+    }
+
+    #[test]
+    fn repos_count_what_they_opened_not_what_they_touched() {
+        let mine = item("me", Kind::Pr, State::Open, 1, "o/a");
+        let theirs = item("you", Kind::Pr, State::Open, 1, "o/b");
+        let w = work(&[&mine, &theirs], "me", now());
+        assert_eq!(w.repos, 1, "only the repo they opened in");
+        assert_eq!(w.repos_touched, 2, "both repos they appear in");
     }
 
     #[test]

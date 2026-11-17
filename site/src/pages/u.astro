@@ -216,7 +216,7 @@ import Band from "../components/Band.astro";
       return box;
     };
     const plural = (n, one, many) => `${n} ${n === 1 ? one : many ?? one + "s"}`;
-    const pct = (part, whole) => (whole ? Math.round((part / whole) * 100) : 0);
+    const pct = (part, whole) => (whole ? `${Math.round((part / whole) * 100)}%` : "\u2014");
 
     const ago = (iso) => {
       const s = Math.max(0, (Date.now() - Date.parse(iso)) / 1000);
@@ -560,7 +560,7 @@ import Band from "../components/Band.astro";
         card(
           "Pull requests",
           String(n.prs),
-          n.prs ? `${n.merged} merged · ${pct(n.merged, n.prs)}%` : "none here",
+          n.prs ? `${n.merged} merged · ${pct(n.merged, n.prs)}` : "none here",
           "merged",
         ),
         card(
@@ -848,6 +848,8 @@ import Band from "../components/Band.astro";
       const closedIssues = issues.filter((r) => !r.open);
       const days = perDay(opened);
       const keys = [...days.keys()].sort((a, b) => a - b);
+      const openedRepos = new Set(opened.map((r) => r.repo)).size;
+      const touchedRepos = new Set(list.map((r) => r.repo)).size;
 
       let best = 0;
       let run = 0;
@@ -876,10 +878,10 @@ import Band from "../components/Band.astro";
       box.textContent = "";
       box.append(
         card("PRs opened", String(prs.length), `${merged.length} merged`),
-        card("Merge rate", `${pct(merged.length, prs.length)}%`, "of PRs they opened"),
+        card("Merge rate", pct(merged.length, prs.length), prs.length ? "of PRs they opened" : "they opened none here"),
         card("Issues opened", String(issues.length), `${closedIssues.length} closed`),
-        card("Issues closed", `${pct(closedIssues.length, issues.length)}%`, "of issues they opened"),
-        card("Repositories", String(new Set(list.map((r) => r.repo)).size), "with activity"),
+        card("Issues closed", pct(closedIssues.length, issues.length), issues.length ? "of issues they opened" : "they opened none here"),
+        card("Repositories", String(openedRepos), `of ${touchedRepos} they took part in`),
         card("Active days", String(days.size), "days they opened something"),
         card("Longest streak", `${best} d`, "days in a row"),
         card("Current streak", `${current} d`, current ? "still going" : "not active today"),
@@ -1132,7 +1134,7 @@ import Band from "../components/Band.astro";
           el("i", `card-dot ${part.key}`),
           el("span", "stack-name", part.word),
           el("span", "stack-n", String(part.n)),
-          el("span", "stack-pct", `${pct(part.n, prs.length)}%`),
+          el("span", "stack-pct", pct(part.n, prs.length)),
         );
         key.append(li);
       }

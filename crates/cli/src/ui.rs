@@ -480,10 +480,18 @@ fn stats(f: &mut Frame, area: Rect, app: &App) {
         f,
         top,
         vec![
-            tile("they opened", (w.prs_opened + w.issues_opened).to_string(), format!("across {} repos", w.repos), blue),
+            tile("they opened", (w.prs_opened + w.issues_opened).to_string(), format!("in {} of {} repos", w.repos, w.repos_touched), blue),
             tile("pull requests", c.prs.to_string(), format!("{} merged", c.merged), info),
             tile("issues", c.issues.to_string(), format!("{} still open", c.open_issues), good),
-            tile("merge rate", format!("{}%", pc(w.prs_merged, w.prs_opened)), format!("of {} they opened", w.prs_opened), info),
+            tile(
+                "merge rate",
+                pc(w.prs_merged, w.prs_opened).map_or_else(|| "-".into(), |n| format!("{n}%")),
+                match w.prs_opened {
+                    0 => "they opened none here".into(),
+                    n => format!("of {n} they opened"),
+                },
+                info,
+            ),
             tile(
                 "time to merge",
                 w.median_merge_hours.map(ghdeck_core::stats::spell_hours).unwrap_or_else(|| "-".into()),
