@@ -414,7 +414,6 @@ async function lookUp(url, env, ctx) {
     const first = !(am || ae || skip);
     const profilePromise = first ? profileOf(env.GHDECK_TOKEN, login) : Promise.resolve(null);
     const calendarPromise = first ? calendarOf(env.GHDECK_TOKEN, login, null) : Promise.resolve(null);
-    const countsPromise = first ? countsOf(env.GHDECK_TOKEN, login, "") : Promise.resolve(null);
     const data = await graphql(env.GHDECK_TOKEN, search(rich), {
       main: `involves:${login} sort:updated-desc`,
       extra: `mentions:${login} sort:updated-desc`,
@@ -434,7 +433,6 @@ async function lookUp(url, env, ctx) {
       source: "search",
       profile: await profilePromise,
       calendar: await calendarPromise,
-      counts: await countsPromise,
       next: {
         am: data.main?.pageInfo?.endCursor ?? null,
         ae: data.extra?.pageInfo?.endCursor ?? null,
@@ -458,7 +456,6 @@ async function lookUp(url, env, ctx) {
             since: feed.since,
             profile: await profilePromise,
             calendar: await calendarPromise,
-      counts: await countsPromise,
             next: { skip: skip + FEED_ROWS, more: feed.more },
           };
         }

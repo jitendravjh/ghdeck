@@ -1348,6 +1348,11 @@ import Band from "../components/Band.astro";
         inFlight = false;
       };
 
+      // the counts are a separate, quicker call, so they race the search rather than follow it
+      const tally = fetch(`/api/counts?name=${encodeURIComponent(name)}&range=all`)
+        .then((r) => (r.ok ? r.json() : null))
+        .catch(() => null);
+
       let res, body;
       try {
         res = await fetch(`/api/user?name=${encodeURIComponent(name)}&rich=1`);
@@ -1397,6 +1402,13 @@ import Band from "../components/Band.astro";
       }
       redraw();
       remember();
+
+      tally.then((got) => {
+        if (!got?.counts || S?.login.toLowerCase() !== body.login.toLowerCase()) return;
+        S.counts.rall = got.counts;
+        if (scopeKey() === "rall") drawCards();
+        remember();
+      });
     };
 
     form.addEventListener("submit", (e) => {
